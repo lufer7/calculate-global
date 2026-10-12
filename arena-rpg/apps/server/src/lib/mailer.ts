@@ -31,7 +31,7 @@ export class DevConsoleMailer implements Mailer {
 /**
  * Production: any SMTP provider. Pick one with EU/TR data centres and sign its data
  * processing agreement (veri işleyen sözleşmesi); list it in the privacy notice.
- *   SMTP_URL="smtps://user:pass@smtp.example.com:465"  MAIL_FROM="Toz ve Demir <no-reply@example.com>"
+ *   SMTP_URL="smtps://user:pass@smtp.example.com:465"  MAIL_FROM="Aegis <no-reply@example.com>"
  */
 export class SmtpMailer implements Mailer {
   private readonly transport;

@@ -39,7 +39,7 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
     const item = ownItem(acc.id, c.req.param('id'));
     const f = ownFighter(acc.id, b?.fighterId);
     if (!item || !f) return c.json({ error: 'not_found' }, 404);
-    if (f.status_kind === 'expedition') return c.json({ error: 'fighter_busy' }, 400);
+    if (f.status_kind === 'expedition' || f.status_kind === 'exploration') return c.json({ error: 'fighter_busy' }, 400);
     const t = game.template(item.template_id);
     if (!t?.slot) return c.json({ error: 'not_equipment' }, 400);
     const candidates = game.slotsFor(t.slot);
@@ -82,18 +82,30 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
     return c.json({ gold });
   });
 
-  /** Blacksmith: +1 upgrade, always succeeds; Kılıç Hakkı / Demirci Dostu make it cheaper. */
-  app.post('/items/:id/upgrade', (c) => {
+  /** "+ basma": drop a duplicate (same item and rarity) onto an item for +1; gold cost grows each step. */
+  app.post('/items/:id/merge', async (c) => {
+    const b = await c.req.json().catch(() => null);
     const acc = own(c);
-    const item = ownItem(acc.id, c.req.param('id'));
-    if (!item) return c.json({ error: 'not_found' }, 404);
-    if (game.template(item.template_id)?.kind !== 'equipment') return c.json({ error: 'not_equipment' }, 400);
-    if (item.upgrade >= game.MAX_ITEM_UPGRADE) return c.json({ error: 'max_upgrade' }, 400);
-    const cost = game.upgradeCost(toInstance(item), smithReduction(acc, fightersOf(db, acc.id)));
+    const target = ownItem(acc.id, c.req.param('id'));
+    const source = ownItem(acc.id, String(b?.sourceId ?? ''));
+    if (!target || !source) return c.json({ error: 'not_found' }, 404);
+    if (source.fighter_id) return c.json({ error: 'equipped' }, 400);
+    const why = game.canMerge(toInstance(target), toInstance(source));
+    if (why) return c.json({ error: why }, 400);
+    const result = { ...toInstance(target), itemLevel: Math.max(target.item_level, source.item_level), upgrade: Math.max(target.upgrade, source.upgrade) };
+    const cost = game.upgradeCost(result, smithReduction(acc, fightersOf(db, acc.id)));
     if (acc.gold < cost) return c.json({ error: 'not_enough_gold', cost }, 400);
-    db.prepare('UPDATE accounts SET gold = gold - ? WHERE id = ?').run(cost, acc.id);
-    db.prepare('UPDATE items SET upgrade = upgrade + 1 WHERE id = ?').run(item.id);
-    return c.json({ upgrade: item.upgrade + 1, cost });
+    db.exec('BEGIN');
+    try {
+      db.prepare('UPDATE accounts SET gold = gold - ? WHERE id = ?').run(cost, acc.id);
+      db.prepare('UPDATE items SET upgrade = ?, item_level = ? WHERE id = ?').run(result.upgrade + 1, result.itemLevel, target.id);
+      db.prepare('DELETE FROM items WHERE id = ?').run(source.id);
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      throw e;
+    }
+    return c.json({ upgrade: result.upgrade + 1, itemLevel: result.itemLevel, cost });
   });
 
   /** Food and potions. */
@@ -198,11 +210,14 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
   const opponentsFor = (acc: AccountRow, f: FighterRow) => {
     const players = db
       .prepare(
-        `SELECT f.*, a.display_name FROM fighters f JOIN accounts a ON a.id = f.account_id
+        `SELECT f.*, a.display_name, cl.tag AS clan_tag FROM fighters f JOIN accounts a ON a.id = f.account_id
+         LEFT JOIN clan_members m ON m.account_id = a.id LEFT JOIN clans cl ON cl.id = m.clan_id
          WHERE f.account_id != ? AND a.status = 'active' AND f.level BETWEEN ? AND ?
+           -- banner mates fight side by side, never against each other
+           AND (m.clan_id IS NULL OR m.clan_id IS NOT (SELECT clan_id FROM clan_members WHERE account_id = ?))
          ORDER BY ABS(f.level - ?), f.arena_points DESC LIMIT 3`,
       )
-      .all(acc.id, f.level - 5, f.level + 5, f.level) as unknown as (FighterRow & { display_name: string })[];
+      .all(acc.id, f.level - 5, f.level + 5, acc.id, f.level) as unknown as (FighterRow & { display_name: string; clan_tag: string | null })[];
     return { npcs: npcFor(f), players };
   };
 
@@ -218,10 +233,16 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
       hpRatio: f.hp_ratio,
       minHp: game.ARENA_MIN_HP,
       npcs: npcs.map((n) => ({ id: n.id, name: n.battler.name, class: n.battler.class, level: n.battler.level, power: power(n.battler) })),
-      players: players.map((p) => ({ id: p.id, name: p.name, owner: p.display_name, class: p.class, level: p.level, points: p.arena_points, power: power(battlerOf(db, p)) })),
+      players: players.map((p) => ({ id: p.id, name: p.name, owner: p.display_name, clanTag: p.clan_tag, class: p.class, level: p.level, points: p.arena_points, power: power(battlerOf(db, p)) })),
       ranking: (db.prepare(
-        `SELECT f.name, f.class, f.level, f.arena_points AS points, f.arena_wins AS wins, a.display_name AS owner FROM fighters f JOIN accounts a ON a.id = f.account_id
+        `SELECT f.name, f.class, f.level, f.arena_points AS points, f.arena_wins AS wins, a.display_name AS owner, cl.tag AS clanTag FROM fighters f JOIN accounts a ON a.id = f.account_id
+         LEFT JOIN clan_members m ON m.account_id = a.id LEFT JOIN clans cl ON cl.id = m.clan_id
          WHERE a.status = 'active' ORDER BY f.arena_points DESC, f.level DESC LIMIT 20`,
+      ).all()),
+      clanRanking: (db.prepare(
+        `SELECT cl.name, cl.tag, cl.emblem_color AS color, cl.emblem_symbol AS symbol, SUM(f.arena_points) AS points, COUNT(DISTINCT m.account_id) AS members
+         FROM clans cl JOIN clan_members m ON m.clan_id = cl.id JOIN fighters f ON f.account_id = m.account_id
+         GROUP BY cl.id ORDER BY points DESC LIMIT 10`,
       ).all()),
     });
   });
@@ -245,7 +266,7 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
       if (!p) return c.json({ error: 'not_found' }, 404);
       foe = { ...battlerOf(db, p), hpRatio: 1 }; // defenders always fight fresh and lose nothing
       vsPlayer = true;
-      foeInfo = { name: p.name, class: p.class, level: p.level, owner: p.display_name };
+      foeInfo = { name: p.name, class: p.class, level: p.level, owner: p.clan_tag ? `[${p.clan_tag}] ${p.display_name}` : p.display_name };
     } else {
       const npc = npcFor(f).find((n) => n.id === b?.opponent?.id);
       if (!npc) return c.json({ error: 'not_found' }, 404);

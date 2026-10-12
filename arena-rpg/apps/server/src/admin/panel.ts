@@ -13,7 +13,7 @@ export function adminPanelHtml(nonce: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:,">
-<title>Toz ve Demir · Yönetim</title>
+<title>Aegis · Yönetim</title>
 <style nonce="${nonce}">
 :root { --bg:#f4f1ec; --panel:#fffdf9; --ink:#2a241d; --muted:#7a6f62; --line:#e2dbd0; --accent:#9a5b1e; --danger:#b3261e; --ok:#2e7d32; --warn:#a66a00; color-scheme: light; }
 @media (prefers-color-scheme: dark) { :root { --bg:#14110e; --panel:#1d1915; --ink:#ece4d8; --muted:#a39684; --line:#3a3229; --accent:#d9934a; --danger:#ef6b62; --ok:#7cc47f; --warn:#e0a83c; color-scheme: dark; } }
@@ -75,10 +75,11 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
 
 <div id="app" hidden>
   <header>
-    <h1>Toz ve Demir <span>· Yönetim</span></h1>
+    <h1>Aegis <span>· Yönetim</span></h1>
     <nav aria-label="Bölümler">
       <button data-view="overview" aria-current="page">Genel</button>
       <button data-view="players">Oyuncular</button>
+      <button data-view="clans">Sancaklar</button>
       <button data-view="requests">KVKK başvuruları</button>
       <button data-view="retention">Saklama ve imha</button>
       <button data-view="audit">İşlem kaydı</button>
@@ -163,6 +164,17 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
       </div>
     </section>
 
+    <section id="view-clans" hidden>
+      <div class="card">
+        <h2>Sancaklar</h2>
+        <p class="muted">Oyunda sohbet yok; oyuncuların yazabildiği tek şey sancak adı ve kısaltmasıdır. Uygunsuz bir adı sıfırlayabilir ya da sancağı dağıtabilirsin. Her işlem kayda geçer.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Ad</th><th>Kısaltma</th><th>Lider</th><th>Üye</th><th>Şan</th><th>Kuruluş</th><th></th></tr></thead>
+          <tbody id="clans"></tbody>
+        </table></div>
+      </div>
+    </section>
+
     <section id="view-retention" hidden>
       <div class="card">
         <div class="row head"><h2>Saklama ve imha</h2><button class="primary" id="run-retention" type="button">Şimdi çalıştır</button></div>
@@ -194,7 +206,7 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
   const $ = (id) => document.getElementById(id);
   const CLASS = { scout: 'Gözcü', swordmaster: 'Kılıç Ustası', seer: 'Müneccim' };
   const STATUS = { active: 'Aktif', pending: 'Doğrulanmamış', banned: 'Yasaklı' };
-  const ACTIONS = { login: 'Giriş', logout: 'Çıkış', ban: 'Yasaklama', unban: 'Yasak kaldırma', reveal_email: 'E-posta görüntüleme', search_by_email: 'E-posta ile arama', rename_fighter: 'Dövüşçü adı değiştirme', delete_account: 'Hesap silme', export_data: 'Veri dışa aktarma', answer_request: 'KVKK başvurusu yanıtı', run_retention: 'Saklama ve imha (elle)' };
+  const ACTIONS = { login: 'Giriş', logout: 'Çıkış', ban: 'Yasaklama', unban: 'Yasak kaldırma', reveal_email: 'E-posta görüntüleme', search_by_email: 'E-posta ile arama', rename_fighter: 'Dövüşçü adı değiştirme', delete_account: 'Hesap silme', export_data: 'Veri dışa aktarma', answer_request: 'KVKK başvurusu yanıtı', run_retention: 'Saklama ve imha (elle)', reset_clan_name: 'Sancak adı sıfırlama', delete_clan: 'Sancak dağıtma' };
   const KINDS = { access: 'Bilgi / erişim', rectification: 'Düzeltme', erasure: 'Silme', objection: 'İtiraz', other: 'Diğer' };
   const fmt = (t) => (t ? new Date(t).toLocaleString('tr-TR') : '—');
   const el = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined && text !== null) e.textContent = String(text); if (cls) e.className = cls; return e; };
@@ -238,9 +250,9 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
 
   document.querySelectorAll('nav [data-view]').forEach((b) => b.addEventListener('click', () => show(b.dataset.view)));
   function show(view) {
-    for (const v of ['overview', 'players', 'requests', 'retention', 'audit']) $('view-' + v).hidden = v !== view;
+    for (const v of ['overview', 'players', 'clans', 'requests', 'retention', 'audit']) $('view-' + v).hidden = v !== view;
     document.querySelectorAll('nav [data-view]').forEach((b) => b.setAttribute('aria-current', b.dataset.view === view ? 'page' : 'false'));
-    ({ overview: loadOverview, players: loadPlayers, requests: loadRequests, retention: loadRetention, audit: loadAudit })[view]().catch((e) => alertBox(e.message));
+    ({ overview: loadOverview, players: loadPlayers, clans: loadClans, requests: loadRequests, retention: loadRetention, audit: loadAudit })[view]().catch((e) => alertBox(e.message));
   }
   function alertBox(msg) { $('d-err').textContent = msg; }
 
@@ -370,6 +382,21 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
       }
       return li;
     }) : [el('li', 'Başvuru yok.', 'muted')]));
+  }
+
+  async function loadClans() {
+    const r = await api('/clans');
+    $('clans').replaceChildren(...(r.clans.length ? r.clans.map((x) => {
+      const tr = el('tr');
+      const actions = el('td');
+      const reset = el('button', 'Adı sıfırla'); reset.type = 'button';
+      reset.addEventListener('click', async () => { if (!confirm(x.name + ' adını sıfırla?')) return; try { await api('/clans/' + x.id + '/reset-name', { method: 'POST' }); loadClans(); } catch (err) { alert(err.message); } });
+      const del = el('button', 'Dağıt', 'danger'); del.type = 'button';
+      del.addEventListener('click', async () => { if (!confirm(x.name + ' sancağı dağıtılsın mı? Üyeler sancaksız kalır.')) return; try { await api('/clans/' + x.id, { method: 'DELETE' }); loadClans(); } catch (err) { alert(err.message); } });
+      actions.append(reset, ' ', del);
+      tr.append(el('td', x.name), el('td', x.tag), el('td', x.leader || '—'), el('td', x.members), el('td', x.xp), el('td', fmt(x.created_at)), actions);
+      return tr;
+    }) : [(() => { const tr = el('tr'); const td = el('td', 'Henüz sancak yok.', 'muted'); td.colSpan = 7; tr.append(td); return tr; })()]));
   }
 
   async function loadRetention() {

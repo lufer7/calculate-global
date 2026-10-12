@@ -76,7 +76,7 @@ Değişiklikler
   terms: {
     title: 'Kullanım Koşulları',
     body: `Taraflar
-• Bu koşullar [ŞİRKET UNVANI] ("biz") ile Toz ve Demir oyununu kullanan oyuncu ("sen") arasındadır.
+• Bu koşullar [ŞİRKET UNVANI] ("biz") ile Aegis oyununu kullanan oyuncu ("sen") arasındadır.
 
 Hesap
 • Kayıt için en az ${game.MIN_AGE} yaşında olmalısın.

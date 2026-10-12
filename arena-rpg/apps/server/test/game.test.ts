@@ -34,11 +34,11 @@ describe('game API', () => {
     let state = await read(await p.get('/v1/game/state'));
     expect(state.fighters[0].status).toBe('expedition');
     expect(state.expeditions).toHaveLength(1);
-    // Scout main class: 30 min base −20% perk.
-    expect(endsAt - p.clock.now()).toBe(24 * 60_000);
+    // Rev3: Scout perks work on Keşif, expeditions take their base time (30 min) for everyone.
+    expect(endsAt - p.clock.now()).toBe(30 * 60_000);
     expect((await read(await p.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [f.id] }))).error).toBe('fighter_busy');
 
-    p.clock.advance(24 * 60_000);
+    p.clock.advance(30 * 60_000);
     state = await read(await p.get('/v1/game/state'));
     expect(state.expeditions).toHaveLength(0);
     expect(state.unreadReports).toBe(1);
@@ -72,7 +72,7 @@ describe('game API', () => {
     expect((await read(await p.post(`/v1/game/fighters/${f.id}/respec`, {}))).error).toBe('cooldown');
   });
 
-  it('runs Kafa Kazanı research with seer perk and gold cost', async () => {
+  it('runs Rasathane research with seer perk and gold cost', async () => {
     const p = await player();
     await p.post('/v1/fighters', { name: 'Yel', class: 'seer' });
     const r = await read(await p.post('/v1/game/research', { id: 'expedition_logistics' }));

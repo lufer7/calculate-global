@@ -70,7 +70,7 @@ Bu klasördeki `deploy/` paketi sunucu tarafını tek komuta indirir. HTTPS sert
 
 1. `apps/mobile/eas.json` içindeki `EXPO_PUBLIC_API_URL` değerini kendi alan adınla değiştir: `https://api.ornekoyun.com`.
 2. `apps/mobile/app.json` dosyasında:
-   - `com.example.tozvedemir` paket adını kendi adınla değiştir (ör. `com.senin-studyon.tozvedemir`). Bu ad mağazaya yüklendikten sonra değiştirilemez.
+   - `com.example.aegis` paket adını kendi adınla değiştir (ör. `com.senin-studyon.aegis`). Bu ad mağazaya yüklendikten sonra değiştirilemez.
    - `version` alanını düzenle.
 3. Derle:
    ```bash

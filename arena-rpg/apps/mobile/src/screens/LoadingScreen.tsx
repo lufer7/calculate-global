@@ -21,7 +21,7 @@ export function LoadingScreen({ message }: { message?: string }) {
     <View style={{ flex: 1, backgroundColor: colors.bgDeep }}>
       <Scene name={scene} fill style={{ borderRadius: 0 }}>
         <View style={{ position: 'absolute', top: 54, left: 0, right: 0, alignItems: 'center' }}>
-          <Text style={{ color: '#f4e9d2', fontSize: 36, fontWeight: '900', letterSpacing: 4, fontFamily: fonts.display, textShadowColor: '#000', textShadowRadius: 10 }}>TOZ VE DEMİR</Text>
+          <Text style={{ color: '#f4e9d2', fontSize: 36, fontWeight: '900', letterSpacing: 4, fontFamily: fonts.display, textShadowColor: '#000', textShadowRadius: 10 }}>AEGIS</Text>
           <View style={{ width: 160, height: 1, backgroundColor: colors.trim, marginVertical: 6 }} />
           <Text style={{ color: '#f4e9d2', opacity: 0.9, textShadowColor: '#000', textShadowRadius: 6 }}>{CAPTIONS[scene]}</Text>
         </View>

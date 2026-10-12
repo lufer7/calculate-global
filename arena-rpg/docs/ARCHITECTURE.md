@@ -1,8 +1,8 @@
-# Toz ve Demir — Anonim Mimari Planı
+# Aegis — Anonim Mimari Planı
 
 > ⚠️ **Bu belge v1'i (hesapsız, tamamen anonim model) anlatır.** E-posta ile üyelik ve sunucu otoritesi kararıyla değişen kısımlar için [`DESIGN_V2.md`](DESIGN_V2.md) dosyasına bakın.
 
-> Kod adı **"Toz ve Demir"** (geçici, özgün bir isim). Metin/menü tabanlı, sıra tabanlı arena RPG.
+> Kod adı **"Aegis"** (geçici, özgün bir isim). Metin/menü tabanlı, sıra tabanlı arena RPG.
 >
 > ⚠️ Bu belge bir mühendislik planıdır, hukuki görüş değildir. Yayından önce KVKK/GDPR ve tüketici hukuku konusunda bir avukata danışın.
 

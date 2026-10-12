@@ -9,6 +9,8 @@ import { randomId } from '../lib/security';
 import type { ExpeditionRow, GameClock } from './settle';
 import { bestSkill, dayKey, researchOf, settle, skillsOf, zoneProgress } from './settle';
 import { battlerOf, registerGangRoutes } from './gangRoutes';
+import { activeExplorations, explorationView, registerExplorationRoutes } from './explorationRoutes';
+import { clanSummary, registerClanRoutes } from '../clan/routes';
 import { countOf, consume, equippedOf, itemView } from './items';
 import type { ItemRow } from './items';
 
@@ -43,7 +45,10 @@ export function gameRoutes(db: Db, clock: GameClock) {
         research,
         activeResearch: acc.active_research ? JSON.parse(acc.active_research) : null,
       },
-      expeditionSlots: game.expeditionSlots(research.expedition_logistics ?? 0, game.highestScoutLevel(fighters.map(toCore), now)),
+      expeditionSlots: game.expeditionSlots(research.expedition_logistics ?? 0),
+      explorationSlots: game.explorationSlots(game.highestScoutLevel(fighters.map(toCore), now)),
+      explorations: activeExplorations(db, acc.id).map(explorationView),
+      clan: clanSummary(db, acc.id, now),
       prophecyZone: seesProphecy ? game.prophecyZone(dayKey(now), clock.prophecySecret) : null,
       fighters: fighters.map((f) => {
         const profile = game.battleProfile({ ...battlerOf(db, f), hpRatio: 1 });
@@ -66,6 +71,8 @@ export function gameRoutes(db: Db, clock: GameClock) {
   });
 
   registerGangRoutes(app, db, clock);
+  registerExplorationRoutes(app, db, clock);
+  registerClanRoutes(app, db, clock);
 
   app.post('/fighters/:id/skills', async (c) => {
     const b = await c.req.json().catch(() => null);
@@ -143,7 +150,7 @@ export function gameRoutes(db: Db, clock: GameClock) {
     return c.body(null, 204);
   });
 
-  /** Kafa Kazanı: one research at a time, paid in gold, shortened by Seer perks/skills. */
+  /** Rasathane: one research at a time, paid in gold, shortened by Seer perks/skills. */
   app.post('/research', async (c) => {
     const b = await c.req.json().catch(() => null);
     const def = game.RESEARCH[String(b?.id ?? '')];

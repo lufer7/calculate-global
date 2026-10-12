@@ -17,7 +17,7 @@ export const RETENTION = {
   /** No activity for this long and warned at least `warnGraceDays` ago → account deleted. */
   inactiveDeleteDays: 730,
   warnGraceDays: 30,
-  /** Expedition/research reports in the in-game inbox. */
+  /** Expedition/research reports in the in-game inbox (also finished keşif/raid records, banner activity log and help records). */
   reportsDays: 90,
   /** Owner notifications ("new member", "new fighter"). */
   adminNotificationsDays: 90,

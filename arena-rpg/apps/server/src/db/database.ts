@@ -181,6 +181,85 @@ const MIGRATIONS: string[] = [
   );
   ALTER TABLE expeditions ADD COLUMN stage INTEGER NOT NULL DEFAULT 1;
   `,
+  `
+  -- Keşif: long Ogame-style explorations with player-chosen travel / exploring time.
+  CREATE TABLE explorations (
+    id          TEXT PRIMARY KEY,
+    account_id  TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    fighter_ids TEXT NOT NULL,
+    started_at  INTEGER NOT NULL,
+    travel_ms   INTEGER NOT NULL,           -- one way, real (speed-adjusted) time
+    explore_ms  INTEGER NOT NULL,
+    base_travel_ms  INTEGER NOT NULL,       -- as chosen by the player (game time, for rewards)
+    base_explore_ms INTEGER NOT NULL,
+    ends_at     INTEGER NOT NULL,
+    seed        INTEGER NOT NULL,
+    state       TEXT NOT NULL CHECK (state IN ('active', 'recalled', 'done'))
+  );
+  CREATE INDEX explorations_account ON explorations(account_id, state);
+  -- Sancak (clans). No chat and no free text except a moderated name/tag.
+  CREATE TABLE clans (
+    id            TEXT PRIMARY KEY,
+    name          TEXT NOT NULL,
+    name_key      TEXT NOT NULL UNIQUE,
+    tag           TEXT NOT NULL UNIQUE,
+    emblem_color  INTEGER NOT NULL DEFAULT 0,
+    emblem_symbol INTEGER NOT NULL DEFAULT 0,
+    join_policy   TEXT NOT NULL DEFAULT 'open' CHECK (join_policy IN ('open', 'request')),
+    xp            INTEGER NOT NULL DEFAULT 0,
+    created_at    INTEGER NOT NULL
+  );
+  CREATE TABLE clan_members (
+    account_id   TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+    clan_id      TEXT NOT NULL REFERENCES clans(id) ON DELETE CASCADE,
+    role         TEXT NOT NULL CHECK (role IN ('leader', 'officer', 'member')),
+    joined_at    INTEGER NOT NULL,
+    contribution INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX clan_members_clan ON clan_members(clan_id);
+  CREATE TABLE clan_requests (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    clan_id    TEXT NOT NULL REFERENCES clans(id) ON DELETE CASCADE,
+    at         INTEGER NOT NULL,
+    PRIMARY KEY (account_id, clan_id)
+  );
+  CREATE TABLE clan_raids (
+    id         TEXT PRIMARY KEY,
+    clan_id    TEXT NOT NULL REFERENCES clans(id) ON DELETE CASCADE,
+    boss_id    TEXT NOT NULL,
+    hp         INTEGER NOT NULL,
+    max_hp     INTEGER NOT NULL,
+    started_at INTEGER NOT NULL,
+    ends_at    INTEGER NOT NULL,
+    state      TEXT NOT NULL CHECK (state IN ('active', 'won', 'expired'))
+  );
+  CREATE INDEX clan_raids_clan ON clan_raids(clan_id, state);
+  CREATE TABLE clan_raid_hits (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    raid_id    TEXT NOT NULL REFERENCES clan_raids(id) ON DELETE CASCADE,
+    account_id TEXT REFERENCES accounts(id) ON DELETE SET NULL,
+    fighter_id TEXT,
+    damage     INTEGER NOT NULL,
+    at         INTEGER NOT NULL
+  );
+  CREATE INDEX clan_raid_hits_raid ON clan_raid_hits(raid_id);
+  CREATE TABLE clan_log (
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    clan_id TEXT NOT NULL REFERENCES clans(id) ON DELETE CASCADE,
+    text    TEXT NOT NULL,              -- system generated only, never player-typed
+    at      INTEGER NOT NULL
+  );
+  CREATE INDEX clan_log_clan ON clan_log(clan_id, id);
+  CREATE TABLE clan_helps (
+    target_kind TEXT NOT NULL CHECK (target_kind IN ('research', 'expedition', 'exploration')),
+    target_id   TEXT NOT NULL,
+    helper_id   TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    at          INTEGER NOT NULL,
+    PRIMARY KEY (target_kind, target_id, helper_id)
+  );
+  ALTER TABLE accounts ADD COLUMN clan_left_at INTEGER;
+  ALTER TABLE fighters ADD COLUMN raid_ready_at INTEGER;
+  `,
 ];
 
 export function openDatabase(path = ':memory:'): Db {

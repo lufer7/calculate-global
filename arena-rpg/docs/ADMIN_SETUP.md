@@ -41,7 +41,7 @@ Yönetici hesabı hazır.
 ## 3. Doğrulama uygulamasını bağlayın
 
 1. Doğrulama uygulamasında **"+" → "Kurulum anahtarı gir"** (Enter a setup key) seçin.
-2. Hesap adı olarak "Toz ve Demir Admin" yazın.
+2. Hesap adı olarak "Aegis Admin" yazın.
 3. Anahtar olarak çıktıdaki **Anahtar** satırını girin. Tür "Zamana dayalı" (Time based) olsun.
 4. Uygulama artık her 30 saniyede bir değişen 6 haneli bir kod gösterir.
 
@@ -85,7 +85,7 @@ Girişte e-posta, şifre ve uygulamadaki 6 haneli kod istenir.
    DB_PATH=/var/lib/arena/arena.db
    TRUST_PROXY=1
    SMTP_URL=smtps://kullanici:sifre@smtp.saglayici.com:465
-   MAIL_FROM="Toz ve Demir <no-reply@alanadiniz.com>"
+   MAIL_FROM="Aegis <no-reply@alanadiniz.com>"
    ADMIN_NOTIFY_EMAIL=siz@ornek.com
    ADMIN_ALLOWED_IPS=evinizin.veya.ofisinizin.ip.adresi   # isteğe bağlı ama önerilir
    PROPHECY_SECRET=uzun-rastgele-bir-metin

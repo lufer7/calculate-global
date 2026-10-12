@@ -16,6 +16,7 @@ export interface RetentionSummary {
   auditPurged: number;
   requestsPurged: number;
   expeditionsPurged: number;
+  clanRecordsPurged: number;
 }
 
 /**
@@ -27,7 +28,7 @@ export async function runRetention(db: Db, mailer: Mailer, now: number): Promise
   const R = game.RETENTION;
   const s: RetentionSummary = {
     pendingDeleted: 0, inactiveWarned: 0, inactiveDeleted: 0, sessionsPurged: 0, codesPurged: 0,
-    reportsPurged: 0, notificationsPurged: 0, auditPurged: 0, requestsPurged: 0, expeditionsPurged: 0,
+    reportsPurged: 0, notificationsPurged: 0, auditPurged: 0, requestsPurged: 0, expeditionsPurged: 0, clanRecordsPurged: 0,
   };
 
   // 1. Sign-ups that never verified.
@@ -43,7 +44,7 @@ export async function runRetention(db: Db, mailer: Mailer, now: number): Promise
       await mailer.send({
         to: a.email,
         subject: 'Hesabın yakında silinecek',
-        text: `Uzun süredir giriş yapmadığın için Toz ve Demir hesabın en erken ${R.warnGraceDays} gün sonra kalıcı olarak silinecek.\nHesabını korumak istiyorsan bu süre içinde oyuna giriş yapman yeterli.`,
+        text: `Uzun süredir giriş yapmadığın için Aegis hesabın en erken ${R.warnGraceDays} gün sonra kalıcı olarak silinecek.\nHesabını korumak istiyorsan bu süre içinde oyuna giriş yapman yeterli.`,
       });
       db.prepare('UPDATE accounts SET inactivity_warned_at = ? WHERE id = ?').run(now, a.id);
       s.inactiveWarned++;
@@ -60,6 +61,12 @@ export async function runRetention(db: Db, mailer: Mailer, now: number): Promise
   s.codesPurged = Number(db.prepare('DELETE FROM verification_codes WHERE expires_at < ?').run(now).changes);
   s.reportsPurged = Number(db.prepare('DELETE FROM reports WHERE at < ?').run(now - R.reportsDays * DAY).changes);
   s.expeditionsPurged = Number(db.prepare("DELETE FROM expeditions WHERE state = 'done' AND ends_at < ?").run(now - R.reportsDays * DAY).changes);
+  const old = now - R.reportsDays * DAY;
+  s.expeditionsPurged += Number(db.prepare("DELETE FROM explorations WHERE state = 'done' AND ends_at < ?").run(old).changes);
+  s.clanRecordsPurged =
+    Number(db.prepare('DELETE FROM clan_log WHERE at < ?').run(old).changes) +
+    Number(db.prepare('DELETE FROM clan_helps WHERE at < ?').run(old).changes) +
+    Number(db.prepare("DELETE FROM clan_raids WHERE state != 'active' AND ends_at < ?").run(old).changes);
   s.notificationsPurged = Number(db.prepare('DELETE FROM admin_notifications WHERE at < ?').run(now - R.adminNotificationsDays * DAY).changes);
   s.auditPurged = Number(db.prepare('DELETE FROM admin_audit WHERE at < ?').run(now - R.auditDays * DAY).changes);
   s.requestsPurged = Number(db.prepare("DELETE FROM data_requests WHERE status != 'open' AND answered_at < ?").run(now - R.dataRequestsDays * DAY).changes);

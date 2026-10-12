@@ -32,7 +32,7 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
       'INSERT INTO verification_codes (account_id, code_hash, expires_at, attempts) VALUES (?, ?, ?, 0) ' +
         'ON CONFLICT(account_id) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at, attempts = 0',
     ).run(accountId, sha256(`${accountId}:${code}`), now() + CODE_TTL_MS);
-    await mailer.send({ to: email, subject: 'Doğrulama kodun', text: `Toz ve Demir doğrulama kodun: ${code}\nKod 15 dakika geçerlidir.` });
+    await mailer.send({ to: email, subject: 'Doğrulama kodun', text: `Aegis doğrulama kodun: ${code}\nKod 15 dakika geçerlidir.` });
   }
 
   /**

@@ -49,7 +49,7 @@ export const GAME_CONFIG = {
   },
   research: {
     /** Name of the "Araştırma" tab in the main menu. */
-    tab_name: 'Kafa Kazanı',
+    tab_name: 'Rasathane',
   },
   market: {
     /** Salı Pazarı NPC food stock refresh. */

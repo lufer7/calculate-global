@@ -1,5 +1,5 @@
 # Game server image. Build from the repository root:
-#   docker build -f deploy/Dockerfile -t toz-ve-demir-server .
+#   docker build -f deploy/Dockerfile -t aegis-server .
 FROM node:22-slim
 
 ENV NODE_ENV=production \

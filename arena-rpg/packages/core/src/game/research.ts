@@ -1,4 +1,4 @@
-/** "Kafa Kazanı" – the research tab. One research at a time per account. */
+/** "Rasathane" – the research tab. One research at a time per account. */
 export interface ResearchDefinition {
   id: string;
   name: string;

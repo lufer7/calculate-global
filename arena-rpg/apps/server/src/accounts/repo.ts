@@ -1,4 +1,5 @@
 import type { Db } from '../db/database';
+import { leaveClanRecord } from '../clan/membership';
 
 export interface AccountRow {
   id: string;
@@ -22,6 +23,7 @@ export interface AccountRow {
   age_confirmed_at: number | null;
   inactivity_warned_at: number | null;
   pending_email: string | null;
+  clan_left_at: number | null;
 }
 
 export interface FighterRow {
@@ -34,7 +36,7 @@ export interface FighterRow {
   created_at: number;
   skills_json: string;
   hp_ratio: number;
-  status_kind: 'idle' | 'expedition' | 'injured' | 'arena';
+  status_kind: 'idle' | 'expedition' | 'exploration' | 'injured' | 'arena';
   status_until: number | null;
   respec_count: number;
   respec_at: number | null;
@@ -45,6 +47,7 @@ export interface FighterRow {
   arena_losses: number;
   arena_ready_at: number | null;
   arena_roll: number;
+  raid_ready_at: number | null;
 }
 
 export const accountById = (db: Db, id: string) =>
@@ -90,6 +93,7 @@ export function touchActivity(db: Db, accountId: string, now: number) {
 
 /** Full deletion of an account and everything linked to it. */
 export function deleteAccount(db: Db, accountId: string) {
+  leaveClanRecord(db, accountId, Date.now(), 'hesabını kapattı');
   db.prepare('DELETE FROM sessions WHERE subject_id = ?').run(accountId);
   db.prepare('DELETE FROM admin_notifications WHERE account_id = ?').run(accountId);
   db.prepare('DELETE FROM accounts WHERE id = ?').run(accountId); // fighters, codes, expeditions, reports, consents cascade

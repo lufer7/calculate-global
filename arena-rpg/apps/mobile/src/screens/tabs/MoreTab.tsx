@@ -7,7 +7,7 @@ import { colors, ui } from '../theme';
 export type MoreId = 'research' | 'alchemy' | 'reports' | 'account';
 
 const ITEMS: { id: MoreId; icon: string; title: string; sub: string }[] = [
-  { id: 'research', icon: 'cauldron', title: 'Kafa Kazanı', sub: 'Araştırmalar: sefer yuvaları ve fazlası' },
+  { id: 'research', icon: 'cauldron', title: 'Rasathane', sub: 'Araştırmalar: sefer yuvaları ve fazlası' },
   { id: 'alchemy', icon: 'flask', title: 'Simya', sub: 'Avcı malzemelerinden iksir kaynat' },
   { id: 'reports', icon: 'scroll', title: 'Raporlar', sub: 'Sefer ve araştırma sonuçları' },
   { id: 'account', icon: 'user', title: 'Hesap ve gizlilik', sub: 'Verilerin, KVKK başvuruları, çıkış' },

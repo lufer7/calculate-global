@@ -8,7 +8,7 @@
 
 ## Taraflar
 
-- Bu koşullar [ŞİRKET UNVANI] ("biz") ile Toz ve Demir oyununu kullanan oyuncu ("sen") arasındadır.
+- Bu koşullar [ŞİRKET UNVANI] ("biz") ile Aegis oyununu kullanan oyuncu ("sen") arasındadır.
 
 ## Hesap
 

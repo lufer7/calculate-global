@@ -11,3 +11,5 @@ export * from './gear';
 export * from './battle';
 export * from './economy';
 export * from './stages';
+export * from './exploration';
+export * from './clan';

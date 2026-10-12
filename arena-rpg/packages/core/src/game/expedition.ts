@@ -7,7 +7,6 @@ import { accountPerks } from './classPerks';
 import { GAME_CONFIG } from './config';
 import type { Fighter } from './fighters';
 import { isAvailable } from './fighters';
-import { SKILLS_BY_ID, skillValue } from './skills';
 
 /** Design doc §6 – Ogame-style expeditions into the dark forests. */
 
@@ -47,17 +46,16 @@ export const ZONES: Record<string, Zone> = {
     eventWeights: { none: 50, ambush: 14, trap: 12, cursed_chest: 8, merchant: 8, lost_treasure: 8 },
   },
   lost_lands: {
-    id: 'lost_lands', name: 'Kayıp Diyarlar', minLevel: 60, baseDurationMs: 6 * 60 * MIN, injuryChance: 0.1, hidden: true,
+    id: 'lost_lands', name: 'Kayıp Diyarlar', minLevel: 60, baseDurationMs: 6 * 60 * MIN, injuryChance: 0.1,
     rewardWeights: { nothing: 10, common: 35, rare: 30, epic: 18, legendary: 7 },
     eventWeights: { none: 50, ambush: 10, trap: 10, cursed_chest: 5, merchant: 10, lost_treasure: 15 },
   },
 };
 
-/** §6.1: research slots + 1 per 25 levels of the account's highest Scout (not stacking across scouts). */
-export function expeditionSlots(researchLevel: number, highestScoutLevel: number): number {
-  const { slots_by_research, research_max_level, scout_slot_per_levels } = GAME_CONFIG.expedition;
-  const research = slots_by_research[Math.max(0, Math.min(researchLevel, research_max_level))]!;
-  return research + Math.floor(highestScoutLevel / scout_slot_per_levels);
+/** Expedition slots come from research only; the Scout slot bonus moved to Keşif (`explorationSlots`). */
+export function expeditionSlots(researchLevel: number, _highestScoutLevel = 0): number {
+  const { slots_by_research, research_max_level } = GAME_CONFIG.expedition;
+  return slots_by_research[Math.max(0, Math.min(researchLevel, research_max_level))]!;
 }
 
 export function highestScoutLevel(fighters: Pick<Fighter, 'class' | 'level' | 'status'>[], now: number): number {
@@ -65,7 +63,10 @@ export function highestScoutLevel(fighters: Pick<Fighter, 'class' | 'level' | 's
   return fighters.filter((f) => f.class === 'scout').reduce((m, f) => Math.max(m, f.level), 0);
 }
 
-/** §6.2: exploration bonuses apply only to the expedition the scout joins; same skill across scouts → max, not sum. */
+/**
+ * Expedition party bonuses. Rev3: the Scout exploration skills now work on Keşif
+ * (`explorationBonuses`), so expeditions are equal for every class; this stays as a hook.
+ */
 export interface PartyBonuses {
   durationReduction: number;
   rareChanceRelative: number;
@@ -75,19 +76,8 @@ export interface PartyBonuses {
   canEnterHidden: boolean;
 }
 
-export function partyBonuses(party: Pick<Fighter, 'skills'>[]): PartyBonuses {
-  const best = (skillId: string) => {
-    const skill = SKILLS_BY_ID.get(skillId)!;
-    return party.reduce((m, f) => Math.max(m, skillValue(skill, f.skills[skillId] ?? 0)), 0);
-  };
-  return {
-    durationReduction: best('swift_steps'),
-    rareChanceRelative: best('treasure_hunter'),
-    badEventReduction: best('trap_sense'),
-    injuryRecoveryReduction: best('pathfinding'),
-    extraRewardChance: best('explorer_spirit'),
-    canEnterHidden: best('lost_lands') > 0,
-  };
+export function partyBonuses(_party: Pick<Fighter, 'skills'>[]): PartyBonuses {
+  return { durationReduction: 0, rareChanceRelative: 0, badEventReduction: 0, injuryRecoveryReduction: 0, extraRewardChance: 0, canEnterHidden: true };
 }
 
 /** Stacked reductions (skill, Hız İksiri, …) never push below 40% of the base duration. */
@@ -128,8 +118,7 @@ export function planExpedition(input: {
   const slots = expeditionSlots(input.researchLevel, highestScoutLevel(input.allFighters, input.now));
   if (input.activeExpeditions >= slots) return err('no_free_slot');
 
-  const perk = accountPerks(input.mainClass).expeditionDurationReduction;
-  const durationMs = expeditionDuration(zone, bonuses, [perk, ...(input.extraReductions ?? [])]);
+  const durationMs = expeditionDuration(zone, bonuses, input.extraReductions ?? []);
   return ok({
     endsAt: input.now + durationMs,
     durationMs,
@@ -182,7 +171,7 @@ export function resolveExpedition(
   const perks = accountPerks(opts.mainClass);
   const cap = GAME_CONFIG.expedition.chance_cap;
   // Skill and main-class bonuses are both relative; they add up before the cap.
-  const rewardWeights = boostedRewardWeights(zone.rewardWeights, bonuses.rareChanceRelative + perks.expeditionRareChanceRelative + (opts.extraRareRelative ?? 0));
+  const rewardWeights = boostedRewardWeights(zone.rewardWeights, bonuses.rareChanceRelative + (opts.extraRareRelative ?? 0));
 
   const reward = pick(rewardWeights, rng);
   const extraReward = rng() < Math.min(cap, bonuses.extraRewardChance) ? pick(rewardWeights, rng) : null;

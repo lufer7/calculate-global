@@ -93,7 +93,7 @@ export function verifyTotp(secret: string, code: string, now: number, lastUsedSt
   return null;
 }
 
-export function otpauthUri(email: string, secret: string, issuer = 'Toz ve Demir Admin'): string {
+export function otpauthUri(email: string, secret: string, issuer = 'Aegis Admin'): string {
   return `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(email)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&period=30&digits=6`;
 }
 

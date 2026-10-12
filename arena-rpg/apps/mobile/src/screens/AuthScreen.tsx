@@ -61,7 +61,7 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string, remembe
       <ScrollView contentContainerStyle={ui.screen} keyboardShouldPersistTaps="handled">
         <Scene name="harbor" height={150}>
           <View style={{ flex: 1, justifyContent: 'flex-end', padding: 12 }}>
-            <Text style={[ui.title, { fontSize: 28, letterSpacing: 3, color: '#f4e9d2', textShadowColor: '#000', textShadowRadius: 8 }]}>TOZ VE DEMİR</Text>
+            <Text style={[ui.title, { fontSize: 28, letterSpacing: 3, color: '#f4e9d2', textShadowColor: '#000', textShadowRadius: 8 }]}>AEGIS</Text>
             <Text style={{ color: '#f4e9d2', textShadowColor: '#000', textShadowRadius: 5 }}>Çeteni kur, arenada adını duyur, karanlık ormanlara sefer düzenle.</Text>
           </View>
         </Scene>

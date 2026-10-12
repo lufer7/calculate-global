@@ -1,4 +1,4 @@
-# Toz ve Demir (arena-rpg)
+# Aegis (arena-rpg)
 
 Metin ve menü tabanlı, sıra tabanlı savaşlı bir mobil arena RPG iskeleti. Tasarımın merkezinde iki ilke var: **hesap yok** ve **kişisel veri saklanmıyor**.
 
@@ -16,7 +16,7 @@ Metin ve menü tabanlı, sıra tabanlı savaşlı bir mobil arena RPG iskeleti. 
 |---|---|
 | `packages/core` | Ortak oyun çekirdeği: statlar, karakter, eşyalar, ekonomi, enerji, görevler, deterministik savaş, kayıt şeması, transfer kodu kriptosu, PvP doğrulama |
 | `apps/server` | Hono API: e-posta ile üyelik, dövüşçüler, yönetici paneli (`/admin`), PvP, sıralama, transfer rölesi |
-| `apps/mobile` | Expo uygulaması: kayıt/giriş, çete ve reis seçimi, yetenek ağacı, giyim ekranı + çanta + demirci, Salı Pazarı, arena (savaş tekrarı), seferler, Kafa Kazanı, simya, raporlar, hesap. Görseller SVG ile çizilir (`src/art`) |
+| `apps/mobile` | Expo uygulaması: kayıt/giriş, çete ve reis seçimi, yetenek ağacı, giyim ekranı + çanta + demirci, Salı Pazarı, arena (savaş tekrarı), seferler, Rasathane, simya, raporlar, hesap. Görseller SVG ile çizilir (`src/art`) |
 
 ## Komutlar
 

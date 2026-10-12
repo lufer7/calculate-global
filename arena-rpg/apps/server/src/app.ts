@@ -63,7 +63,7 @@ export function createApp(deps: AppDeps = {}) {
   const notifyAdmin = async (kind: string, accountId: string, text: string) => {
     addNotification(db, kind, accountId, text, now());
     if (deps.adminNotifyEmail) {
-      await mailer.send({ to: deps.adminNotifyEmail, subject: `[Toz ve Demir] ${text}`, text: `${text}\nAyrıntılar yönetim panelinde.` }).catch(() => undefined);
+      await mailer.send({ to: deps.adminNotifyEmail, subject: `[Aegis] ${text}`, text: `${text}\nAyrıntılar yönetim panelinde.` }).catch(() => undefined);
     }
   };
 

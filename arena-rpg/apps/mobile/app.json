@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Toz ve Demir",
-    "slug": "toz-ve-demir",
+    "name": "Aegis",
+    "slug": "aegis",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "ios": {
-      "bundleIdentifier": "com.example.tozvedemir",
+      "bundleIdentifier": "com.example.aegis",
       "config": {
         "usesNonExemptEncryption": false
       },
@@ -17,7 +17,7 @@
       }
     },
     "android": {
-      "package": "com.example.tozvedemir",
+      "package": "com.example.aegis",
       "allowBackup": false,
       "permissions": [],
       "blockedPermissions": [

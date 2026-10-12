@@ -8,9 +8,9 @@
       "tier": 1,
       "name": "Hızlı Adımlar",
       "max_rank": 5,
-      "effect": "expedition.duration_reduction",
+      "effect": "exploration.pace",
       "unit": "ratio",
-      "description": "Katıldığı seferlerin süresi −%4 / rütbe",
+      "description": "Keşifte saatte daha çok yol: altın ve buluntu +%4 / rütbe",
       "value_per_rank": 0.04
     },
     {
@@ -20,9 +20,9 @@
       "tier": 1,
       "name": "Hazine Avcısı",
       "max_rank": 5,
-      "effect": "expedition.rare_chance_relative",
+      "effect": "exploration.rare_relative",
       "unit": "ratio",
-      "description": "Nadir ve üstü ödül şansı +%3 (göreli) / rütbe",
+      "description": "Keşifte nadir ve üstü buluntu şansı +%3 (göreli) / rütbe",
       "value_per_rank": 0.03
     },
     {
@@ -32,9 +32,9 @@
       "tier": 2,
       "name": "Tuzak Sezgisi",
       "max_rank": 5,
-      "effect": "expedition.bad_event_reduction",
+      "effect": "exploration.injury_reduction",
       "unit": "ratio",
-      "description": "Kötü olay şansı −%5 (göreli) / rütbe",
+      "description": "Keşifte yaralanma şansı −%5 (göreli) / rütbe",
       "value_per_rank": 0.05
     },
     {
@@ -44,9 +44,9 @@
       "tier": 2,
       "name": "Yol Bilgisi",
       "max_rank": 3,
-      "effect": "expedition.injury_recovery_reduction",
+      "effect": "exploration.recovery_reduction",
       "unit": "ratio",
-      "description": "Seferde yaralananların iyileşme süresi −%15 / rütbe",
+      "description": "Keşifte yaralananların iyileşme süresi −%15 / rütbe",
       "value_per_rank": 0.15
     },
     {
@@ -56,9 +56,9 @@
       "tier": 3,
       "name": "Kaşif Ruhu",
       "max_rank": 3,
-      "effect": "expedition.extra_reward_chance",
+      "effect": "exploration.extra_find_chance",
       "unit": "ratio",
-      "description": "Ekstra 1 ödül şansı +%5 / rütbe",
+      "description": "Keşifte ekstra 1 buluntu şansı +%5 / rütbe",
       "value_per_rank": 0.05
     },
     {
@@ -68,9 +68,9 @@
       "tier": 4,
       "name": "Kayıp Diyarlar",
       "max_rank": 1,
-      "effect": "expedition.unlock_hidden_zones",
+      "effect": "exploration.lost_lands",
       "unit": "flag",
-      "description": "Yalnızca Gözcülerin girebildiği gizli bölgeleri açar",
+      "description": "Keşiflerde Kayıp Diyarlar'a ulaşır: efsanevi buluntu şansı 2 katı",
       "value_per_rank": 1
     },
     {

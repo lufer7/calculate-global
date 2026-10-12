@@ -167,9 +167,24 @@ export function itemPrice(item: Pick<ItemInstance, 'templateId' | 'itemLevel' | 
 
 export const sellPrice = (item: Parameters<typeof itemPrice>[0]) => Math.max(1, Math.floor(itemPrice(item) * 0.25));
 
+/**
+ * "+ basma": merging a duplicate (same item, same rarity) into an item gives +1.
+ * Gold cost grows ~1.85× per step, so +5 needs five duplicates and a real gold investment.
+ */
 export function upgradeCost(item: Pick<ItemInstance, 'templateId' | 'itemLevel' | 'rarity' | 'upgrade'>, reduction = 0): number {
   const base = itemPrice({ ...item, upgrade: 0 });
-  return Math.max(1, Math.round(base * 0.35 * (item.upgrade + 1) ** 1.5 * (1 - Math.min(0.6, reduction))));
+  return Math.max(5, Math.round(base * 0.4 * 1.85 ** item.upgrade * (1 - Math.min(0.6, reduction))));
+}
+
+export type MergeError = 'not_equipment' | 'not_same_item' | 'same_item' | 'max_upgrade';
+
+/** Same template and same rarity ("aynı item, aynı renk"); the result keeps the higher level and upgrade, then +1. */
+export function canMerge(target: Pick<ItemInstance, 'id' | 'templateId' | 'rarity' | 'upgrade'>, source: Pick<ItemInstance, 'id' | 'templateId' | 'rarity' | 'upgrade'>): MergeError | null {
+  if (target.id === source.id) return 'same_item';
+  if (template(target.templateId)?.kind !== 'equipment') return 'not_equipment';
+  if (target.templateId !== source.templateId || target.rarity !== source.rarity) return 'not_same_item';
+  if (Math.max(target.upgrade, source.upgrade) >= MAX_ITEM_UPGRADE) return 'max_upgrade';
+  return null;
 }
 
 export type EquipError = 'not_equipment' | 'wrong_class' | 'level_too_low' | 'wrong_slot';

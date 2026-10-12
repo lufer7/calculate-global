@@ -36,7 +36,7 @@ Hesabın **ilk dövüşçüsünün sınıfı** "ana sınıf" olur ve hesaptaki b
 |---|---|---|
 | Gözcü | Kâşifler Yolu | Tüm seferler %20 daha kısa; nadir ve üstü ödül şansı %30 daha yüksek (göreli) |
 | Kılıç Ustası | Kılıç Hakkı | Kazanılan saldırılarda %25 daha fazla altın; saldırıya uğrayınca %25 daha az altın kaybı; demircide %15 indirim |
-| Müneccim | Yıldız Okuru | Kafa Kazanı araştırmaları %20 daha kısa; günün kehanet bölgesi her zaman görünür ve oraya giden seferlere +%10 ödül; yaralanma süresi %20 daha kısa |
+| Müneccim | Yıldız Okuru | Rasathane araştırmaları %20 daha kısa; günün kehanet bölgesi her zaman görünür ve oraya giden seferlere +%10 ödül; yaralanma süresi %20 daha kısa |
 
 Gözcü dövüşçüsünün "her 25 seviyede +1 sefer slotu" pasifi ayrıca geçerli. Bu, dövüşçünün kendisine bağlıdır, ana sınıftan bağımsızdır. Yetenek ve ana sınıf bonusları toplanır, ama süre için %40 tabanı ve olasılıklar için üst sınır her zaman korunur.
 
@@ -48,7 +48,7 @@ Gözcü dövüşçüsünün "her 25 seviyede +1 sefer slotu" pasifi ayrıca geç
 - **Bölgeler:** Karanlık Orman (Sv 1), Sisli Bataklık (Sv 20), Terk Edilmiş Madenler (Sv 45) ve yalnızca Kayıp Diyarlar ustalığıyla açılan Kayıp Diyarlar (Sv 60). Süreler ve ödül ağırlıkları başlangıç değerleridir.
 - **Seviye farkı koruması:** 5 seviyeye kadar tam ödül; 5–20 arası ödül doğrusal azalır; 20+ farkta saldırı engellenir.
 - **Arena:** Yenilgide can %15 düşer; yaralanma ve altın kaybı yoktur.
-- **Araştırma sekmesinin adı:** **Kafa Kazanı**. Değiştirmek için `config.ts` içindeki `research.tab_name` alanı yeterli.
+- **Araştırma sekmesinin adı:** **Rasathane**. Değiştirmek için `config.ts` içindeki `research.tab_name` alanı yeterli.
 
 ## 4. Hesap modeli değişti: e-posta ile üyelik
 
@@ -78,7 +78,7 @@ Gözcü dövüşçüsünün "her 25 seviyede +1 sefer slotu" pasifi ayrıca geç
 1. §3 varsayımlarının onayı.
 2. Savaş motorunu sınıf, yetenek ve takım savaşına göre genişletmek (Yarma, Koruyucu, Şifacı, İlk Vuruş, Gölgeye Karış…).
 3. Sunucu: seferler ve Raporlar kutusu, v2 aydınlatma metni, gerçek e-posta sağlayıcısı. (Kayıt, giriş ve yönetici paneli hazır, bkz. §7.)
-4. Arayüz: ana menü sekmeleri (Kafa Kazanı, Salı Pazarı, Envanter + karakter giydirme), yükleme ekranları.
+4. Arayüz: ana menü sekmeleri (Rasathane, Salı Pazarı, Envanter + karakter giydirme), yükleme ekranları.
 
 ## 7. Yönetici paneli
 
@@ -194,13 +194,13 @@ Oyuncunun bir kalesi, köyü veya şehri yok. Ana karakter (reis) ve sonradan ka
 - **Tema:** "Taş ve parşömen": koyu taş mavisi-yeşili paneller, parşömen rengi yazılar, eskimiş altın kenarlar, serif başlıklar.
 - **Sahneler:** Bütün görseller kodla çizilen SVG'lerdir (`apps/mobile/src/art/`):
   - Liman, Karanlık Orman, Sisli Bataklık, Terk Edilmiş Madenler, Kayıp Diyarlar,
-  - Salı Pazarı, Arena, Kafa Kazanı, kamp ateşi.
+  - Salı Pazarı, Arena, Rasathane, kamp ateşi.
 - **Portreler ve ikonlar:**
   - 3 sınıf portresi,
   - 30'a yakın eşya ikonu (nadirlik renkli çerçeveyle),
   - menü ikonları.
 - **Telif:** Hiçbiri başka bir oyundan alınmadı. Gerçek illüstrasyonlar geldiğinde aynı anahtarlarla değiştirilebilir (`Scene`, `ItemIcon`, `Portrait`).
-- **Menü:** Altta Çete, Çanta, Sefer, Arena, Pazar ve Daha (Kafa Kazanı, Simya, Raporlar, Hesap).
+- **Menü:** Altta Çete, Çanta, Sefer, Arena, Pazar ve Daha (Rasathane, Simya, Raporlar, Hesap).
 - **Çanta ekranı:**
   - Gladiatus'taki gibi, giyim penceresi ve çanta aynı ekranda.
   - Bir eşyaya dokununca giyili eşyayla ▲▼ karşılaştırma açılır.

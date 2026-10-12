@@ -43,13 +43,20 @@ describe('inventory & paper doll', () => {
     expect(bag).toEqual(['bow', 'bread', 'sword']); // old sword went back to the bag
   });
 
-  it('sells, upgrades at the blacksmith (with swordmaster discount) and eats food', async () => {
+  it('merges duplicates for +1 (with swordmaster discount), sells and eats food', async () => {
     const g = await gang();
-    const inv = await g.get('/v1/game/inventory');
+    let inv = await g.get('/v1/game/inventory');
     const sword = inv.items.find((i: { templateId: string }) => i.templateId === 'sword');
-    const up = await g.post(`/v1/game/items/${sword.id}/upgrade`);
+    const dupe = addItem(g.db, g.accountId, { templateId: 'sword', itemLevel: 3, rarity: sword.rarity, upgrade: 0, qty: 1 }, 0)!;
+    const other = addItem(g.db, g.accountId, { templateId: 'sword', itemLevel: 1, rarity: 'legendary', upgrade: 0, qty: 1 }, 0)!;
+    expect((await g.post(`/v1/game/items/${sword.id}/merge`, { sourceId: other })).error).toBe('not_same_item');
+    const up = await g.post(`/v1/game/items/${sword.id}/merge`, { sourceId: dupe });
     expect(up.upgrade).toBe(1);
-    expect(up.cost).toBe(sword.upgradeCost);
+    expect(up.itemLevel).toBe(3);
+    inv = await g.get('/v1/game/inventory');
+    expect(inv.items.some((i: { id: string }) => i.id === dupe)).toBe(false);
+    const merged = inv.items.find((i: { id: string }) => i.id === sword.id);
+    expect(merged.upgradeCost).toBeGreaterThan(up.cost);
     const bread = inv.items.find((i: { templateId: string }) => i.templateId === 'bread');
     expect((await g.post(`/v1/game/items/${bread.id}/use`, { fighterId: g.fighterId })).error).toBe('hp_full');
     g.db.prepare('UPDATE fighters SET hp_ratio = 0.5').run();

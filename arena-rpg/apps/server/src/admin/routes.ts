@@ -217,6 +217,33 @@ export function adminRoutes({ db, now, mailer }: AdminDeps) {
     return c.body(null, 204);
   });
 
+  // ------------------------------------------------------------ Sancak moderation (names/tags are user content)
+  app.get('/clans', (c) => c.json({
+    clans: db.prepare(
+      `SELECT c.id, c.name, c.tag, c.xp, c.created_at, COUNT(m.account_id) members,
+              (SELECT a.display_name FROM clan_members l JOIN accounts a ON a.id = l.account_id WHERE l.clan_id = c.id AND l.role = 'leader') leader
+       FROM clans c LEFT JOIN clan_members m ON m.clan_id = c.id GROUP BY c.id ORDER BY c.created_at DESC LIMIT 300`,
+    ).all(),
+  }));
+  app.post('/clans/:id/reset-name', (c) => {
+    const clan = db.prepare('SELECT * FROM clans WHERE id = ?').get(c.req.param('id')) as { id: string; name: string; tag: string } | undefined;
+    if (!clan) return c.json({ error: 'not_found' }, 404);
+    const suffix = clan.id.slice(0, 6).toUpperCase().replace(/[^A-Z]/g, 'X');
+    const name = `Sancak ${clan.id.slice(0, 6)}`;
+    const tag = `S${suffix.slice(0, 3)}`.slice(0, 4);
+    db.prepare('UPDATE clans SET name = ?, name_key = ?, tag = ? WHERE id = ?').run(name, game.clanNameKey(name), tag, clan.id);
+    db.prepare('INSERT INTO clan_log (clan_id, text, at) VALUES (?, ?, ?)').run(clan.id, 'Sancağın adı kurallara uymadığı için yönetim tarafından değiştirildi. Lider yeni bir ad seçebilir.', now());
+    log(c, 'reset_clan_name', clan.id, `${clan.name} [${clan.tag}] → ${name} [${tag}]`);
+    return c.json({ name, tag });
+  });
+  app.delete('/clans/:id', (c) => {
+    const clan = db.prepare('SELECT * FROM clans WHERE id = ?').get(c.req.param('id')) as { id: string; name: string; tag: string } | undefined;
+    if (!clan) return c.json({ error: 'not_found' }, 404);
+    db.prepare('DELETE FROM clans WHERE id = ?').run(clan.id);
+    log(c, 'delete_clan', clan.id, `${clan.name} [${clan.tag}]`);
+    return c.body(null, 204);
+  });
+
   app.get('/audit', (c) => c.json({ entries: db.prepare('SELECT * FROM admin_audit ORDER BY id DESC LIMIT 200').all() }));
 
   return app;

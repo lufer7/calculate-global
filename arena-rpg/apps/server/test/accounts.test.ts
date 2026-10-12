@@ -66,7 +66,7 @@ describe('player accounts', () => {
 
     const me = await read(await ctx.app.request('/v1/me', auth(token)));
     expect(me.mainClass).toBe('scout');
-    expect(me.mainClassPerk.perks.expeditionRareChanceRelative).toBe(0.3);
+    expect(me.mainClassPerk.perks.explorationRareRelative).toBe(0.3);
     expect(me.fighters).toHaveLength(1);
   });
 

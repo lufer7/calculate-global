@@ -2,6 +2,7 @@ import { createRng, game } from '@arena/core';
 import type { AccountRow, FighterRow } from '../accounts/repo';
 import { accountById, fightersOf } from '../accounts/repo';
 import type { Db } from '../db/database';
+import { clanById, membershipOf } from '../clan/membership';
 import { addItem, fighterGear as fighterGearOf } from './items';
 
 export interface GameClock {
@@ -48,6 +49,20 @@ export function settle(db: Db, accountId: string, clock: GameClock): void {
     try {
       if (exp.state === 'recalled') finishRecall(db, acc, exp);
       else finishExpedition(db, acc, exp, clock);
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      throw e;
+    }
+  }
+
+  const trips = db
+    .prepare("SELECT * FROM explorations WHERE account_id = ? AND state IN ('active', 'recalled') AND ends_at <= ? ORDER BY ends_at")
+    .all(accountId, now) as unknown as ExplorationRow[];
+  for (const t of trips) {
+    db.exec('BEGIN');
+    try {
+      finishExploration(db, acc, t, clock);
       db.exec('COMMIT');
     } catch (e) {
       db.exec('ROLLBACK');
@@ -112,6 +127,66 @@ export interface ExpeditionRow {
   stage: number;
 }
 
+export interface ExplorationRow {
+  id: string;
+  account_id: string;
+  fighter_ids: string;
+  started_at: number;
+  travel_ms: number;
+  explore_ms: number;
+  base_travel_ms: number;
+  base_explore_ms: number;
+  ends_at: number;
+  seed: number;
+  state: 'active' | 'recalled' | 'done';
+}
+
+/** Banner level bonus on expedition / keşif gold. */
+export function clanBonus(db: Db, accountId: string): number {
+  const m = membershipOf(db, accountId);
+  const clan = m ? clanById(db, m.clan_id) : undefined;
+  return clan ? game.clanGoldBonus(game.clanLevel(clan.xp)) : 0;
+}
+
+function finishExploration(db: Db, acc: AccountRow, t: ExplorationRow, clock: GameClock) {
+  const ids = JSON.parse(t.fighter_ids) as string[];
+  const all = fightersOf(db, acc.id);
+  const party = all.filter((f) => ids.includes(f.id));
+  db.prepare("UPDATE explorations SET state = 'done' WHERE id = ?").run(t.id);
+  if (t.state === 'recalled' || party.length === 0) {
+    for (const f of party) db.prepare("UPDATE fighters SET status_kind = 'idle', status_until = NULL WHERE id = ? AND status_kind = 'exploration'").run(f.id);
+    addReport(db, acc.id, 'exploration_recalled', 'Keşif yarıda bırakıldı', { fighters: party.map((f) => f.name) }, t.ends_at);
+    return;
+  }
+  const mainClass = acc.main_class as game.ClassId | null;
+  const coreParty = party.map((f) => ({ id: f.id, level: f.level, skills: skillsOf(f) }));
+  const o = game.resolveExploration({ seed: t.seed, travelMs: t.base_travel_ms, exploreMs: t.base_explore_ms, party: coreParty, mainClass });
+  const bonus = game.explorationBonuses(coreParty, mainClass);
+  const goldFound = o.finds.reduce((s, f) => s + f.gold, 0);
+  const gold = Math.round((o.gold + goldFound) * (1 + clanBonus(db, acc.id)));
+  db.prepare('UPDATE accounts SET gold = gold + ? WHERE id = ?').run(gold, acc.id);
+  const highest = Math.max(...all.map((f) => f.level));
+  const total = game.explorationTotalMs(t.base_travel_ms, t.base_explore_ms);
+  const fighters = party.map((f) => {
+    const gained = Math.round(o.xp * game.xpMultiplier(f.level, highest));
+    const next = game.addXp(f, gained);
+    const injured = o.injured.includes(f.id);
+    const until = injured ? t.ends_at + Math.round(game.explorationInjuryMs(total, bonus.recoveryReduction) / clock.speed) : null;
+    db.prepare('UPDATE fighters SET level = ?, xp = ?, status_kind = ?, status_until = ? WHERE id = ?').run(next.level, next.xp, injured ? 'injured' : 'idle', until, f.id);
+    return { id: f.id, name: f.name, xp: gained, levelsGained: next.levelsGained, newLevel: next.level, injuredUntil: until };
+  });
+  const finds = o.finds.map((f) => ({
+    kind: f.kind,
+    gold: f.gold,
+    items: f.items.map((item) => ({ name: game.itemName(item), rarity: item.rarity, icon: game.template(item.templateId)?.icon, qty: item.qty, kept: addItem(db, acc.id, item, t.ends_at) !== null })),
+  }));
+  const best = finds.flatMap((f) => f.items).reduce<string | null>((b, i) => (game.RARITIES.indexOf(i.rarity) > game.RARITIES.indexOf((b ?? 'common') as game.Rarity) ? i.rarity : b), null);
+  const hours = Math.round((total / 3_600_000) * 4) / 4;
+  addReport(db, acc.id, 'exploration', `Keşif döndü (${hours} saat)${best && ['epic', 'legendary'].includes(best) ? ` · ${game.RARITY_INFO[best as game.Rarity].name} buluntu!` : ''}`, {
+    gold, goldFound, xp: o.xp, travelMs: t.base_travel_ms, exploreMs: t.base_explore_ms, finds, fighters, seed: t.seed,
+  }, t.ends_at);
+}
+
 export function zoneProgress(db: Db, accountId: string): Record<string, number> {
   const rows = db.prepare('SELECT zone_id, cleared FROM zone_progress WHERE account_id = ?').all(accountId) as { zone_id: string; cleared: number }[];
   return Object.fromEntries(rows.map((r) => [r.zone_id, r.cleared]));
@@ -164,7 +239,7 @@ function finishExpedition(db: Db, acc: AccountRow, exp: ExpeditionRow, clock: Ga
   const baseLoot = game.expeditionLoot(zone.id, outcome, rng);
   const mult = game.stageLootMultiplier(stage) * (success ? 1 : 0.25);
   const loot = {
-    gold: Math.max(success ? 5 : 1, Math.round((baseLoot.gold + 8 * stage) * mult * game.zoneGoldMultiplier(zone.id))),
+    gold: Math.max(success ? 5 : 1, Math.round((baseLoot.gold + 8 * stage) * mult * game.zoneGoldMultiplier(zone.id) * (1 + clanBonus(db, acc.id)))),
     xp: Math.round(baseLoot.xp * game.stageLootMultiplier(stage) * (success ? 1 : 0.5)),
   };
   const highest = Math.max(...all.map((f) => f.level));

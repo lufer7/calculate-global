@@ -8,7 +8,7 @@ import type { GameState } from '../../lib/api';
 import { ApiError, api } from '../../lib/api';
 import { colors, ui } from '../theme';
 
-/** "Kafa Kazanı" – the research tab. */
+/** "Rasathane" – the research tab. */
 export function ResearchTab({ state, now, refresh }: { state: GameState; now: number; refresh: () => Promise<void> }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

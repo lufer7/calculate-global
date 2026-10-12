@@ -34,7 +34,7 @@ export function ItemDetails({ item, compareTo }: { item: ItemView; compareTo?: I
           {item.slot && <Text style={ui.muted}>{game.SLOT_NAMES[game.slotsFor(item.slot)[0]!]}{item.classes ? ` · ${item.classes.map((c) => tr.classes[c].name).join(', ')}` : ' · Tüm sınıflar'}</Text>}
           {item.heal && <Text style={{ color: colors.good }}>Canı %{Math.round(item.heal * 100)} doldurur</Text>}
           {item.description && <Text style={ui.muted}>{item.description}</Text>}
-          {item.kind === 'resource' && <Text style={ui.muted}>Simya malzemesi. Müneccimler iksir kaynatmak için kullanır.</Text>}
+          {item.kind === 'resource' && <Text style={ui.muted}>Aktar malzemesi. Müneccimler iksir kaynatmak için kullanır.</Text>}
         </View>
       </View>
       {item.stats && (

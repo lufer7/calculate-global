@@ -30,7 +30,7 @@ const TABS = [
   { id: 'more', title: 'Daha', icon: 'more' },
 ] as const;
 type TabId = (typeof TABS)[number]['id'];
-const MORE_TITLES: Record<MoreId, string> = { research: 'Kafa Kazanı', alchemy: 'Simya', reports: 'Raporlar', account: 'Hesap ve gizlilik' };
+const MORE_TITLES: Record<MoreId, string> = { research: 'Rasathane', alchemy: 'Simya', reports: 'Raporlar', account: 'Hesap ve gizlilik' };
 
 export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSignedOut: () => void }) {
   const [state, setState] = useState(initial);
@@ -91,7 +91,7 @@ export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSig
               <Text style={[ui.h2, { color: colors.text }]}>{title}</Text>
             </Pressable>
           ) : (
-            <Text style={{ color: colors.text, fontSize: 18, fontWeight: '800', letterSpacing: 2, fontFamily: fonts.display }}>TOZ VE DEMİR</Text>
+            <Text style={{ color: colors.text, fontSize: 18, fontWeight: '800', letterSpacing: 2, fontFamily: fonts.display }}>AEGIS</Text>
           )}
           <View style={ui.row}>
             {state.unreadReports > 0 && (

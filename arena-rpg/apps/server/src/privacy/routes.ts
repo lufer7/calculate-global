@@ -18,7 +18,7 @@ export function privacyRoutes(db: Db, mailer: Mailer, now: () => number) {
 
   // Right of access / portability: the player can download everything at any time, no request needed.
   app.get('/export', (c) => {
-    c.header('Content-Disposition', 'attachment; filename="toz-ve-demir-verilerim.json"');
+    c.header('Content-Disposition', 'attachment; filename="aegis-verilerim.json"');
     return c.json(exportAccountData(db, c.get('subjectId'), now()));
   });
 
@@ -36,7 +36,7 @@ export function privacyRoutes(db: Db, mailer: Mailer, now: () => number) {
       'INSERT INTO verification_codes (account_id, code_hash, expires_at, attempts) VALUES (?, ?, ?, 0) ' +
         'ON CONFLICT(account_id) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at, attempts = 0',
     ).run(acc.id, sha256(`${acc.id}:email:${code}`), now() + 15 * 60_000);
-    await mailer.send({ to: email, subject: 'Yeni e-posta adresini doğrula', text: `Toz ve Demir e-posta değişikliği kodun: ${code}\nKod 15 dakika geçerlidir.` });
+    await mailer.send({ to: email, subject: 'Yeni e-posta adresini doğrula', text: `Aegis e-posta değişikliği kodun: ${code}\nKod 15 dakika geçerlidir.` });
     return c.json({ status: 'verification_sent' }, 202);
   });
 
@@ -52,7 +52,7 @@ export function privacyRoutes(db: Db, mailer: Mailer, now: () => number) {
     if (accountByEmail(db, acc.pending_email)) return c.json({ error: 'email_taken' }, 409);
     db.prepare('UPDATE accounts SET email = pending_email, pending_email = NULL WHERE id = ?').run(acc.id);
     db.prepare('DELETE FROM verification_codes WHERE account_id = ?').run(acc.id);
-    await mailer.send({ to: acc.email, subject: 'E-posta adresin değiştirildi', text: 'Toz ve Demir hesabının e-posta adresi değiştirildi. Bu işlemi sen yapmadıysan hemen bizimle iletişime geç.' }).catch(() => undefined);
+    await mailer.send({ to: acc.email, subject: 'E-posta adresin değiştirildi', text: 'Aegis hesabının e-posta adresi değiştirildi. Bu işlemi sen yapmadıysan hemen bizimle iletişime geç.' }).catch(() => undefined);
     return c.body(null, 204);
   });
 

@@ -60,7 +60,7 @@ export function PrivacyTools({ onEmailChanged }: { onEmailChanged: () => void })
       <Button title="Verilerimi indir" kind="ghost" busy={busy && panel === null} onPress={() => run(async () => {
         const json = JSON.stringify(await api.exportData(), null, 2);
         try {
-          await Share.share({ message: json, title: 'Toz ve Demir verilerim' });
+          await Share.share({ message: json, title: 'Aegis verilerim' });
         } catch {
           setExported(json);
         }

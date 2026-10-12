@@ -6,8 +6,9 @@ import type { ClassId } from './classes';
  * even if that fighter later changes class. Values are relative bonuses (0.2 = 20%).
  */
 export interface AccountPerks {
-  expeditionDurationReduction: number;
-  expeditionRareChanceRelative: number;
+  /** Keşif: more ground covered per hour (more gold and finds). */
+  explorationPace: number;
+  explorationRareRelative: number;
   plunderBonus: number;
   defenseGoldLossReduction: number;
   smithCostReduction: number;
@@ -17,8 +18,8 @@ export interface AccountPerks {
 }
 
 const NONE: AccountPerks = {
-  expeditionDurationReduction: 0,
-  expeditionRareChanceRelative: 0,
+  explorationPace: 0,
+  explorationRareRelative: 0,
   plunderBonus: 0,
   defenseGoldLossReduction: 0,
   smithCostReduction: 0,
@@ -36,8 +37,8 @@ export interface MainClassPerk {
 export const MAIN_CLASS_PERKS: Record<ClassId, MainClassPerk> = {
   scout: {
     title: 'Kâşifler Yolu',
-    lines: ['Tüm seferler %20 daha kısa sürer', 'Seferlerde nadir ve üstü ödül şansı %30 daha yüksek (göreli)'],
-    perks: { ...NONE, expeditionDurationReduction: 0.2, expeditionRareChanceRelative: 0.3 },
+    lines: ['Keşiflerde %20 daha hızlı ilerler: aynı sürede daha çok altın ve buluntu', 'Keşiflerde nadir ve üstü buluntu şansı %30 daha yüksek (göreli)'],
+    perks: { ...NONE, explorationPace: 0.2, explorationRareRelative: 0.3 },
   },
   swordmaster: {
     title: 'Kılıç Hakkı',
@@ -51,7 +52,7 @@ export const MAIN_CLASS_PERKS: Record<ClassId, MainClassPerk> = {
   seer: {
     title: 'Yıldız Okuru',
     lines: [
-      'Kafa Kazanı araştırmaları %20 daha kısa sürer',
+      'Rasathane araştırmaları %20 daha kısa sürer',
       'Günün kehanet bölgesi her zaman görünür; oraya giden seferlere +%10 ödül',
       'Tüm dövüşçülerin yaralanma süresi %20 kısalır',
     ],
