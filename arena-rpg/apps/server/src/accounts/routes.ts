@@ -6,6 +6,7 @@ import { DUMMY_HASH, hashPassword, randomId, sha256, sixDigitCode, verifyPasswor
 import { playerGuard } from './guard';
 import { accountByEmail, accountById, addNotification, deleteAccount, effectiveStatus, fightersOf, logConsent } from './repo';
 import { createSession, endSession } from './sessions';
+import { giveStarterKit } from '../game/items';
 
 /** Bump in @arena/core when the texts change; players must accept the new version on next login. */
 export const LEGAL_VERSIONS = game.LEGAL_VERSIONS;
@@ -161,7 +162,8 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
     if (fighters.length >= game.fighterSlots(game.accountLevel(fighters))) return c.json({ error: 'no_fighter_slot' }, 409);
 
     const id = randomId();
-    db.prepare('INSERT INTO fighters (id, account_id, name, class, created_at) VALUES (?, ?, ?, ?, ?)').run(id, acc.id, name, b.class, now());
+    db.prepare('INSERT INTO fighters (id, account_id, name, class, created_at, hp_at) VALUES (?, ?, ?, ?, ?, ?)').run(id, acc.id, name, b.class, now(), now());
+    giveStarterKit(db, acc.id, id, b.class, now());
     if (!acc.main_class) db.prepare('UPDATE accounts SET main_class = ? WHERE id = ?').run(b.class, acc.id);
     await notifyAdmin('fighter_created', acc.id, `${acc.display_name} yeni dövüşçü oluşturdu: ${name} (${game.CLASSES[b.class as game.ClassId].name})`);
     return c.json({ id, name, class: b.class, level: 1, mainClass: acc.main_class ?? b.class }, 201);

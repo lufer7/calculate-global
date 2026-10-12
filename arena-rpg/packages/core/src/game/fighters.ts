@@ -4,7 +4,7 @@ import type { SkillRanks } from './skills';
 
 /** Design doc "Meşguliyet kuralı": one activity at a time. */
 export type FighterStatus =
-  | { kind: 'idle' } // kalede
+  | { kind: 'idle' } // hazır, çeteyle birlikte
   | { kind: 'expedition'; expeditionId: string; until: number }
   | { kind: 'arena'; until: number }
   | { kind: 'injured'; until: number };

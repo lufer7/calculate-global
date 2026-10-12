@@ -38,6 +38,13 @@ export interface FighterRow {
   status_until: number | null;
   respec_count: number;
   respec_at: number | null;
+  hp_at: number | null;
+  hunt_at: number | null;
+  arena_points: number;
+  arena_wins: number;
+  arena_losses: number;
+  arena_ready_at: number | null;
+  arena_roll: number;
 }
 
 export const accountById = (db: Db, id: string) =>

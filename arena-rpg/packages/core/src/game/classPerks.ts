@@ -43,7 +43,7 @@ export const MAIN_CLASS_PERKS: Record<ClassId, MainClassPerk> = {
     title: 'Kılıç Hakkı',
     lines: [
       'Kazanılan saldırılarda %25 daha fazla altın taşınır',
-      'Saldırıya uğrayınca kaybedilen altın %25 azalır (garnizon)',
+      'Çetene saldırıldığında kaybedilen altın %25 azalır',
       'Demircide onarım ve güçlendirme %15 ucuz',
     ],
     perks: { ...NONE, plunderBonus: 0.25, defenseGoldLossReduction: 0.25, smithCostReduction: 0.15 },

@@ -140,6 +140,37 @@ const MIGRATIONS: string[] = [
     summary TEXT NOT NULL
   );
   `,
+  `
+  -- Gang inventory (shared bag) and equipped items (fighter_id + slot set).
+  CREATE TABLE items (
+    id          TEXT PRIMARY KEY,
+    account_id  TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    template_id TEXT NOT NULL,
+    item_level  INTEGER NOT NULL,
+    rarity      TEXT NOT NULL,
+    upgrade     INTEGER NOT NULL DEFAULT 0,
+    qty         INTEGER NOT NULL DEFAULT 1,
+    fighter_id  TEXT REFERENCES fighters(id) ON DELETE SET NULL,
+    slot        TEXT,
+    created_at  INTEGER NOT NULL
+  );
+  CREATE INDEX items_account ON items(account_id);
+  CREATE UNIQUE INDEX items_equipped ON items(fighter_id, slot) WHERE fighter_id IS NOT NULL;
+  ALTER TABLE fighters ADD COLUMN hp_at INTEGER;
+  ALTER TABLE fighters ADD COLUMN hunt_at INTEGER;
+  ALTER TABLE fighters ADD COLUMN arena_points INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE fighters ADD COLUMN arena_wins INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE fighters ADD COLUMN arena_losses INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE fighters ADD COLUMN arena_ready_at INTEGER;
+  ALTER TABLE fighters ADD COLUMN arena_roll INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE expeditions ADD COLUMN luck INTEGER NOT NULL DEFAULT 0;
+  CREATE TABLE market_purchases (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    hour_key   INTEGER NOT NULL,
+    offer_id   TEXT NOT NULL,
+    PRIMARY KEY (account_id, hour_key, offer_id)
+  );
+  `,
 ];
 
 export function openDatabase(path = ':memory:'): Db {

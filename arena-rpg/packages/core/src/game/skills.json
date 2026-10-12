@@ -346,15 +346,15 @@
       "value_per_rank": 1
     },
     {
-      "id": "fort_defender",
+      "id": "gang_defender",
       "class": "swordmaster",
       "branch": "shield",
       "tier": 2,
-      "name": "Kale Savunucusu",
+      "name": "Çete Savunucusu",
       "max_rank": 5,
       "effect": "pvp.home_defense",
       "unit": "ratio",
-      "description": "Kendi kalesi saldırıya uğrayınca takım savunması +%2 / rütbe",
+      "description": "Çetene saldırıldığında tüm çetenin savunması +%2 / rütbe",
       "value_per_rank": 0.02
     },
     {
@@ -482,7 +482,7 @@
       "max_rank": 5,
       "effect": "research.duration_reduction",
       "unit": "ratio",
-      "description": "Bu Müneccim kalede iken araştırma süresi −%4 / rütbe",
+      "description": "Bu Müneccim seferde değilken araştırma süresi −%4 / rütbe",
       "value_per_rank": 0.04
     },
     {

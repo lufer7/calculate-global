@@ -7,3 +7,6 @@ export * from './expedition';
 export * from './pvpRules';
 export * from './research';
 export * from './legal';
+export * from './gear';
+export * from './battle';
+export * from './economy';

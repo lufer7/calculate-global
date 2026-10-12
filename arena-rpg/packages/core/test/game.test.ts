@@ -92,13 +92,13 @@ describe('expeditions', () => {
     expect(share(boostedRewardWeights(base, 100))).toBeCloseTo(GAME_CONFIG.expedition.chance_cap);
   });
 
-  it('plans with slot, busy, hidden-zone and empty-castle checks', () => {
+  it('plans with slot, busy and hidden-zone checks', () => {
     const scout = fighter({ id: 's', level: 30 });
     const other = fighter({ id: 'o', class: 'swordmaster', level: 30 });
     const all = [scout, other];
     const base = { party: [scout], allFighters: all, researchLevel: 0, now: 0 };
     const r = planExpedition({ ...base, zoneId: 'dark_forest', activeExpeditions: 0 });
-    expect(r.ok && r.value.leavesCastleEmpty).toBe(false);
+    expect(r.ok).toBe(true);
     expect(planExpedition({ ...base, zoneId: 'dark_forest', activeExpeditions: 2 })).toEqual({ ok: false, error: 'no_free_slot' });
     expect(planExpedition({ ...base, zoneId: 'lost_lands', activeExpeditions: 0 })).toEqual({ ok: false, error: 'hidden_zone' });
     const busy = fighter({ id: 's', status: { kind: 'injured', until: 10 } });

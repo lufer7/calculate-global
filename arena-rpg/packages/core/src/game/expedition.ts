@@ -118,7 +118,7 @@ export function planExpedition(input: {
   /** Class of the account's first fighter – grants account-wide perks. */
   mainClass?: ClassId | null;
   extraReductions?: number[];
-}): Result<{ endsAt: number; durationMs: number; leavesCastleEmpty: boolean; underLevel: string[] }, StartError> {
+}): Result<{ endsAt: number; durationMs: number; underLevel: string[] }, StartError> {
   const zone = Object.prototype.hasOwnProperty.call(ZONES, input.zoneId) ? ZONES[input.zoneId] : undefined;
   if (!zone) return err('unknown_zone');
   if (input.party.length === 0) return err('empty_party');
@@ -130,11 +130,9 @@ export function planExpedition(input: {
 
   const perk = accountPerks(input.mainClass).expeditionDurationReduction;
   const durationMs = expeditionDuration(zone, bonuses, [perk, ...(input.extraReductions ?? [])]);
-  const partyIds = new Set(input.party.map((f) => f.id));
   return ok({
     endsAt: input.now + durationMs,
     durationMs,
-    leavesCastleEmpty: !input.allFighters.some((f) => !partyIds.has(f.id) && isAvailable(f, input.now)),
     underLevel: input.party.filter((f) => f.level < zone.minLevel).map((f) => f.id),
   });
 }
@@ -178,13 +176,13 @@ export function resolveExpedition(
   zone: Zone,
   party: Pick<Fighter, 'id' | 'level' | 'skills'>[],
   rng: () => number,
-  opts: { prophecyBonus?: number; mainClass?: ClassId | null; isProphecyZone?: boolean } = {},
+  opts: { prophecyBonus?: number; mainClass?: ClassId | null; isProphecyZone?: boolean; extraRareRelative?: number } = {},
 ): ExpeditionOutcome {
   const bonuses = partyBonuses(party);
   const perks = accountPerks(opts.mainClass);
   const cap = GAME_CONFIG.expedition.chance_cap;
   // Skill and main-class bonuses are both relative; they add up before the cap.
-  const rewardWeights = boostedRewardWeights(zone.rewardWeights, bonuses.rareChanceRelative + perks.expeditionRareChanceRelative);
+  const rewardWeights = boostedRewardWeights(zone.rewardWeights, bonuses.rareChanceRelative + perks.expeditionRareChanceRelative + (opts.extraRareRelative ?? 0));
 
   const reward = pick(rewardWeights, rng);
   const extraReward = rng() < Math.min(cap, bonuses.extraRewardChance) ? pick(rewardWeights, rng) : null;

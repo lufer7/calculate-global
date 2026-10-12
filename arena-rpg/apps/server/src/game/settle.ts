@@ -2,6 +2,7 @@ import { createRng, game } from '@arena/core';
 import type { AccountRow, FighterRow } from '../accounts/repo';
 import { accountById, fightersOf } from '../accounts/repo';
 import type { Db } from '../db/database';
+import { addItem } from './items';
 
 export interface GameClock {
   now: () => number;
@@ -56,6 +57,34 @@ export function settle(db: Db, accountId: string, clock: GameClock): void {
 
   db.prepare("UPDATE fighters SET status_kind = 'idle', status_until = NULL WHERE account_id = ? AND status_kind = 'injured' AND status_until <= ?").run(accountId, now);
 
+  // Health regenerates while a fighter is not injured.
+  for (const f of fightersOf(db, accountId)) {
+    if (f.hp_at === null) {
+      db.prepare('UPDATE fighters SET hp_at = ? WHERE id = ?').run(now, f.id);
+    } else if (f.status_kind !== 'injured' && f.hp_ratio < 1) {
+      db.prepare('UPDATE fighters SET hp_ratio = ?, hp_at = ? WHERE id = ?').run(game.regenHp(f.hp_ratio, (now - f.hp_at) * clock.speed), now, f.id);
+    } else {
+      db.prepare('UPDATE fighters SET hp_at = ? WHERE id = ?').run(now, f.id);
+    }
+  }
+
+  // Scout "Avcılık": passive resources into the gang bag; production pauses when the bag is full.
+  for (const f of fightersOf(db, accountId)) {
+    const rank = skillsOf(f).hunting ?? 0;
+    if (f.class !== 'scout' || rank === 0) continue;
+    if (f.hunt_at === null) {
+      db.prepare('UPDATE fighters SET hunt_at = ? WHERE id = ?').run(now, f.id);
+      continue;
+    }
+    const elapsed = (now - f.hunt_at) * clock.speed;
+    const perUnit = 3_600_000 / rank;
+    const units = Math.floor(elapsed / perUnit);
+    if (units <= 0) continue;
+    const yieldBy = game.huntingYield(rank, units * perUnit, game.seedFrom(f.id, f.hunt_at));
+    for (const [templateId, qty] of Object.entries(yieldBy)) addItem(db, accountId, { templateId, itemLevel: 1, rarity: 'common', upgrade: 0, qty }, now);
+    db.prepare('UPDATE fighters SET hunt_at = ? WHERE id = ?').run(f.hunt_at + Math.round((units * perUnit) / clock.speed), f.id);
+  }
+
   const fresh = accountById(db, accountId)!;
   if (fresh.active_research) {
     const r = JSON.parse(fresh.active_research) as { id: string; level: number; until: number };
@@ -79,6 +108,7 @@ export interface ExpeditionRow {
   base_duration_ms: number;
   seed: number;
   state: 'active' | 'recalled' | 'done';
+  luck: number;
 }
 
 function finishRecall(db: Db, acc: AccountRow, exp: ExpeditionRow) {
@@ -105,6 +135,7 @@ function finishExpedition(db: Db, acc: AccountRow, exp: ExpeditionRow, clock: Ga
       mainClass,
       isProphecyZone: game.prophecyZone(dayKey(exp.started_at), clock.prophecySecret) === zone.id,
       prophecyBonus: bestSkill(all, 'daily_prophecy'),
+      extraRareRelative: exp.luck ? 0.15 : 0,
     },
   );
   const loot = game.expeditionLoot(zone.id, outcome, rng);
@@ -129,8 +160,10 @@ function finishExpedition(db: Db, acc: AccountRow, exp: ExpeditionRow, clock: Ga
 
   db.prepare('UPDATE accounts SET gold = gold + ? WHERE id = ?').run(loot.gold, acc.id);
   db.prepare("UPDATE expeditions SET state = 'done' WHERE id = ?").run(exp.id);
+  const found = game.expeditionItems(exp.seed, outcome.reward, outcome.extraReward, Math.max(...party.map((f) => f.level)));
+  const items = found.map((item) => ({ name: game.itemName(item), rarity: item.rarity, icon: game.template(item.templateId)?.icon, qty: item.qty, kept: addItem(db, acc.id, item, exp.ends_at) !== null }));
   addReport(db, acc.id, 'expedition', `${zone.name} seferi döndü`, {
     zoneId: zone.id, reward: outcome.reward, extraReward: outcome.extraReward, event: outcome.event,
-    gold: loot.gold, rewardMultiplier: outcome.rewardMultiplier, fighters: fighterResults, seed: exp.seed,
+    gold: loot.gold, rewardMultiplier: outcome.rewardMultiplier, fighters: fighterResults, items, seed: exp.seed,
   }, exp.ends_at);
 }
