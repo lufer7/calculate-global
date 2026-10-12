@@ -34,6 +34,27 @@ async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T>
   return data as T;
 }
 
+export interface ItemView {
+  id: string;
+  templateId: string;
+  kind: 'equipment' | 'food' | 'potion' | 'resource';
+  icon: string;
+  name: string;
+  itemLevel: number;
+  rarity: game.Rarity;
+  upgrade: number;
+  qty: number;
+  slot: game.TemplateSlot | null;
+  classes: game.ClassId[] | null;
+  stats: game.GearStats | null;
+  heal: number | null;
+  description: string | null;
+  sellPrice: number;
+  upgradeCost: number | null;
+  fighterId: string | null;
+  equippedSlot: game.EquipSlot | null;
+}
+
 export interface FighterView {
   id: string;
   name: string;
@@ -47,6 +68,10 @@ export interface FighterView {
   skills: Record<string, number>;
   skillPoints: number;
   respecFree: boolean;
+  equipment: ItemView[];
+  profile: game.BattleProfile;
+  power: number;
+  arena: { points: number; wins: number; losses: number; readyAt: number | null };
 }
 
 export interface GameState {
@@ -67,6 +92,25 @@ export interface GameState {
   fighters: FighterView[];
   expeditions: { id: string; zoneId: string; fighterIds: string[]; startedAt: number; endsAt: number; recalled: boolean }[];
   unreadReports: number;
+  luckPotions: number;
+}
+
+export interface MarketOffer { offerId: string; section: 'equipment' | 'food' | 'potion'; price: number; soldOut: boolean; item: ItemView }
+export interface ArenaOpponent { id: string; name: string; class: game.ClassId; level: number; power: number; owner?: string; points?: number }
+export interface ArenaInfo {
+  fighterId: string; readyAt: number | null; hpRatio: number; minHp: number;
+  npcs: ArenaOpponent[]; players: ArenaOpponent[];
+  ranking: { name: string; class: game.ClassId; level: number; points: number; wins: number; owner: string }[];
+}
+export interface FightResult {
+  won: boolean; seed: number; outcome: game.BattleOutcome;
+  me: { name: string; class: game.ClassId; level: number }; foe: { name: string; class: game.ClassId; level: number; owner?: string };
+  rewards: { gold: number; xp: number; points: number; levelsGained: number }; hpRatio: number;
+}
+export interface AlchemyInfo {
+  seers: { id: string; name: string; rank: number }[];
+  resources: Record<string, number>;
+  recipes: (game.Recipe & { outputName: string; icon: string })[];
 }
 
 export interface DataRequest {
@@ -82,7 +126,7 @@ export interface DataRequest {
 
 export interface Report {
   id: number;
-  kind: 'expedition' | 'expedition_recalled' | 'research';
+  kind: 'expedition' | 'expedition_recalled' | 'research' | 'alchemy';
   title: string;
   at: number;
   read: boolean;
@@ -110,8 +154,20 @@ export const api = {
   state: () => call<GameState>('/v1/game/state'),
   rankUp: (fighterId: string, skillId: string) => call<{ skills: Record<string, number> }>(`/v1/game/fighters/${fighterId}/skills`, 'POST', { skillId }),
   respec: (fighterId: string) => call<{ skills: Record<string, number> }>(`/v1/game/fighters/${fighterId}/respec`, 'POST', {}),
-  startExpedition: (zoneId: string, fighterIds: string[]) =>
-    call<{ id: string; endsAt: number; leavesCastleEmpty: boolean; underLevel: string[] }>('/v1/game/expeditions', 'POST', { zoneId, fighterIds }),
+  startExpedition: (zoneId: string, fighterIds: string[], useLuck = false) =>
+    call<{ id: string; endsAt: number; underLevel: string[] }>('/v1/game/expeditions', 'POST', { zoneId, fighterIds, useLuck }),
+  inventory: () => call<{ capacity: number; used: number; smithReduction: number; items: ItemView[] }>('/v1/game/inventory'),
+  equip: (itemId: string, fighterId: string, slot?: game.EquipSlot) => call<{ slot: game.EquipSlot }>(`/v1/game/items/${itemId}/equip`, 'POST', { fighterId, slot }),
+  unequip: (itemId: string) => call<void>(`/v1/game/items/${itemId}/unequip`, 'POST', {}),
+  sell: (itemId: string, qty?: number) => call<{ gold: number }>(`/v1/game/items/${itemId}/sell`, 'POST', { qty }),
+  upgrade: (itemId: string) => call<{ upgrade: number; cost: number }>(`/v1/game/items/${itemId}/upgrade`, 'POST', {}),
+  use: (itemId: string, target: { fighterId?: string; expeditionId?: string }) => call<Record<string, unknown>>(`/v1/game/items/${itemId}/use`, 'POST', target),
+  market: () => call<{ nextRefresh: number; offers: MarketOffer[] }>('/v1/game/market'),
+  buy: (offerId: string) => call<{ gold: number }>('/v1/game/market/buy', 'POST', { offerId }),
+  arena: (fighterId: string) => call<ArenaInfo>(`/v1/game/arena?fighterId=${encodeURIComponent(fighterId)}`),
+  fight: (fighterId: string, opponent: { type: 'npc' | 'player'; id: string }) => call<FightResult>('/v1/game/arena/fight', 'POST', { fighterId, opponent }),
+  alchemy: () => call<AlchemyInfo>('/v1/game/alchemy'),
+  craft: (fighterId: string, recipeId: string) => call<{ qty: number }>('/v1/game/alchemy/craft', 'POST', { fighterId, recipeId }),
   recall: (id: string) => call<{ returnsAt: number }>(`/v1/game/expeditions/${id}/recall`, 'POST', {}),
   reports: () => call<{ reports: Report[] }>('/v1/game/reports'),
   markReportsRead: () => call<void>('/v1/game/reports/read', 'POST', {}),

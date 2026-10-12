@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { game } from '@arena/core';
-import { Bar, Button, Card, ErrorText } from '../../components/ui';
+import { Scene } from '../../art/Scene';
+import { Bar, Button, Card, ErrorText, Gold } from '../../components/ui';
 import { formatDuration, tr } from '../../i18n/tr';
 import type { GameState } from '../../lib/api';
 import { ApiError, api } from '../../lib/api';
@@ -16,7 +17,12 @@ export function ResearchTab({ state, now, refresh }: { state: GameState; now: nu
 
   return (
     <View style={{ gap: 12 }}>
-      <Text style={ui.muted}>Kazanın başında üç yaşlı bilge, bir kepçe ve sonsuz bir tartışma. Bir seferde tek araştırma kaynar.</Text>
+      <Scene name="study" height={120}>
+        <View style={{ flex: 1, justifyContent: 'flex-end', padding: 10 }}>
+          <Text style={{ color: '#fff', fontSize: 20, fontWeight: '900', textShadowColor: '#000', textShadowRadius: 6 }}>KAFA KAZANI</Text>
+          <Text style={{ color: '#f2e6cc', fontSize: 12, textShadowColor: '#000', textShadowRadius: 4 }}>Üç yaşlı bilge, bir kepçe ve bitmeyen bir tartışma. Bir seferde tek fikir kaynar.</Text>
+        </View>
+      </Scene>
       {perk > 0 && <Text style={{ color: colors.seer }}>Yıldız Okuru: araştırmalar %{Math.round(perk * 100)} daha kısa.</Text>}
       {Object.values(game.RESEARCH).map((def) => {
         const level = state.account.research[def.id] ?? 0;
@@ -38,7 +44,7 @@ export function ResearchTab({ state, now, refresh }: { state: GameState; now: nu
               <Text style={{ color: colors.good }}>Tamamlandı</Text>
             ) : (
               <>
-                <Text style={ui.text}>Sv {next}: {def.cost(next)} altın · ~{formatDuration(duration)}</Text>
+                <View style={ui.between}><Text style={ui.text}>Sv {next} · ~{formatDuration(duration)}</Text><Gold amount={def.cost(next)} size={13} /></View>
                 <Button
                   title="Kazana at"
                   busy={busy}

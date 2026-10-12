@@ -1,15 +1,26 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { game } from '@arena/core';
-import { Button, Card, Checkbox, ErrorText, Pill } from '../../components/ui';
+import { Portrait } from '../../art/Portrait';
+import { Scene } from '../../art/Scene';
+import type { SceneKey } from '../../art/Scene';
+import { Bar, Button, Card, Checkbox, ErrorText, Pill, SectionTitle } from '../../components/ui';
 import { formatDuration, tr } from '../../i18n/tr';
 import type { GameState } from '../../lib/api';
 import { ApiError, api } from '../../lib/api';
-import { classColor, colors, ui } from '../theme';
+import { colors, ui } from '../theme';
+
+const BLURB: Record<string, string> = {
+  dark_forest: 'Çam iğneleri arasında yaban domuzu izleri ve unutulmuş avcı kulübeleri.',
+  misty_marsh: 'Sis hiç kalkmaz. Kamışların arasında batmış kervanların sandıkları yatar.',
+  abandoned_mines: 'Cevher bitti, madenciler gitti. Karanlıkta başka şeyler kaldı.',
+  lost_lands: 'Haritalarda olmayan yer. Yalnızca yolu bilen Gözcüler dönebilir.',
+};
 
 export function ExpeditionsTab({ state, now, refresh }: { state: GameState; now: number; refresh: () => Promise<void> }) {
   const [zoneId, setZoneId] = useState<string | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
+  const [luck, setLuck] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -33,69 +44,88 @@ export function ExpeditionsTab({ state, now, refresh }: { state: GameState; now:
   };
 
   const zone = zoneId ? game.ZONES[zoneId] : null;
-  const leavesEmpty = picked.length > 0 && picked.length === idle.length;
   const underLevel = zone ? state.fighters.filter((f) => picked.includes(f.id) && f.level < zone.minLevel) : [];
 
   return (
     <View style={{ gap: 12 }}>
       <Card>
         <View style={ui.between}>
-          <Text style={ui.text}>Sefer slotu</Text>
-          <Text style={[ui.h2, { color: used >= state.expeditionSlots ? colors.warn : colors.text }]}>{used} / {state.expeditionSlots}</Text>
+          <Text style={ui.text}>Sefer yuvası</Text>
+          <Text style={[ui.h2, ui.num, { color: used >= state.expeditionSlots ? colors.warn : colors.text }]}>{used} / {state.expeditionSlots}</Text>
         </View>
-        <Text style={ui.muted}>Slotlar Keşif Lojistiği araştırmasından ve en yüksek Gözcünün her 25 seviyesinden gelir.</Text>
+        <Text style={ui.muted}>Yuvalar Kafa Kazanı'ndaki Keşif Lojistiği'nden ve en yüksek Gözcünün her 25 seviyesinden gelir.</Text>
         {state.gameSpeed > 1 && <Text style={{ color: colors.warn, fontSize: 12 }}>Test modu: süreler {state.gameSpeed} kat hızlı.</Text>}
       </Card>
 
+      {state.expeditions.length > 0 && <SectionTitle>Yoldaki seferler</SectionTitle>}
       {state.expeditions.map((e) => {
         const z = game.ZONES[e.zoneId];
-        const names = state.fighters.filter((f) => e.fighterIds.includes(f.id)).map((f) => f.name).join(', ');
+        const party = state.fighters.filter((f) => e.fighterIds.includes(f.id));
+        const total = e.endsAt - e.startedAt;
         return (
-          <Card key={e.id} style={{ borderColor: colors.warn }}>
+          <Card key={e.id} style={{ borderColor: colors.trimDim }}>
             <View style={ui.between}>
               <Text style={ui.h2}>{z?.name ?? e.zoneId}</Text>
               <Pill text={e.recalled ? 'Geri dönüyor' : 'Yolda'} color={colors.warn} />
             </View>
-            <Text style={ui.muted}>{names}</Text>
-            <Text style={[ui.text, { fontVariant: ['tabular-nums'] }]}>Dönüş: {formatDuration(e.endsAt - now)}</Text>
-            {!e.recalled && <Button title="Geri çağır (ödül alınmaz)" kind="ghost" busy={busy === e.id} onPress={() => act(e.id, () => api.recall(e.id))} />}
+            <View style={ui.row}>{party.map((f) => <Portrait key={f.id} cls={f.class} size={30} />)}<Text style={ui.muted}>{party.map((f) => f.name).join(', ')}</Text></View>
+            <Bar ratio={(now - e.startedAt) / total} color={colors.trim} label={`Dönüş ${formatDuration(e.endsAt - now)}`} />
+            {!e.recalled && <Button title="Geri çağır (ödül alınmaz)" kind="ghost" small busy={busy === e.id} onPress={() => act(e.id, () => api.recall(e.id))} />}
           </Card>
         );
       })}
 
-      <Text style={ui.label}>Keşif bölgeleri</Text>
+      <SectionTitle>Keşif bölgeleri</SectionTitle>
       {zones.map((z) => {
         const open = zoneId === z.id;
         const duration = Math.round((z.baseDurationMs * (1 - perkCut)) / state.gameSpeed);
         return (
-          <Card key={z.id} style={open ? { borderColor: colors.accent } : undefined}>
-            <Pressable onPress={() => { setZoneId(open ? null : z.id); setPicked([]); setError(null); }}>
-              <View style={ui.between}>
-                <Text style={ui.h2}>{z.name}</Text>
-                {state.prophecyZone === z.id && <Pill text="★ Kehanet" color={colors.seer} />}
-              </View>
-              <Text style={ui.muted}>Önerilen seviye {z.minLevel}+ · Süre ~{formatDuration(duration)}{perkCut > 0 ? ' (Kâşifler Yolu dahil)' : ''}</Text>
+          <View key={z.id} style={{ borderRadius: 8, overflow: 'hidden', borderWidth: 1, borderColor: open ? colors.trim : colors.border, backgroundColor: colors.panel }}>
+            <Pressable onPress={() => { setZoneId(open ? null : z.id); setPicked([]); setLuck(false); setError(null); }}>
+              <Scene name={z.id as SceneKey} height={110} style={{ borderRadius: 0 }}>
+                <View style={{ flex: 1, justifyContent: 'space-between', padding: 10 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+                    {state.prophecyZone === z.id && <Pill text="★ Bugünün kehaneti" color="#f2e6ff" />}
+                  </View>
+                  <View>
+                    <Text style={{ color: '#fff', fontSize: 19, fontWeight: '900', textShadowColor: '#000', textShadowRadius: 6 }}>{z.name}</Text>
+                    <Text style={{ color: '#f2e6cc', fontSize: 12, textShadowColor: '#000', textShadowRadius: 4 }}>Önerilen Sv {z.minLevel}+ · ~{formatDuration(duration)}</Text>
+                  </View>
+                </View>
+              </Scene>
             </Pressable>
             {open && (
-              <View style={{ gap: 10, marginTop: 6 }}>
-                {idle.length === 0 && <Text style={ui.muted}>Kalede boşta dövüşçü yok.</Text>}
-                {idle.map((f) => (
-                  <Checkbox key={f.id} checked={picked.includes(f.id)} onChange={(v) => setPicked(v ? [...picked, f.id] : picked.filter((x) => x !== f.id))}>
-                    <Text style={ui.text}><Text style={{ color: classColor(f.class) }}>{tr.classes[f.class].name}</Text> · {f.name} (Sv {f.level})</Text>
+              <View style={{ padding: 12, gap: 10 }}>
+                <Text style={ui.muted}>{BLURB[z.id]}</Text>
+                {idle.length === 0 && <Text style={ui.muted}>Hazırda bekleyen dövüşçü yok.</Text>}
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                  {idle.map((f) => {
+                    const on = picked.includes(f.id);
+                    return (
+                      <Pressable key={f.id} onPress={() => setPicked(on ? picked.filter((x) => x !== f.id) : [...picked, f.id])} style={{ alignItems: 'center', gap: 3, opacity: on ? 1 : 0.5 }}>
+                        <Portrait cls={f.class} size={48} hpRatio={f.hpRatio} />
+                        <Text style={{ color: on ? colors.trim : colors.muted, fontSize: 11, fontWeight: '800' }}>{on ? '✓ ' : ''}{f.name}</Text>
+                        <Text style={{ color: colors.faint, fontSize: 10 }}>Sv {f.level}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                {state.luckPotions > 0 && (
+                  <Checkbox checked={luck} onChange={setLuck}>
+                    <Text style={ui.text}>Şans İksiri kullan (+%15 nadir ödül) · {state.luckPotions} adet</Text>
                   </Checkbox>
-                ))}
-                {leavesEmpty && <Text style={{ color: colors.warn }}>⚠ Kalede kimse kalmayacak; saldırıya açık olursun.</Text>}
+                )}
                 {underLevel.length > 0 && <Text style={{ color: colors.warn }}>⚠ {underLevel.map((f) => f.name).join(', ')} önerilen seviyenin altında; yaralanma ihtimali artar.</Text>}
                 <ErrorText message={error} />
                 <Button
                   title="Sefere gönder"
                   busy={busy === 'send'}
                   disabled={picked.length === 0 || used >= state.expeditionSlots}
-                  onPress={() => act('send', async () => { await api.startExpedition(z.id, picked); setZoneId(null); setPicked([]); })}
+                  onPress={() => act('send', async () => { await api.startExpedition(z.id, picked, luck); setZoneId(null); setPicked([]); setLuck(false); })}
                 />
               </View>
             )}
-          </Card>
+          </View>
         );
       })}
       {!zoneId && <ErrorText message={error} />}

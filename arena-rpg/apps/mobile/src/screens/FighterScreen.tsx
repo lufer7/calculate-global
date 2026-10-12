@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { game } from '@arena/core';
-import { Bar, Button, Card, ErrorText, Pill } from '../components/ui';
+import { ItemIcon } from '../art/ItemIcon';
+import { Portrait } from '../art/Portrait';
+import { Bar, Button, Card, ErrorText, Pill, SectionTitle } from '../components/ui';
 import { tr } from '../i18n/tr';
 import type { FighterView } from '../lib/api';
 import { ApiError, api } from '../lib/api';
@@ -10,7 +12,7 @@ import { classColor, colors, ui } from './theme';
 const TIER_NAMES = ['', 'Kademe 1', 'Kademe 2', 'Kademe 3', 'Ustalık'];
 
 /** Skill tree: 3 branches, tiers unlock by points spent in that branch. All rules are re-checked by the server. */
-export function FighterScreen({ fighter, onBack, onChanged }: { fighter: FighterView; onBack: () => void; onChanged: () => Promise<void> }) {
+export function FighterScreen({ fighter, onBack, onChanged, onInventory }: { fighter: FighterView; onBack: () => void; onChanged: () => Promise<void>; onInventory: () => void }) {
   const branches = game.BRANCH_IDS[fighter.class];
   const [branch, setBranch] = useState<game.BranchId>(branches[0]);
   const [error, setError] = useState<string | null>(null);
@@ -35,13 +37,33 @@ export function FighterScreen({ fighter, onBack, onChanged }: { fighter: Fighter
 
   return (
     <ScrollView contentContainerStyle={ui.screen}>
-      <Button title="‹ Dövüşçüler" kind="ghost" onPress={onBack} style={{ alignSelf: 'flex-start' }} />
-      <View style={ui.between}>
-        <Text style={ui.title}>{fighter.name}</Text>
-        <Pill text={tr.classes[fighter.class].name} color={classColor(fighter.class)} />
+      <Button title="‹ Çete" kind="ghost" small onPress={onBack} style={{ alignSelf: 'flex-start' }} />
+      <Card trim style={{ flexDirection: 'row', gap: 12 }}>
+        <Portrait cls={fighter.class} size={86} hpRatio={fighter.hpRatio} injured={fighter.status === 'injured'} />
+        <View style={{ flex: 1, gap: 6 }}>
+          <View style={ui.between}>
+            <Text style={[ui.title, { fontSize: 21, flex: 1 }]} numberOfLines={1}>{fighter.name}</Text>
+            <Pill text={tr.classes[fighter.class].name} color={classColor(fighter.class)} />
+          </View>
+          <Text style={ui.muted}>Seviye {fighter.level} · Güç {fighter.power}</Text>
+          <Bar ratio={fighter.hpRatio} color={colors.hp} label={`Can ${Math.round(fighter.profile.maxHp * fighter.hpRatio)}/${fighter.profile.maxHp}`} />
+          <Bar ratio={fighter.xp / fighter.xpToNext} color={colors.xp} label={`Deneyim ${fighter.xp}/${fighter.xpToNext}`} />
+        </View>
+      </Card>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {[['Hasar', `${fighter.profile.damageMin}–${fighter.profile.damageMax}`], ['Zırh', String(fighter.profile.armor)], ['Kritik', `%${Math.round(fighter.profile.crit * 100)}`],
+          ['Kaçınma', `%${Math.round(fighter.profile.evasion * 100)}`], ['İsabet', `%${Math.round(fighter.profile.accuracy * 100)}`], ['Hız', String(fighter.profile.speed)]].map(([k, v]) => (
+          <View key={k} style={{ width: '32%', backgroundColor: colors.inset, borderRadius: 5, paddingVertical: 6, alignItems: 'center' }}>
+            <Text style={{ color: colors.muted, fontSize: 10 }}>{k}</Text>
+            <Text style={{ color: colors.text, fontWeight: '800' }}>{v}</Text>
+          </View>
+        ))}
       </View>
-      <Text style={ui.muted}>Seviye {fighter.level} · Deneyim {fighter.xp}/{fighter.xpToNext}</Text>
-      <Bar ratio={fighter.xp / fighter.xpToNext} />
+      <SectionTitle right={<Button title="Çantada giydir" small kind="ghost" onPress={onInventory} />}>Ekipman</SectionTitle>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {fighter.equipment.length === 0 ? <Text style={ui.muted}>Üzerinde bir şey yok.</Text> : fighter.equipment.map((e) => <ItemIcon key={e.id} icon={e.icon} rarity={e.rarity} size={44} upgrade={e.upgrade} />)}
+      </View>
+      <SectionTitle>Yetenekler</SectionTitle>
       <Card>
         <View style={ui.between}>
           <Text style={ui.text}>Kullanılabilir yetenek puanı</Text>

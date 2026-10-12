@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
-import { Card, ErrorText, Pill } from '../../components/ui';
+import { game } from '@arena/core';
+import { ItemIcon } from '../../art/ItemIcon';
+import { Card, ErrorText, Gold, Pill } from '../../components/ui';
 import { formatDuration, tr } from '../../i18n/tr';
 import type { Report } from '../../lib/api';
 import { ApiError, api } from '../../lib/api';
@@ -55,7 +57,17 @@ function ExpeditionBody({ body, at }: { body: Record<string, unknown>; at: numbe
         Ganimet: <Text style={{ fontWeight: '700', color: reward === 'nothing' ? colors.muted : colors.accent }}>{tr.tiers[reward]}</Text>
         {body.extraReward ? ` + ekstra ${tr.tiers[String(body.extraReward)]}` : ''}
       </Text>
-      <Text style={ui.text}>Altın: +{Number(body.gold)}{Number(body.rewardMultiplier) > 1 ? ` (kehanet ×${Number(body.rewardMultiplier).toFixed(2)})` : ''}</Text>
+      <View style={ui.row}><Gold amount={Number(body.gold)} size={14} />{Number(body.rewardMultiplier) > 1 && <Text style={ui.muted}>(kehanet ×{Number(body.rewardMultiplier).toFixed(2)})</Text>}</View>
+      {Array.isArray(body.items) && (body.items as { name: string; rarity: game.Rarity; icon: string; qty: number; kept: boolean }[]).length > 0 && (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {(body.items as { name: string; rarity: game.Rarity; icon: string; qty: number; kept: boolean }[]).map((it, i) => (
+            <View key={i} style={{ alignItems: 'center', width: 70, gap: 2 }}>
+              <ItemIcon icon={it.icon} rarity={it.rarity} size={44} qty={it.qty} dim={!it.kept} />
+              <Text style={{ color: game.RARITY_INFO[it.rarity].color, fontSize: 10, textAlign: 'center' }} numberOfLines={2}>{it.kept ? it.name : 'Çanta doluydu'}</Text>
+            </View>
+          ))}
+        </View>
+      )}
       {fighters.map((f) => (
         <Text key={f.id} style={ui.muted}>
           {f.name}: +{f.xp} deneyim{f.levelsGained > 0 ? ` · Seviye ${f.newLevel}!` : ''}{f.injuredUntil ? ` · Yaralandı (${formatDuration(f.injuredUntil - at)})` : ''}

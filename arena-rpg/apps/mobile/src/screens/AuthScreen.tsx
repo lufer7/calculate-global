@@ -6,6 +6,7 @@ import { game } from '@arena/core';
 import { LEGAL } from '../legal/texts';
 import { ApiError, api } from '../lib/api';
 import { LegalScreen } from './LegalScreen';
+import { Scene } from '../art/Scene';
 import { colors, ui } from './theme';
 
 type Mode = 'login' | 'register' | 'verify';
@@ -48,8 +49,12 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={ui.screen} keyboardShouldPersistTaps="handled">
-        <Text style={[ui.title, { fontSize: 30, letterSpacing: 1 }]}>TOZ VE DEMİR</Text>
-        <Text style={ui.muted}>Arenada adını duyur, karanlık ormanlara sefer düzenle.</Text>
+        <Scene name="harbor" height={150}>
+          <View style={{ flex: 1, justifyContent: 'flex-end', padding: 12 }}>
+            <Text style={[ui.title, { fontSize: 28, letterSpacing: 3, color: '#f4e9d2', textShadowColor: '#000', textShadowRadius: 8 }]}>TOZ VE DEMİR</Text>
+            <Text style={{ color: '#f4e9d2', textShadowColor: '#000', textShadowRadius: 5 }}>Çeteni kur, arenada adını duyur, karanlık ormanlara sefer düzenle.</Text>
+          </View>
+        </Scene>
 
         {mode !== 'verify' && (
           <View style={[ui.row, { marginTop: 8 }]}>

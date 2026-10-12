@@ -10,7 +10,7 @@ Bu not, `gld.docx` tasarım belgesinin koda nasıl döküldüğünü, yapılan v
 | `classes.ts` | Gözcü / Kılıç Ustası / Müneccim; dal rolleri (savaş, imza, hibrit); temel stat çarpanları | §1 |
 | `skills.json` | 9 dal × 6 yetenek = 54 yetenek. Alanlar: `id`, `class`, `branch`, `tier`, `max_rank`, `value_per_rank` veya `values_by_rank`, `effect` | §3–5 |
 | `skills.ts` | YP hesabı, rütbe maliyeti, kademe kilidi, `rankUp`, sunucu tarafı `validateAllocation`, respec (Unutma İksiri) | §2 |
-| `fighters.ts` | Dövüşçü durumu (kalede / seferde / arenada / yaralı), dövüşçü açılma seviyeleri, +%50 yetişme deneyimi | Genel, §8 |
+| `fighters.ts` | Dövüşçü durumu (hazır / seferde / arenada / yaralı), dövüşçü açılma seviyeleri, +%50 yetişme deneyimi | Genel, §8 |
 | `expedition.ts` | Bölgeler, slot formülü, süre (%40 taban), göreli nadir şansı + üst sınır, olay ve yaralanma zarları, geri çağırma, Zaman Büküm, günlük kehanet | §6 |
 | `pvpRules.ts` | Yağma (korunan %25), seviye farkı koruması, arena can kaybı, sunucu saatine göre gece | §4–5 |
 
@@ -121,7 +121,7 @@ Uygulama artık sunucuya bağlı çalışıyor; cihazda yalnızca oturum anahtar
 - **Açılış:** Liman manzaralı yer tutucu yükleme ekranı ve dönen ipuçları.
 - **Kayıt / giriş:** E-posta, şifre, iki zorunlu onay (Aydınlatma Metni, Kullanım Koşulları), ayrı ve isteğe bağlı pazarlama izni, 6 haneli doğrulama kodu. Yasaklı hesap gerekçeyi ve bitiş tarihini görür.
 - **Ana karakter:** Üç sınıf, savaş tarzları ve ana sınıf avantajlarıyla birlikte gösterilir.
-- **Sekmeler:** Dövüşçüler (yetenek ağacı, kademe kilitleri, puan sıfırlama), Seferler (slotlar, kehanet bölgesi, boş kale ve düşük seviye uyarıları, geri çağırma), Kafa Kazanı, Raporlar, Hesap (ana sınıf avantajı, metinler, pazarlama izni, çıkış, hesap silme). Salı Pazarı, Envanter ve Arena "yakında" olarak içerikleriyle listelenir.
+- **Sekmeler:** Güncel hali için §10'a bakın.
 - **Zaman:** Bütün süreler sunucuda; uygulama geri sayımı sunucu saatine göre gösterir ve süre dolunca durumu yeniler.
 
 **Test modu:** `npm run dev` süreleri 20 kat hızlandırır (`GAME_SPEED`). Üretimde her zaman 1'dir.
@@ -134,3 +134,80 @@ Uygulama artık sunucuya bağlı çalışıyor; cihazda yalnızca oturum anahtar
 4. Savaş motorunun sınıf ve yeteneklere göre genişletilmesi; Arena ve PvP saldırıları, casusluk.
 5. Push bildirimleri (sefer dönüşü, saldırı uyarısı; ayarlardan kapatılabilir).
 6. PostgreSQL'e geçiş ve canlı sunucu kurulumu.
+
+## 10. Çete, ekipman, pazar, arena ve görsel tasarım (v3)
+
+### Kale yok, çete var
+Oyuncunun bir kalesi, köyü veya şehri yok. Ana karakter (reis) ve sonradan katılan dövüşçüler küçük bir **çete** oluşturur. "Kale boş kalacak" uyarısı kaldırıldı. Kale Savunucusu yeteneği **Çete Savunucusu** oldu. Gökbilim ve Müneccim pasifinde "kalede iken" şartı "seferde değilken" oldu.
+
+### Ekipman ve çanta (`gear.ts`)
+- **Giyim yuvaları:** baş, kolye, gövde, silah, yan el, eller, 2 yüzük, ayaklar.
+- **Sınıfa bağlı eşyalar:** Silahlar ve yan eller sınıfa göre: Gözcü yay/hançer/sadak, Kılıç Ustası kılıç/balta/topuz/kalkan, Müneccim asa/değnek/kitap. Zırh ve takılar herkese.
+- **Nadirlik:** Sıradan, Kaliteli, Nadir, Destansı, Efsanevi. Değerler eşya seviyesi, nadirlik ve demirci güçlendirmesiyle (+0…+10) büyür.
+- **Adlar:** Eşya seviyesine göre malzeme önekiyle oluşur: Paslı/Eski → Demir → Çelik → Usta İşi.
+- **Kullanım sınırı:** Dövüşçü en fazla 2 seviye üstündeki eşyayı giyebilir.
+- **Çete çantası:** 48 yuva, ortak. Yiyecek, iksir ve malzemeler üst üste biner.
+- **Başlangıç kiti:** Her yeni dövüşçü kendi sınıfının silahı, başlığı ve gövde zırhıyla gelir; çeteye 3 ekmek verilir.
+
+### Savaş motoru (`battle.ts`)
+- **Hesap:** Sınıf özellikleri, seviye, ekipman ve savaş yetenekleri birlikte hesaplanır.
+  - Gözcü: kritik, kaçınma ve zırh delme.
+  - Kılıç Ustası: can ve zırh.
+  - Müneccim: büyü hasarı; zırh büyüyü yalnızca kısmen durdurur.
+- **İşlenen yetenekler:** İlk Vuruş, Çift Ok, Avcının Sabrı, Öfke, Kararlılık, Kan Bağı, Şifacı, Zayıflık Laneti, Kör Yıldız, Kara Ay, Gece Gücü, Gölgeye Karış (kaçış) ve diğer sayısal bonuslar.
+- **Denge:** Aynı seviye ve benzer ekipmanla sınıf eşleşmeleri %38–63 aralığında. Bir test bunu korur; ince ayar canlı verilerle yapılmalı.
+
+### Salı Pazarı (`economy.ts`)
+- **Tezgâhlar:** Her çeteye özel, her oyun saatinde yenilenir:
+  - 8 ekipman (yarısı ana sınıfa uygun),
+  - 4 yiyecek,
+  - 4 iksir (Şifa, Hız, Şans, Unutma).
+- **Satın alma:** Her mal saatte bir kez alınır.
+- **Satış:** Çantadaki eşya, fiyatının %25'ine satılır.
+- **Yiyecekler:** Canı %20–100 doldurur.
+- **İksirler:**
+  - Şifa İksiri yaralanmayı anında geçirir.
+  - Hız İksiri yoldaki seferi %10 kısaltır (%40 tabanına uyarak).
+  - Şans İksiri sefer gönderilirken kullanılır (+%15 nadir).
+  - Unutma İksiri bekleme süresine uyarak yetenek puanlarını iade eder.
+
+### Demirci
+- **Güçlendirme:** Her eşya +10'a kadar güçlendirilir ve işlem her zaman başarılı olur.
+- **Maliyet:** Kılıç Hakkı (ana sınıf) ve Demirci Dostu yeteneği maliyeti düşürür.
+
+### Arena
+- **Rakipler:** Her dövüşçü için 3 NPC gladyatör (seviye −1, aynı, +2) ve seviyesi yakın 3 başka oyuncu dövüşçüsü.
+- **Sonuç:** Sunucu savaşı hesaplar; uygulama savaşı tur tur canlandırır.
+- **Kazanırsan:** Altın, deneyim ve şöhret.
+- **Kaybedersen:** Yalnızca %15 can kaybı. Yaralanma ve altın kaybı yok.
+- **Sınırlar:** 10 dakikalık dinlenme süresi; canı %15'in altındaki dövüşçü savaşamaz.
+- **Savunan oyuncu:** Hiçbir şey kaybetmez.
+- **Şöhret sıralaması:** İlk 20 dövüşçü.
+
+### Can, avcılık ve simya
+- **Can yenilenmesi:** Yaralı olmayan dövüşçülerin canı saatte %10 yenilenir.
+- **Avcılık:** Avcılık yeteneği olan Gözcüler rütbe başına saatte 1 kaynak (deri, kemik, av eti) toplar. Çanta doluysa üretim durur.
+- **Simya:** Müneccimler İksir Yapımı rütbesine göre bu kaynaklardan iksir kaynatır. Usta Simyacı ile 2 adet çıkabilir.
+- **Ganimet:** Seferlerden ödül kademesine göre ekipman ve yiyecek düşer. Çanta doluysa raporda belirtilir.
+
+### Görsel tasarım
+- **Tema:** "Taş ve parşömen": koyu taş mavisi-yeşili paneller, parşömen rengi yazılar, eskimiş altın kenarlar, serif başlıklar.
+- **Sahneler:** Bütün görseller kodla çizilen SVG'lerdir (`apps/mobile/src/art/`):
+  - Liman, Karanlık Orman, Sisli Bataklık, Terk Edilmiş Madenler, Kayıp Diyarlar,
+  - Salı Pazarı, Arena, Kafa Kazanı, kamp ateşi.
+- **Portreler ve ikonlar:**
+  - 3 sınıf portresi,
+  - 30'a yakın eşya ikonu (nadirlik renkli çerçeveyle),
+  - menü ikonları.
+- **Telif:** Hiçbiri başka bir oyundan alınmadı. Gerçek illüstrasyonlar geldiğinde aynı anahtarlarla değiştirilebilir (`Scene`, `ItemIcon`, `Portrait`).
+- **Menü:** Altta Çete, Çanta, Sefer, Arena, Pazar ve Daha (Kafa Kazanı, Simya, Raporlar, Hesap).
+- **Çanta ekranı:**
+  - Gladiatus'taki gibi, giyim penceresi ve çanta aynı ekranda.
+  - Bir eşyaya dokununca giyili eşyayla ▲▼ karşılaştırma açılır.
+  - Aynı karttan giy, çıkar, ye/kullan, demirci ve sat işlemleri yapılır.
+
+### Henüz yok
+- Oyuncular arası ortak pazar (açık artırma).
+- Oyuncu çetelerine saldırı ve yağma (kurallar `pvpRules.ts` içinde hazır, ekranı yok).
+- Casusluk, lonca ve kehanet paylaşımı.
+- Push bildirimleri.

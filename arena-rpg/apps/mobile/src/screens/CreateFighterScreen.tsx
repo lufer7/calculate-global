@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { game } from '@arena/core';
+import { Portrait } from '../art/Portrait';
 import { Button, ErrorText, Field, Pill } from '../components/ui';
 import { tr } from '../i18n/tr';
 import { ApiError, api } from '../lib/api';
@@ -28,10 +29,10 @@ export function CreateFighterScreen({ isFirst, onCreated, onCancel }: { isFirst:
 
   return (
     <ScrollView contentContainerStyle={ui.screen} keyboardShouldPersistTaps="handled">
-      <Text style={ui.title}>{isFirst ? 'Ana karakterini seç' : 'Yeni dövüşçü'}</Text>
+      <Text style={ui.title}>{isFirst ? 'Çetenin reisini seç' : 'Çeteye yeni üye'}</Text>
       {isFirst && (
         <Text style={ui.muted}>
-          İlk dövüşçünün sınıfı hesabının ana sınıfı olur. Ana sınıfın avantajı bütün dövüşçülerine kalıcı olarak geçer ve sonradan değişmez.
+          Reisin sınıfı çetenin ana sınıfı olur. Ana sınıfın avantajı çetedeki herkese kalıcı olarak geçer ve sonradan değişmez. Her yeni dövüşçü başlangıç ekipmanıyla gelir.
         </Text>
       )}
       {game.CLASS_IDS.map((id) => {
@@ -40,12 +41,17 @@ export function CreateFighterScreen({ isFirst, onCreated, onCancel }: { isFirst:
         return (
           <Pressable key={id} onPress={() => setCls(id)} accessibilityRole="radio" accessibilityState={{ selected }}
             style={[ui.panel, { borderColor: selected ? classColor(id) : colors.border, borderWidth: selected ? 2 : 1 }]}>
-            <View style={ui.between}>
-              <Text style={[ui.h2, { color: classColor(id) }]}>{tr.classes[id].name}</Text>
-              <Pill text={tr.classes[id].tagline} color={classColor(id)} />
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Portrait cls={id} size={70} />
+              <View style={{ flex: 1, gap: 4 }}>
+                <View style={ui.between}>
+                  <Text style={[ui.h2, { color: classColor(id) }]}>{tr.classes[id].name}</Text>
+                  <Pill text={tr.classes[id].tagline} color={classColor(id)} />
+                </View>
+                <Text style={ui.text}>{tr.classes[id].blurb}</Text>
+                <Text style={ui.muted}>Savaş tarzı: {game.CLASSES[id].combatStyle}</Text>
+              </View>
             </View>
-            <Text style={ui.text}>{tr.classes[id].blurb}</Text>
-            <Text style={ui.muted}>Savaş tarzı: {game.CLASSES[id].combatStyle}</Text>
             {isFirst && (
               <View style={{ gap: 4, marginTop: 4 }}>
                 <Text style={[ui.label, { color: classColor(id) }]}>Ana sınıf avantajı · {perk.title}</Text>

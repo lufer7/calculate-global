@@ -22,8 +22,8 @@ async function gang(cls = 'swordmaster') {
   const token = (await read(await req('/v1/auth/verify', 'POST', { email: 'g@example.com', code }))).token as string;
   const f = await read(await req('/v1/fighters', 'POST', { name: 'Kara Demir', class: cls }, token));
   const accountId = (db.prepare('SELECT id FROM accounts').get() as { id: string }).id;
-  const get = (p: string) => req(p, 'GET', undefined, token).then(read);
-  const post = (p: string, b: unknown = {}) => req(p, 'POST', b, token).then(read);
+  const get = async (p: string) => read(await req(p, 'GET', undefined, token));
+  const post = async (p: string, b: unknown = {}) => read(await req(p, 'POST', b, token));
   return { db, clock, get, post, fighterId: f.id as string, accountId };
 }
 
