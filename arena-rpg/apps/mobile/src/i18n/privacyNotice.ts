@@ -8,7 +8,7 @@ export const PRIVACY_NOTICE_TR = `GİZLİLİK ÖZETİ
   – Sunucuya yalnızca karakterinin savaş değerleri (seviye, statlar, ekipman) ve rastgele üretilmiş anonim bir anahtar gönderilir. Karakter adın gönderilmez.
   – Sıralamada otomatik üretilmiş bir takma ad görünür (ör. "Paslı Çakal #4821").
   – Bağlantının kurulabilmesi için IP adresin teknik olarak anlık işlenir; kaydedilmez, günlüklenmez.
-  – Sıralama kayıtları 30 gün işlem yapılmazsa veya sezon bitince otomatik silinir. "Çevrimiçi verilerimi sil" ile hemen silebilirsin.
+  – Sıralama kayıtları 30 gün işlem yapılmazsa veya sezon bitince otomatik silinir. "Tüm Verilerimi Sil" ile hemen silebilirsin.
 • Transfer kodu: İlerlemen, yalnızca senin bildiğin kodla cihazında şifrelenir. Sunucuya yüklersen sunucu içeriği okuyamaz; veri ilk indirmede veya 72 saat sonunda silinir. Kodu kaybedersen biz de kurtaramayız.
 • Kullanıcılar arası sohbet/mesajlaşma yoktur.
 • Uygulama içi satın alımlar Apple/Google tarafından işlenir; ödeme bilgilerini görmeyiz.`;

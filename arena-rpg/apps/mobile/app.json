@@ -7,7 +7,9 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "bundleIdentifier": "com.example.tozvedemir",
-      "config": { "usesNonExemptEncryption": false },
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "privacyManifests": {
         "NSPrivacyTracking": false,
         "NSPrivacyTrackingDomains": [],
@@ -25,9 +27,16 @@
         "com.google.android.gms.permission.AD_ID"
       ]
     },
-    "plugins": ["expo-sqlite", "expo-secure-store"],
+    "plugins": [
+      "expo-sqlite",
+      "expo-secure-store"
+    ],
     "extra": {
       "apiBaseUrl": "https://api.example.invalid"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
     }
   }
 }
