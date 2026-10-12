@@ -5,7 +5,7 @@ import { tr } from '../i18n/tr';
 import { game } from '@arena/core';
 import { LEGAL } from '../legal/texts';
 import { ApiError, api, pingServer } from '../lib/api';
-import { apiBaseUrl } from '../config';
+import { APP_BUILD, apiBaseUrl } from '../config';
 import { LegalScreen } from './LegalScreen';
 import { Scene } from '../art/Scene';
 import { colors, ui } from './theme';
@@ -132,6 +132,7 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
             {server === 'ok' ? 'Sunucuya bağlı' : server === 'down' ? 'Sunucuya ulaşılamıyor (dokun: tekrar dene)' : 'Sunucu kontrol ediliyor…'} · {apiBaseUrl()}
           </Text>
         </Pressable>
+        <Text style={[ui.muted, { fontSize: 11, opacity: 0.7 }]}>Sürüm: {APP_BUILD}</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );

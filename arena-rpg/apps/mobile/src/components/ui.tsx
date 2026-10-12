@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import type { TextInputProps, ViewStyle } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { NavIcon } from '../art/NavIcon';
 import { colors, fonts, ui } from '../screens/theme';
 
@@ -25,15 +24,11 @@ export function Button({ title, onPress, kind = 'primary', disabled, busy, style
       ]}
     >
       {kind === 'primary' && (
-        <Svg pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 10 10">
-          <Defs>
-            <LinearGradient id="btn-gold" x1="0" y1="0" x2="0" y2="1">
-              <Stop offset="0" stopColor="#e8c879" />
-              <Stop offset="1" stopColor="#a17c3a" />
-            </LinearGradient>
-          </Defs>
-          <Rect width={10} height={10} fill="url(#btn-gold)" />
-        </Svg>
+        // Plain views (no SVG) so nothing inside the button can swallow the touch on Android.
+        <View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#b8913f' }}>
+          <View style={{ flex: 1, backgroundColor: '#e0bf73' }} />
+          <View style={{ flex: 1, backgroundColor: '#c49a4c' }} />
+        </View>
       )}
       {busy ? <ActivityIndicator color={kind === 'primary' ? colors.accentInk : colors.text} />
         : <Text style={{ color: kind === 'primary' ? colors.accentInk : kind === 'danger' ? colors.danger : colors.text, fontWeight: '800', fontSize: small ? 13 : 15, letterSpacing: 0.3 }}>{title}</Text>}

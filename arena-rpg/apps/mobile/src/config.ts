@@ -3,6 +3,9 @@ import { Platform } from 'react-native';
 
 const SERVER_PORT = 8787;
 
+/** Shown on the sign-in screen so testers can confirm they run the latest bundle. */
+export const APP_BUILD = 'v0.4 (dokunma düzeltmesi 2)';
+
 /**
  * Where the game server lives.
  * 1. EXPO_PUBLIC_API_URL (e.g. for tunnels or a deployed server)

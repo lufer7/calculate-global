@@ -1,9 +1,12 @@
+import { View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 /** Line icons for the bottom bar and headers. */
 export function NavIcon({ name, color, size = 24 }: { name: string; color: string; size?: number }) {
   const p = { stroke: color, strokeWidth: 1.8, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   return (
+    // Wrapped in a non-touchable View: the press always reaches the parent Pressable.
+    <View pointerEvents="none" style={{ width: size, height: size }}>
     <Svg pointerEvents="none" width={size} height={size} viewBox="0 0 24 24">
       {name === 'gang' && <><Path {...p} d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" /><Path {...p} d="M2 20c0-3 3-5 6-5s6 2 6 5M12 18c.6-2 2.4-3 4-3 3 0 6 2 6 5" /></>}
       {name === 'bag' && <><Path {...p} d="M5 8h14l-1 12H6L5 8z" /><Path {...p} d="M9 8V6a3 3 0 0 1 6 0v2" /><Path {...p} d="M9 12h6" /></>}
@@ -27,5 +30,6 @@ export function NavIcon({ name, color, size = 24 }: { name: string; color: strin
       {name === 'star' && <Path fill={color} d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3z" />}
       {name === 'rest' && <><Rect {...p} x={3} y={12} width={18} height={6} rx={1} /><Path {...p} d="M3 18v2M21 18v2M6 12V9a2 2 0 0 1 2-2h3v5" /></>}
     </Svg>
+    </View>
   );
 }
