@@ -26,6 +26,11 @@ if (process.env.SMTP_URL && process.env.MAIL_FROM) {
 const clientIp = (c: Context) =>
   (trustProxy ? c.req.header('x-forwarded-for')?.split(',')[0]?.trim() : undefined) ?? getConnInfo(c).remote.address ?? 'unknown';
 
+if (production && (process.env.PROPHECY_SECRET ?? '').length < 16) {
+  console.error('PROPHECY_SECRET (en az 16 karakter, rastgele) ayarlanmadan üretim modunda başlatılamaz.');
+  process.exit(1);
+}
+
 // ADMIN_ALLOWED_IPS="1.2.3.4,5.6.7.8" hides /admin (404) from every other address.
 const adminIps = (process.env.ADMIN_ALLOWED_IPS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 const db = openDatabase(process.env.DB_PATH ?? 'arena.db');

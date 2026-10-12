@@ -211,3 +211,41 @@ Oyuncunun bir kalesi, köyü veya şehri yok. Ana karakter (reis) ve sonradan ka
 - Oyuncu çetelerine saldırı ve yağma (kurallar `pvpRules.ts` içinde hazır, ekranı yok).
 - Casusluk, lonca ve kehanet paylaşımı.
 - Push bildirimleri.
+
+## 11. Revizyon 1: profesyonel görünüm, seferler, savaş, sürükle-bırak (v4)
+
+- **Giriş ekranı:**
+  - Üretim derlemesinde sunucu adresi ve bağlantı ayrıntıları gösterilmez; yalnızca geliştirme modunda görünür.
+  - "Beni hatırla" kutusu eklendi. İşaretlenmezse oturum yalnızca uygulama açıkken sürer.
+- **Android:** Alt sekmeler ve alt sayfalar sistem gezinme tuşlarının üstünde kalır (safe-area).
+- **Savaş:**
+  - "Saldır"a basınca sonuç hemen belli olur: yaklaşık 1 saniyelik çarpışma animasyonundan sonra Zafer ya da Yenilgi kartı gelir.
+  - Özet olarak verilen ve alınan hasar, kritik ve kaçınma sayıları gösterilir.
+  - Tur tur kayıt, katlanabilir "Savaş detayları" bölümündedir.
+- **Seferler (`stages.ts`):**
+  - Her bölgede 10 bölüm var ve her biri bir öncekinden zor. Bölge kartına dokununca o bölgenin temasında küçük bir patika haritası açılır; oyuncu kaldığı bölümden devam eder.
+  - Geçilen bölümler tekrar oynanabilir. 10. bölüm patrondur ve ilk zaferde garantili nadir+ eşya verir.
+  - **Başarı şansı:**
+    - Ekip gücü = en güçlü üye + diğer üyelerin gücünün 0,35'i.
+    - Bu güç, bölüm seviyesindeki referans güçle karşılaştırılır.
+    - Sonuç %10 ile %97 arasındadır ve gönderirken gösterilir.
+  - **Başarısız sefer:** Ödülün yalnızca %25'i gelir ve yaralanma riski vardır.
+  - **Bölüm ilerledikçe:** Süre bölüm başına +%12, ganimet +%18 artar.
+  - **Bölge ödülleri** (altın hepsinde düşer):
+
+    | Bölge | Öne çıkan ödüller |
+    |---|---|
+    | Orman | Deri, kemik, av eti, yiyecek |
+    | Bataklık | İksir ve yiyecek |
+    | Madenler | 1,5 kat altın, silah ve zırh |
+    | Kayıp Diyarlar | Nadir, destansı ve efsanevi eşya |
+
+- **Envanter:**
+  - Eşyaya basılı tutup sürükle:
+    - Yiyecek ya da iksir karaktere bırakılırsa kullanılır.
+    - Ekipman karaktere ya da ilgili yuvaya bırakılırsa kuşanılır.
+    - Kuşanılmış eşya çantaya bırakılırsa çıkarılır.
+  - Uygun hedefler sürükleme sırasında parlar.
+  - Kısa dokunuş karşılaştırma sayfasını açar.
+- **Yayın:** `deploy/` klasöründe Docker, Caddy (otomatik HTTPS) ve yedekleme betiği var. Adımlar için `docs/DEPLOY.md` dosyasına bak.
+

@@ -1,0 +1,10 @@
+# Caddy obtains and renews the HTTPS certificate for {$DOMAIN} automatically.
+# Access logs stay OFF on purpose (KVKK: the game does not keep IP logs).
+{$DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		-Server
+	}
+	reverse_proxy server:8787
+}

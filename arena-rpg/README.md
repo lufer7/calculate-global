@@ -7,6 +7,7 @@ Metin ve menü tabanlı, sıra tabanlı savaşlı bir mobil arena RPG iskeleti. 
 - ✅ Yayın öncesi kontrol listesi → [`docs/LEGAL_CHECKLIST.md`](docs/LEGAL_CHECKLIST.md)
 - ⚔️ v2: sınıflar, yetenekler, seferler, e-posta üyelik ve yönetici paneli → [`docs/DESIGN_V2.md`](docs/DESIGN_V2.md)
 - 🛡️ Yönetici paneli kurulumu → [`docs/ADMIN_SETUP.md`](docs/ADMIN_SETUP.md)
+- 🚀 Canlıya alma (7/24 sunucu, HTTPS, yedek, mağaza derlemesi) → [`docs/DEPLOY.md`](docs/DEPLOY.md)
 - ⚖️ KVKK / GDPR uyumu (kodda olanlar ve sizin yapmanız gerekenler) → [`docs/KVKK_COMPLIANCE.md`](docs/KVKK_COMPLIANCE.md)
 
 ## Paketler
