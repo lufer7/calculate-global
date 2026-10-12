@@ -1,0 +1,134 @@
+import { randomBytes } from 'node:crypto';
+import { Hono } from 'hono';
+import { bodyLimit } from 'hono/body-limit';
+import type { PvpSnapshot } from '@arena/core';
+import {
+  displayNameFromId, eloDelta, generateOpponent, isValidLadderToken, ladderIdFromToken,
+  simulateBattle, snapshotToCombatant, validateSnapshot,
+} from '@arena/core';
+import { rateLimit } from './lib/rateLimit';
+import { TtlStore } from './lib/ttlStore';
+
+const HOUR = 60 * 60 * 1000;
+export const LADDER_TTL_MS = 30 * 24 * HOUR; // inactive entries vanish; seasons also reset the store
+export const POOL_TTL_MS = 24 * HOUR; // opponent snapshots
+export const TRANSFER_TTL_MS = 72 * HOUR; // encrypted save blobs
+const TRANSFER_MAX_BYTES = 64 * 1024;
+
+interface LadderEntry {
+  rating: number;
+  wins: number;
+  losses: number;
+}
+
+export interface AppDeps {
+  now?: () => number;
+  /** Returns a transient per-connection key used only for rate limiting (see rateLimit.ts). */
+  clientKey?: Parameters<typeof rateLimit>[0]['clientKey'];
+  rateLimitPerMinute?: number;
+}
+
+export function createApp(deps: AppDeps = {}) {
+  const now = deps.now ?? Date.now;
+  const ladder = new TtlStore<LadderEntry>(now);
+  const pool = new TtlStore<{ ladderId: string; snapshot: PvpSnapshot; rating: number }>(now);
+  const transfers = new TtlStore<string>(now);
+
+  const app = new Hono();
+
+  // Deliberately NO logger middleware: no access logs, no IPs, no user agents on disk.
+  app.use('/v1/*', bodyLimit({ maxSize: TRANSFER_MAX_BYTES + 1024, onError: (c) => c.json({ error: 'too_large' }, 413) }));
+  app.use(
+    '/v1/*',
+    rateLimit({ windowMs: 60_000, max: deps.rateLimitPerMinute ?? 30, clientKey: deps.clientKey ?? (() => 'global'), now }),
+  );
+  app.use('*', async (c, next) => {
+    await next();
+    c.header('Cache-Control', 'no-store');
+  });
+
+  app.get('/health', (c) => c.json({ ok: true }));
+
+  // ---- PvP: client sends {token, snapshot}; server validates & simulates. ----
+  app.post('/v1/pvp/fight', async (c) => {
+    const body = await c.req.json().catch(() => null);
+    if (!body || !isValidLadderToken(body.token)) return c.json({ error: 'bad_token' }, 400);
+    const snap = validateSnapshot(body.snapshot);
+    if (!snap.ok) return c.json({ error: snap.error }, 400);
+
+    const ladderId = ladderIdFromToken(body.token);
+    const me = ladder.get(ladderId) ?? { rating: 1000, wins: 0, losses: 0 };
+
+    const candidates = pool
+      .values()
+      .filter((p) => p.ladderId !== ladderId && Math.abs(p.snapshot.level - snap.value.level) <= 3);
+    const seed = randomBytes(4).readUInt32LE(0);
+    const picked = candidates.length > 0 ? candidates[seed % candidates.length]! : null;
+    const opponent = picked
+      ? { name: displayNameFromId(picked.ladderId), setup: snapshotToCombatant(picked.snapshot), rating: picked.rating }
+      : { name: null, setup: generateOpponent(snap.value.level, seed), rating: me.rating };
+
+    const battle = simulateBattle(snapshotToCombatant(snap.value), opponent.setup, seed);
+    const score = battle.winner === 'a' ? 1 : battle.winner === 'b' ? 0 : 0.5;
+    const delta = eloDelta(me.rating, opponent.rating, score, picked ? 32 : 16);
+    const updated: LadderEntry = {
+      rating: me.rating + delta,
+      wins: me.wins + (score === 1 ? 1 : 0),
+      losses: me.losses + (score === 0 ? 1 : 0),
+    };
+    ladder.set(ladderId, updated, LADDER_TTL_MS);
+    pool.set(ladderId, { ladderId, snapshot: snap.value, rating: updated.rating }, POOL_TTL_MS);
+
+    return c.json({
+      seed,
+      result: battle.winner,
+      log: battle.log,
+      opponent: { displayName: opponent.name, isGhost: !picked, snapshot: picked?.snapshot ?? null },
+      me: { displayName: displayNameFromId(ladderId), ...updated, delta },
+    });
+  });
+
+  app.get('/v1/ladder', (c) => {
+    const limit = Math.min(100, Math.max(1, Number(c.req.query('limit')) || 50));
+    ladder.sweep();
+    const top = [...pool.values()]
+      .map((p) => ({ ladderId: p.ladderId, entry: ladder.get(p.ladderId) }))
+      .filter((x): x is { ladderId: string; entry: LadderEntry } => !!x.entry)
+      .sort((a, b) => b.entry.rating - a.entry.rating)
+      .slice(0, limit)
+      .map(({ ladderId, entry }) => ({ displayName: displayNameFromId(ladderId), ...entry }));
+    return c.json({ entries: top });
+  });
+
+  // "Delete my online data": removes ladder entry and pooled snapshot immediately.
+  app.delete('/v1/ladder', async (c) => {
+    const body = await c.req.json().catch(() => null);
+    if (!body || !isValidLadderToken(body.token)) return c.json({ error: 'bad_token' }, 400);
+    const id = ladderIdFromToken(body.token);
+    ladder.delete(id);
+    pool.delete(id);
+    return c.body(null, 204);
+  });
+
+  // ---- Zero-knowledge transfer relay: opaque ciphertext under a random id. ----
+  const LOOKUP = /^[0-9a-f]{32}$/;
+  app.put('/v1/transfer/:id', async (c) => {
+    const id = c.req.param('id');
+    const body = await c.req.json().catch(() => null);
+    if (!LOOKUP.test(id) || !body || typeof body.blob !== 'string' || !body.blob.startsWith('AR1.')) {
+      return c.json({ error: 'bad_request' }, 400);
+    }
+    if (body.blob.length > TRANSFER_MAX_BYTES) return c.json({ error: 'too_large' }, 413);
+    transfers.set(id, body.blob, TRANSFER_TTL_MS);
+    return c.json({ expiresInHours: TRANSFER_TTL_MS / HOUR });
+  });
+
+  app.get('/v1/transfer/:id', (c) => {
+    const id = c.req.param('id');
+    if (!LOOKUP.test(id)) return c.json({ error: 'bad_request' }, 400);
+    const blob = transfers.take(id); // one-time read
+    return blob ? c.json({ blob }) : c.json({ error: 'not_found' }, 404);
+  });
+
+  return app;
+}

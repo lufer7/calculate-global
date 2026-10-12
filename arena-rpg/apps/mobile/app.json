@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Toz ve Demir",
+    "slug": "toz-ve-demir",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "bundleIdentifier": "com.example.tozvedemir",
+      "config": { "usesNonExemptEncryption": false },
+      "privacyManifests": {
+        "NSPrivacyTracking": false,
+        "NSPrivacyTrackingDomains": [],
+        "NSPrivacyCollectedDataTypes": []
+      }
+    },
+    "android": {
+      "package": "com.example.tozvedemir",
+      "allowBackup": false,
+      "permissions": [],
+      "blockedPermissions": [
+        "android.permission.READ_PHONE_STATE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "com.google.android.gms.permission.AD_ID"
+      ]
+    },
+    "plugins": ["expo-sqlite", "expo-secure-store"],
+    "extra": {
+      "apiBaseUrl": "https://api.example.invalid"
+    }
+  }
+}
