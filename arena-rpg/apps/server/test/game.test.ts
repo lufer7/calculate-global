@@ -6,7 +6,7 @@ import { MemoryMailer } from '../src/lib/mailer';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const read = (res: Response): Promise<any> => res.json();
-const legal = { acceptTerms: true, privacyNoticeAck: true, termsVersion: LEGAL_VERSIONS.terms, privacyVersion: LEGAL_VERSIONS.privacy };
+const legal = { acceptTerms: true, privacyNoticeAck: true, ageConfirmed: true, termsVersion: LEGAL_VERSIONS.terms, privacyVersion: LEGAL_VERSIONS.privacy };
 
 async function player() {
   let t = Date.UTC(2026, 9, 12, 10);

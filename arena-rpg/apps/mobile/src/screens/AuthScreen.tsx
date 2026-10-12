@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button, Checkbox, ErrorText, Field } from '../components/ui';
 import { tr } from '../i18n/tr';
+import { game } from '@arena/core';
 import { LEGAL } from '../legal/texts';
 import { ApiError, api } from '../lib/api';
 import { LegalScreen } from './LegalScreen';
@@ -17,6 +18,7 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
   const [marketing, setMarketing] = useState(false);
+  const [age, setAge] = useState(false);
   const [legal, setLegal] = useState<'privacy' | 'terms' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -81,6 +83,9 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
                 <Checkbox checked={terms} onChange={setTerms}>
                   <Text style={ui.text}>{link('Kullanım Koşulları', 'terms')}'nı kabul ediyorum.</Text>
                 </Checkbox>
+                <Checkbox checked={age} onChange={setAge}>
+                  <Text style={ui.text}>{game.MIN_AGE} yaşından büyüğüm.</Text>
+                </Checkbox>
                 <Checkbox checked={marketing} onChange={setMarketing}>
                   <Text style={ui.muted}>İsteğe bağlı: Yenilikler ve etkinlikler hakkında e-posta almak istiyorum. (Bu izni vermesen de oynayabilirsin.)</Text>
                 </Checkbox>
@@ -93,8 +98,8 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
                 onSignedIn(r.token);
               })} />
             ) : (
-              <Button title="Kayıt ol" busy={busy} disabled={!email || password.length < 10 || !terms || !privacy} onPress={() => run(async () => {
-                await api.register({ email, password, acceptTerms: terms, privacyNoticeAck: privacy, marketingConsent: marketing, termsVersion: LEGAL.versions.terms, privacyVersion: LEGAL.versions.privacy });
+              <Button title="Kayıt ol" busy={busy} disabled={!email || password.length < 10 || !terms || !privacy || !age} onPress={() => run(async () => {
+                await api.register({ email, password, acceptTerms: terms, privacyNoticeAck: privacy, ageConfirmed: age, marketingConsent: marketing, termsVersion: LEGAL.versions.terms, privacyVersion: LEGAL.versions.privacy });
                 setMode('verify');
               })} />
             )}

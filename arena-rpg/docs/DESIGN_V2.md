@@ -129,7 +129,7 @@ Uygulama artık sunucuya bağlı çalışıyor; cihazda yalnızca oturum anahtar
 ## 9. Sıradaki adımlar (güncel)
 
 1. Gerçek e-posta servisi (AB bölgeli, veri işleme sözleşmeli) ve üretim ayarları.
-2. 24 ay giriş yapmayan hesapların uyarılıp silinmesi. Aydınlatma metni bunu vaat ediyor, kodda henüz yok; yayından önce eklenmeli.
+2. ~~24 ay giriş yapmayan hesapların silinmesi~~ Yapıldı: saklama ve imha görevi, KVKK araçları ve başvuru takibi (`KVKK_COMPLIANCE.md`).
 3. Envanter + karakter giydirme + demirci, Salı Pazarı (saatlik NPC stoğu), iksirler (Unutma İksiri ile ücretli respec).
 4. Savaş motorunun sınıf ve yeteneklere göre genişletilmesi; Arena ve PvP saldırıları, casusluk.
 5. Push bildirimleri (sefer dönüşü, saldırı uyarısı; ayarlardan kapatılabilir).

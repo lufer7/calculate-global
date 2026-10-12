@@ -69,6 +69,17 @@ export interface GameState {
   unreadReports: number;
 }
 
+export interface DataRequest {
+  id: string;
+  kind: 'access' | 'rectification' | 'erasure' | 'objection' | 'other';
+  message: string;
+  status: 'open' | 'answered' | 'rejected';
+  created_at: number;
+  due_at: number;
+  answered_at: number | null;
+  answer: string | null;
+}
+
 export interface Report {
   id: number;
   kind: 'expedition' | 'expedition_recalled' | 'research';
@@ -79,12 +90,19 @@ export interface Report {
 }
 
 export const api = {
-  register: (b: { email: string; password: string; acceptTerms: boolean; privacyNoticeAck: boolean; marketingConsent: boolean; termsVersion: string; privacyVersion: string }) =>
+  register: (b: { email: string; password: string; acceptTerms: boolean; privacyNoticeAck: boolean; ageConfirmed: boolean; marketingConsent: boolean; termsVersion: string; privacyVersion: string }) =>
     call<{ status: string }>('/v1/auth/register', 'POST', b),
   verify: (email: string, code: string) => call<{ token: string }>('/v1/auth/verify', 'POST', { email, code }),
   login: (email: string, password: string) => call<{ token: string; needsLegalAcceptance: boolean }>('/v1/auth/login', 'POST', { email, password }),
   logout: () => call<void>('/v1/auth/logout', 'POST'),
-  me: () => call<{ id: string; email: string; displayName: string; mainClass: game.ClassId | null; fighters: unknown[]; marketingConsent: boolean }>('/v1/me'),
+  me: () => call<{ id: string; email: string; displayName: string; mainClass: game.ClassId | null; fighters: unknown[]; marketingConsent: boolean; needsLegalAcceptance: boolean }>('/v1/me'),
+  exportData: () => call<Record<string, unknown>>('/v1/me/export'),
+  changeEmail: (email: string, password: string) => call<{ status: string }>('/v1/me/email', 'POST', { email, password }),
+  confirmEmail: (code: string) => call<void>('/v1/me/email/confirm', 'POST', { code }),
+  changePassword: (current: string, next: string) => call<void>('/v1/me/password', 'POST', { current, next }),
+  revokeOtherSessions: () => call<void>('/v1/me/sessions/revoke-others', 'POST', {}),
+  dataRequests: () => call<{ requests: DataRequest[] }>('/v1/me/requests'),
+  createDataRequest: (kind: DataRequest['kind'], message: string) => call<{ id: string; dueAt: number }>('/v1/me/requests', 'POST', { kind, message }),
   acceptLegal: () => call<void>('/v1/me/legal', 'POST', { acceptTerms: true, privacyNoticeAck: true }),
   setMarketing: (consent: boolean) => call<void>('/v1/me/marketing', 'POST', { consent }),
   deleteAccount: (password: string) => call<void>('/v1/account', 'DELETE', { password }),

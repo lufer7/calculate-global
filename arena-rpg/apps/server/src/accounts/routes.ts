@@ -4,7 +4,7 @@ import type { Db } from '../db/database';
 import type { Mailer } from '../lib/mailer';
 import { DUMMY_HASH, hashPassword, randomId, sha256, sixDigitCode, verifyPassword } from '../lib/security';
 import { playerGuard } from './guard';
-import { accountByEmail, accountById, addNotification, effectiveStatus, fightersOf, revokeSessions } from './repo';
+import { accountByEmail, accountById, addNotification, deleteAccount, effectiveStatus, fightersOf, logConsent } from './repo';
 import { createSession, endSession } from './sessions';
 
 /** Bump in @arena/core when the texts change; players must accept the new version on next login. */
@@ -45,6 +45,7 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
     if (!EMAIL.test(email)) return c.json({ error: 'invalid_email' }, 400);
     if (password.length < 10 || password.length > 200) return c.json({ error: 'weak_password' }, 400);
     if (b.acceptTerms !== true || b.privacyNoticeAck !== true) return c.json({ error: 'legal_acceptance_required' }, 400);
+    if (b.ageConfirmed !== true) return c.json({ error: 'age_confirmation_required', minAge: game.MIN_AGE }, 400);
     if (b.termsVersion !== LEGAL_VERSIONS.terms || b.privacyVersion !== LEGAL_VERSIONS.privacy) {
       return c.json({ error: 'outdated_legal_version', current: LEGAL_VERSIONS }, 409);
     }
@@ -58,10 +59,15 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
 
     const id = randomId();
     const t = now();
+    const marketing = b.marketingConsent === true;
     db.prepare(
-      `INSERT INTO accounts (id, email, password_hash, display_name, status, created_at, terms_version, privacy_version, marketing_consent, consent_at)
-       VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`,
-    ).run(id, email, await hashPassword(password), displayNameFromId(id), t, LEGAL_VERSIONS.terms, LEGAL_VERSIONS.privacy, b.marketingConsent === true ? 1 : 0, t);
+      `INSERT INTO accounts (id, email, password_hash, display_name, status, created_at, terms_version, privacy_version, marketing_consent, consent_at, age_confirmed_at)
+       VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?)`,
+    ).run(id, email, await hashPassword(password), displayNameFromId(id), t, LEGAL_VERSIONS.terms, LEGAL_VERSIONS.privacy, marketing ? 1 : 0, t, t);
+    logConsent(db, id, 'terms', LEGAL_VERSIONS.terms, t);
+    logConsent(db, id, 'privacy', LEGAL_VERSIONS.privacy, t);
+    logConsent(db, id, 'age', `${game.MIN_AGE}+`, t);
+    if (marketing) logConsent(db, id, 'marketing', 'granted', t);
     await sendCode(id, email);
     return c.json({ status: 'verification_sent' }, 202);
   });
@@ -93,7 +99,7 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
     const status = effectiveStatus(db, acc, now());
     if (status === 'pending') return c.json({ error: 'not_verified' }, 403);
     if (status === 'banned') return c.json({ error: 'banned', reason: acc.ban_reason, until: acc.banned_until }, 403);
-    db.prepare('UPDATE accounts SET last_login_at = ? WHERE id = ?').run(now(), acc.id);
+    db.prepare('UPDATE accounts SET last_login_at = ?, inactivity_warned_at = NULL WHERE id = ?').run(now(), acc.id);
     const needsLegal = acc.terms_version !== LEGAL_VERSIONS.terms || acc.privacy_version !== LEGAL_VERSIONS.privacy;
     return c.json({ token: createSession(db, 'player', acc.id, now()), needsLegalAcceptance: needsLegal });
   });
@@ -121,6 +127,7 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
       fighterSlots: game.fighterSlots(level),
       fighters: fighters.map(({ account_id: _, ...f }) => f),
       marketingConsent: acc.marketing_consent === 1,
+      needsLegalAcceptance: acc.terms_version !== LEGAL_VERSIONS.terms || acc.privacy_version !== LEGAL_VERSIONS.privacy,
     });
   });
 
@@ -130,12 +137,16 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
     db.prepare('UPDATE accounts SET terms_version = ?, privacy_version = ?, consent_at = ? WHERE id = ?').run(
       LEGAL_VERSIONS.terms, LEGAL_VERSIONS.privacy, now(), c.get('subjectId'),
     );
+    logConsent(db, c.get('subjectId'), 'terms', LEGAL_VERSIONS.terms, now());
+    logConsent(db, c.get('subjectId'), 'privacy', LEGAL_VERSIONS.privacy, now());
     return c.body(null, 204);
   });
 
   app.post('/me/marketing', async (c) => {
     const b = await c.req.json().catch(() => null);
-    db.prepare('UPDATE accounts SET marketing_consent = ? WHERE id = ?').run(b?.consent === true ? 1 : 0, c.get('subjectId'));
+    const granted = b?.consent === true;
+    db.prepare('UPDATE accounts SET marketing_consent = ? WHERE id = ?').run(granted ? 1 : 0, c.get('subjectId'));
+    logConsent(db, c.get('subjectId'), 'marketing', granted ? 'granted' : 'withdrawn', now());
     return c.body(null, 204);
   });
 
@@ -163,8 +174,7 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
     if (!(await verifyPassword(typeof b?.password === 'string' ? b.password : '', acc.password_hash))) {
       return c.json({ error: 'invalid_credentials' }, 401);
     }
-    revokeSessions(db, acc.id);
-    db.prepare('DELETE FROM accounts WHERE id = ?').run(acc.id); // fighters & codes cascade
+    deleteAccount(db, acc.id);
     addNotification(db, 'account_deleted', null, `Bir hesap kendini sildi (${acc.display_name})`, now());
     return c.body(null, 204);
   });

@@ -10,11 +10,13 @@ import { AuthScreen } from './src/screens/AuthScreen';
 import { CreateFighterScreen } from './src/screens/CreateFighterScreen';
 import { LoadingScreen } from './src/screens/LoadingScreen';
 import { MainScreen } from './src/screens/MainScreen';
+import { ReacceptScreen } from './src/screens/ReacceptScreen';
 import { colors, ui } from './src/screens/theme';
 
 type Phase =
   | { kind: 'loading' }
   | { kind: 'auth' }
+  | { kind: 'reaccept' }
   | { kind: 'first-fighter' }
   | { kind: 'game'; state: GameState }
   | { kind: 'error'; message: string };
@@ -35,6 +37,11 @@ export default function App() {
         return setPhase({ kind: 'auth' });
       }
       setToken(token);
+      const me = await api.me();
+      if (me.needsLegalAcceptance) {
+        await wait();
+        return setPhase({ kind: 'reaccept' });
+      }
       const state = await api.state();
       await wait();
       setPhase(state.fighters.length === 0 ? { kind: 'first-fighter' } : { kind: 'game', state });
@@ -65,6 +72,7 @@ export default function App() {
       {phase.kind === 'auth' && (
         <AuthScreen onSignedIn={async (token) => { await session.set(token); setToken(token); await enter(); }} />
       )}
+      {phase.kind === 'reaccept' && <ReacceptScreen onDone={enter} onSignOut={signOut} />}
       {phase.kind === 'first-fighter' && <CreateFighterScreen isFirst onCreated={enter} />}
       {phase.kind === 'game' && <MainScreen initial={phase.state} onSignedOut={signOut} />}
       {phase.kind === 'error' && (

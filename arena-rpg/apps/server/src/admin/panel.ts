@@ -31,7 +31,7 @@ main { max-width:1100px; margin:0 auto; padding:16px; display:grid; gap:16px; }
 .tile .n { font-size:26px; font-weight:650; font-variant-numeric:tabular-nums; }
 .tile .l { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.06em; }
 label { display:grid; gap:4px; font-size:12px; color:var(--muted); }
-input, select { font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:8px 10px; min-width:0; }
+input, select, textarea { font:inherit; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:8px 10px; min-width:0; }
 button { font:inherit; border-radius:6px; padding:7px 12px; cursor:pointer; border:1px solid var(--line); background:var(--panel); color:var(--ink); }
 button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
 button.danger { color:var(--danger); border-color:var(--danger); }
@@ -79,6 +79,8 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
     <nav aria-label="Bölümler">
       <button data-view="overview" aria-current="page">Genel</button>
       <button data-view="players">Oyuncular</button>
+      <button data-view="requests">KVKK başvuruları</button>
+      <button data-view="retention">Saklama ve imha</button>
       <button data-view="audit">İşlem kaydı</button>
       <button id="logout">Çıkış</button>
     </nav>
@@ -103,7 +105,7 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
         </form>
         <p class="muted">E-posta ile arama işlem kaydına yazılır.</p>
         <div class="table-wrap"><table>
-          <thead><tr><th>Takma ad</th><th>Durum</th><th>Ana sınıf</th><th>Dövüşçü</th><th>En yüksek Sv</th><th>Kayıt</th><th>Son giriş</th></tr></thead>
+          <thead><tr><th>Takma ad</th><th>Durum</th><th>Ana sınıf</th><th>Dövüşçü</th><th>En yüksek Sv</th><th>Kayıt</th><th>Son etkinlik</th></tr></thead>
           <tbody id="players"></tbody>
         </table></div>
       </div>
@@ -137,6 +139,11 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
             <button type="submit">Göster</button>
             <output id="revealed"></output>
           </form>
+          <div class="card">
+            <strong>Verilerini dışa aktar</strong>
+            <p class="muted">Erişim başvurusunu yanıtlamak için. İşlem kayda geçer.</p>
+            <button id="export" type="button">JSON indir</button>
+          </div>
           <form class="card" id="delete-form">
             <strong>Hesabı sil</strong>
             <label>Gerekçe <input id="delete-reason" required minlength="3" maxlength="200"></label>
@@ -145,6 +152,25 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
           </form>
         </div>
         <p class="error" id="d-err" role="alert"></p>
+      </div>
+    </section>
+
+    <section id="view-requests" hidden>
+      <div class="card">
+        <h2>KVKK başvuruları</h2>
+        <p class="muted">KVKK md. 13 gereği başvurular en geç 30 gün içinde yanıtlanmalı. Yanıt oyuncunun uygulamasında görünür, oyuncuya e-posta ile bildirilir.</p>
+        <ul class="list" id="requests"></ul>
+      </div>
+    </section>
+
+    <section id="view-retention" hidden>
+      <div class="card">
+        <div class="row head"><h2>Saklama ve imha</h2><button class="primary" id="run-retention" type="button">Şimdi çalıştır</button></div>
+        <p class="muted">Sunucu bu görevi açılışta ve 6 saatte bir kendiliğinden çalıştırır: 7 günde doğrulanmayan kayıtlar, 2 yıl hareketsiz kalıp uyarıldıktan 30 gün sonra hâlâ dönmeyen hesaplar, 90 günden eski raporlar ve bildirimler, 2 yıldan eski işlem kayıtları silinir. Her çalışma burada kayıt altına alınır (yalnızca sayılar).</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Zaman</th><th>Doğrulanmayan</th><th>Uyarılan</th><th>Silinen hareketsiz</th><th>Rapor</th><th>Oturum</th><th>İşlem kaydı</th></tr></thead>
+          <tbody id="retention"></tbody>
+        </table></div>
       </div>
     </section>
 
@@ -168,7 +194,8 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
   const $ = (id) => document.getElementById(id);
   const CLASS = { scout: 'Gözcü', swordmaster: 'Kılıç Ustası', seer: 'Müneccim' };
   const STATUS = { active: 'Aktif', pending: 'Doğrulanmamış', banned: 'Yasaklı' };
-  const ACTIONS = { login: 'Giriş', logout: 'Çıkış', ban: 'Yasaklama', unban: 'Yasak kaldırma', reveal_email: 'E-posta görüntüleme', search_by_email: 'E-posta ile arama', rename_fighter: 'Dövüşçü adı değiştirme', delete_account: 'Hesap silme' };
+  const ACTIONS = { login: 'Giriş', logout: 'Çıkış', ban: 'Yasaklama', unban: 'Yasak kaldırma', reveal_email: 'E-posta görüntüleme', search_by_email: 'E-posta ile arama', rename_fighter: 'Dövüşçü adı değiştirme', delete_account: 'Hesap silme', export_data: 'Veri dışa aktarma', answer_request: 'KVKK başvurusu yanıtı', run_retention: 'Saklama ve imha (elle)' };
+  const KINDS = { access: 'Bilgi / erişim', rectification: 'Düzeltme', erasure: 'Silme', objection: 'İtiraz', other: 'Diğer' };
   const fmt = (t) => (t ? new Date(t).toLocaleString('tr-TR') : '—');
   const el = (tag, text, cls) => { const e = document.createElement(tag); if (text !== undefined && text !== null) e.textContent = String(text); if (cls) e.className = cls; return e; };
   const pill = (s) => el('span', STATUS[s] || s, 'pill ' + s);
@@ -211,9 +238,9 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
 
   document.querySelectorAll('nav [data-view]').forEach((b) => b.addEventListener('click', () => show(b.dataset.view)));
   function show(view) {
-    for (const v of ['overview', 'players', 'audit']) $('view-' + v).hidden = v !== view;
+    for (const v of ['overview', 'players', 'requests', 'retention', 'audit']) $('view-' + v).hidden = v !== view;
     document.querySelectorAll('nav [data-view]').forEach((b) => b.setAttribute('aria-current', b.dataset.view === view ? 'page' : 'false'));
-    ({ overview: loadOverview, players: loadPlayers, audit: loadAudit })[view]().catch((e) => alertBox(e.message));
+    ({ overview: loadOverview, players: loadPlayers, requests: loadRequests, retention: loadRetention, audit: loadAudit })[view]().catch((e) => alertBox(e.message));
   }
   function alertBox(msg) { $('d-err').textContent = msg; }
 
@@ -253,7 +280,7 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
     $('detail').hidden = false;
     $('d-name').textContent = p.displayName;
     $('d-status').replaceChildren(pill(p.status));
-    const info = [['Hesap ID', p.id], ['E-posta', p.emailMasked], ['Ana sınıf', CLASS[p.mainClass] || '—'], ['Kayıt', fmt(p.createdAt)], ['Doğrulama', fmt(p.verifiedAt)], ['Son giriş', fmt(p.lastLoginAt)],
+    const info = [['Hesap ID', p.id], ['E-posta', p.emailMasked], ['Ana sınıf', CLASS[p.mainClass] || '—'], ['Kayıt', fmt(p.createdAt)], ['Doğrulama', fmt(p.verifiedAt)], ['Son etkinlik', fmt(p.lastLoginAt)],
       ['Yasak', p.status === 'banned' ? (p.banReason || '') + (p.bannedUntil ? ' — bitiş: ' + fmt(p.bannedUntil) : ' — kalıcı') : '—'],
       ['Onaylanan metinler', 'Koşullar ' + p.termsVersion + ', Aydınlatma ' + p.privacyVersion + ' (' + fmt(p.consentAt) + ')'], ['Pazarlama izni', p.marketingConsent ? 'Var' : 'Yok']];
     $('d-info').replaceChildren(...info.flatMap(([k, v]) => [el('dt', k), el('dd', v)]));
@@ -302,6 +329,58 @@ dt { color:var(--muted); } dd { margin:0; min-width:0; overflow-wrap:anywhere; }
     try { await api('/players/' + encodeURIComponent(current.id), { method: 'DELETE', body: { reason: $('delete-reason').value } }); $('detail').hidden = true; $('delete-reason').value = ''; $('delete-confirm').value = ''; loadPlayers(); }
     catch (err) { alertBox(err.message); }
   });
+
+  $('export').addEventListener('click', async () => {
+    try {
+      const data = await api('/players/' + encodeURIComponent(current.id) + '/export');
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = 'oyuncu-' + current.id + '.json';
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (err) { alertBox(err.message); }
+  });
+
+  async function loadRequests() {
+    const r = await api('/requests');
+    const now = Date.now();
+    $('requests').replaceChildren(...(r.requests.length ? r.requests.map((q) => {
+      const li = el('li');
+      li.style.display = 'grid'; li.style.gap = '6px';
+      const head = el('div', null, 'row head');
+      const left = Math.ceil((q.due_at - now) / 86400000);
+      const badge = q.status === 'open' ? (left < 0 ? el('span', 'SÜRESİ GEÇTİ (' + -left + ' gün)', 'pill banned') : el('span', left + ' gün kaldı', 'pill ' + (left <= 7 ? 'pending' : 'active'))) : el('span', q.status === 'answered' ? 'Yanıtlandı' : 'Reddedildi', 'pill active');
+      head.append(el('strong', (KINDS[q.kind] || q.kind) + ' · ' + q.display_name), badge);
+      li.append(head, el('span', 'Başvuru: ' + fmt(q.created_at) + ' · Son tarih: ' + fmt(q.due_at), 'muted'), el('p', q.message));
+      if (q.status === 'open') {
+        const form = el('form'); form.className = 'actions';
+        const box = el('div', null, 'card');
+        const ta = document.createElement('textarea'); ta.rows = 4; ta.required = true; ta.minLength = 3; ta.maxLength = 4000; ta.placeholder = 'Yanıtınız (oyuncu görecek)';
+        const sel = document.createElement('select'); sel.innerHTML = '<option value="answered">Yanıtla</option><option value="rejected">Gerekçeli ret</option>';
+        const btn = el('button', 'Gönder', 'primary'); btn.type = 'submit';
+        box.append(ta, sel, btn); form.append(box);
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          try { await api('/requests/' + encodeURIComponent(q.id) + '/answer', { method: 'POST', body: { status: sel.value, answer: ta.value } }); loadRequests(); }
+          catch (err) { alert(err.message); }
+        });
+        li.append(form);
+      } else if (q.answer) {
+        li.append(el('span', 'Yanıt (' + fmt(q.answered_at) + '): ' + q.answer, 'muted'));
+      }
+      return li;
+    }) : [el('li', 'Başvuru yok.', 'muted')]));
+  }
+
+  async function loadRetention() {
+    const r = await api('/retention');
+    $('retention').replaceChildren(...r.runs.map((x) => {
+      const s = JSON.parse(x.summary); const tr = el('tr');
+      tr.append(el('td', fmt(x.at)), el('td', s.pendingDeleted), el('td', s.inactiveWarned), el('td', s.inactiveDeleted), el('td', s.reportsPurged), el('td', s.sessionsPurged), el('td', s.auditPurged));
+      return tr;
+    }));
+  }
+  $('run-retention').addEventListener('click', async () => { try { await api('/retention/run', { method: 'POST' }); loadRetention(); } catch (err) { alert(err.message); } });
 
   async function loadAudit() {
     const r = await api('/audit');

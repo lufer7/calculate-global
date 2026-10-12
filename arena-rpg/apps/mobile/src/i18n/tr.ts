@@ -44,6 +44,10 @@ export const tr = {
     max_level: 'En yüksek seviyeye ulaşıldı.',
     not_enough_gold: 'Yeterli altının yok.',
     unauthorized: 'Oturumun sona erdi, tekrar giriş yap.',
+    age_confirmation_required: 'Kayıt için yaş onayı gerekiyor.',
+    email_taken: 'Bu e-posta başka bir hesapta kullanılıyor.',
+    message_required: 'Başvurunu birkaç kelimeyle açıkla.',
+    too_many_open_requests: 'Yanıt bekleyen 3 başvurun var. Önce onların yanıtlanmasını bekle.',
   } as Record<string, string>,
   tips: [
     'Gözcüler seferlerden daha hızlı döner. Ana sınıfın Gözcü ise bu avantaj bütün dövüşçülerine geçer.',

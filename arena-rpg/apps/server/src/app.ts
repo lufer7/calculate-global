@@ -13,6 +13,7 @@ import { addNotification } from './accounts/repo';
 import { adminPanelHtml } from './admin/panel';
 import { adminRoutes } from './admin/routes';
 import { gameRoutes } from './game/routes';
+import { privacyRoutes } from './privacy/routes';
 import type { Db } from './db/database';
 import { openDatabase } from './db/database';
 import type { Mailer } from './lib/mailer';
@@ -93,6 +94,7 @@ export function createApp(deps: AppDeps = {}) {
 
   // ---- Accounts (email sign-up) ----
   app.route('/v1', accountRoutes({ db, mailer, now, notifyAdmin }));
+  app.route('/v1/me', privacyRoutes(db, mailer, now));
   app.route('/v1/game', gameRoutes(db, { now, speed: deps.gameSpeed ?? 1, prophecySecret: deps.prophecySecret ?? 'dev-prophecy' }));
 
   // ---- Owner-only admin panel ----
@@ -108,7 +110,7 @@ export function createApp(deps: AppDeps = {}) {
     c.header('X-Robots-Tag', 'noindex, nofollow');
     return c.html(adminPanelHtml(nonce));
   });
-  app.route('/admin/api', adminRoutes({ db, now }));
+  app.route('/admin/api', adminRoutes({ db, now, mailer }));
 
   // ---- PvP: client sends {token, snapshot}; server validates & simulates. ----
   app.post('/v1/pvp/fight', async (c) => {

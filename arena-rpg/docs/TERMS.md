@@ -1,14 +1,47 @@
-# Kullanım Koşulları (v2)
+# Kullanım Koşulları
 
-> **Şablondur, hukuki tavsiye değildir.** Uygulama içindeki metin `apps/mobile/src/legal/texts.ts` dosyasındadır; ikisi aynı tutulmalıdır.
+> Şablondur, hukuki tavsiye değildir. [Köşeli parantez] alanlarını doldurup bir avukata kontrol ettirin.
+> Bu dosya `apps/mobile/src/legal/texts.ts` dosyasından üretilir (`npm run legal:docs`); doğrudan düzenlemeyin.
 
-**Sürüm:** 2026-10-12
+**Sürüm:** 2026-10-13
 
-- Oyunu kullanmak için en az [13/16] yaşında olmalısın.
-- Hesabın kişiseldir; paylaşma, satma veya devretme.
-- Hile, otomasyon, açık istismarı ve başkalarını rahatsız eden dövüşçü adları yasaktır. Bu durumlarda hesap geçici veya kalıcı olarak yasaklanabilir.
-- Oyun içi altın ve eşyalar gerçek para değeri taşımaz ve hesabın dışına aktarılamaz.
+
+## Taraflar
+
+- Bu koşullar [ŞİRKET UNVANI] ("biz") ile Toz ve Demir oyununu kullanan oyuncu ("sen") arasındadır.
+
+## Hesap
+
+- Kayıt için en az 16 yaşında olmalısın.
+- Hesabın kişiseldir; paylaşma, satma, devretme. Şifreni gizli tut; hesabında yapılan işlemlerden sen sorumlusun.
+- Hesabını istediğin an uygulama içinden silebilirsin.
+
+## Kurallar
+
+- Hile, otomasyon (bot), açık istismarı, sunucuya zarar verecek kullanım yasaktır.
+- Hakaret içeren, nefret söylemi barındıran, başkasının kimliğine bürünen veya marka/telif hakkı ihlal eden dövüşçü adları yasaktır.
+- Kurallara aykırılıkta hesap geçici veya kalıcı olarak yasaklanabilir; yasak gerekçesi ve süresi girişte gösterilir.
+
+## Oyun içi değerler
+
+- Altın, eşya ve dövüşçüler oyunun lisanslı içeriğidir; gerçek para değeri taşımaz, hesap dışına aktarılamaz veya satılamaz.
 - Oyun dengesi, sezonlar ve içerik zaman içinde değişebilir.
-- Hizmet "olduğu gibi" sunulur; kesintisiz olacağı garanti edilmez.
-- Bu koşullar değişirse uygulama içinde yeniden onayın istenir.
-[ŞİRKET], [ADRES], [destek@alanadi]
+- Uygulama içi satın almalar Apple App Store veya Google Play üzerinden yapılır; iade ve cayma hakkı bu mağazaların koşullarına ve Mesafeli Sözleşmeler Yönetmeliği'ne tabidir.
+
+## Sorumluluk
+
+- Oyun "olduğu gibi" sunulur; kesintisiz veya hatasız olacağı garanti edilmez. Kanunen sınırlanamayan haller saklıdır.
+- Bakım, güvenlik veya hukuki zorunluluk nedeniyle hizmeti geçici olarak durdurabilir ya da sona erdirebiliriz; mümkünse önceden duyururuz.
+
+## Fikri mülkiyet
+
+- Oyunun adı, metinleri, görselleri ve kodu bize veya lisans verenlerimize aittir.
+
+## Değişiklik ve uygulanacak hukuk
+
+- Bu koşullar değişirse uygulamada yeniden onayın istenir.
+- Türk hukuku uygulanır; tüketici işlemlerinde Tüketici Hakem Heyetleri ve Tüketici Mahkemeleri yetkilidir.
+
+## İletişim
+
+- [ŞİRKET], [ADRES], [destek@alanadi]

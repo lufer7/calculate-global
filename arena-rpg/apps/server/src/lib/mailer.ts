@@ -1,3 +1,5 @@
+import nodemailer from 'nodemailer';
+
 export interface Mail {
   to: string;
   subject: string;
@@ -17,12 +19,26 @@ export class MemoryMailer implements Mailer {
 }
 
 /**
- * Development only: prints mails to the terminal. index.ts refuses to start in production
- * with this mailer, so verification codes and addresses never end up in production logs.
- * Production: implement Mailer with your provider's SMTP/API (EU region, signed DPA).
+ * Development only: prints mails to the terminal. index.ts never uses it in production,
+ * so verification codes and addresses do not end up in production logs.
  */
 export class DevConsoleMailer implements Mailer {
   async send(mail: Mail) {
     console.log(`[dev-mail] to=${mail.to} subject="${mail.subject}"\n${mail.text}\n`);
+  }
+}
+
+/**
+ * Production: any SMTP provider. Pick one with EU/TR data centres and sign its data
+ * processing agreement (veri işleyen sözleşmesi); list it in the privacy notice.
+ *   SMTP_URL="smtps://user:pass@smtp.example.com:465"  MAIL_FROM="Toz ve Demir <no-reply@example.com>"
+ */
+export class SmtpMailer implements Mailer {
+  private readonly transport;
+  constructor(url: string, private readonly from: string) {
+    this.transport = nodemailer.createTransport(url);
+  }
+  async send(mail: Mail) {
+    await this.transport.sendMail({ from: this.from, to: mail.to, subject: mail.subject, text: mail.text });
   }
 }

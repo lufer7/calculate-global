@@ -1,42 +1,77 @@
-# Aydınlatma Metni (v2 – e-posta ile üyelik)
+# Aydınlatma Metni
 
-> **Şablondur, hukuki tavsiye değildir.** [Köşeli parantez] alanlarını doldurun ve yayından önce bir avukata kontrol ettirin. Uygulama içindeki metin `apps/mobile/src/legal/texts.ts` dosyasındadır; ikisi aynı tutulmalıdır. Bu sayfayı mağazalar için herkese açık bir adreste yayınlayın.
+> Şablondur, hukuki tavsiye değildir. [Köşeli parantez] alanlarını doldurup bir avukata kontrol ettirin.
+> Bu dosya `apps/mobile/src/legal/texts.ts` dosyasından üretilir (`npm run legal:docs`); doğrudan düzenlemeyin.
 
-**Sürüm:** 2026-10-12
+**Sürüm:** 2026-10-13
 
-Veri sorumlusu: [AD SOYAD / ŞİRKET], [ADRES], [destek@alanadi]
+Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) md. 10 ve AB Genel Veri Koruma Tüzüğü (GDPR) md. 13 uyarınca hazırlanmıştır.
 
+## Veri sorumlusu
 
-## Hangi verileri işliyoruz?
+- [AD SOYAD / ŞİRKET UNVANI], [ADRES], [MERSİS / VERGİ NO], e-posta: [kvkk@alanadi]
 
-- E-posta adresin ve şifren (şifre geri döndürülemez şekilde, özetlenerek saklanır).
-- Oyun verilerin: dövüşçülerin, adları, seviyeleri, yetenekleri, altının, seferlerin ve raporların.
-- Teknik veriler: oturum anahtarı (özetlenmiş), son giriş zamanı. IP adresin bağlantı ve kötüye kullanımı önleme için anlık işlenir; kaydedilmez.
-- Onay kayıtların: hangi metin sürümünü ne zaman onayladığın.
+## Hangi kişisel verileri işliyoruz?
 
+- Kimlik / iletişim: e-posta adresin.
+- Hesap güvenliği: şifren (geri döndürülemez özet olarak, scrypt), oturum anahtarlarının özeti, son etkinlik zamanı.
+- Oyun verileri: oyun içi takma adın (otomatik üretilir), dövüşçü adların, seviye, yetenek, altın, sefer ve rapor kayıtların.
+- Onay kayıtları: hangi metin sürümünü, yaş beyanını ve pazarlama iznini ne zaman verdiğin veya geri aldığın.
+- Başvurular: bize yaptığın KVKK başvuruları ve yanıtları.
+- IP adresi: yalnızca bağlantı kurmak ve aşırı istekleri engellemek için bellekte anlık işlenir; diske yazılmaz, günlüğe kaydedilmez.
+- Doğum tarihi, ad-soyad, telefon, konum, rehber, reklam kimliği veya cihaz kimliği toplamıyoruz. Analitik, reklam veya takip aracı kullanmıyoruz.
 
-## Neden ve hangi hukuki sebeple?
+## Hangi amaçla ve hangi hukuki sebeple?
 
-- Hesabını açmak, oyunu sunmak ve güvenliğini sağlamak: sözleşmenin kurulması ve ifası (KVKK md. 5/2-c, GDPR md. 6/1-b).
-- Hile ve kötüye kullanımı önlemek: meşru menfaat (KVKK md. 5/2-f).
-- Pazarlama e-postaları: yalnızca ayrıca açık rıza verirsen (istediğin zaman geri alabilirsin).
+- Hesabının açılması, oyunun sunulması, doğrulama ve hesap güvenliği: sözleşmenin kurulması ve ifası (KVKK md. 5/2-c, GDPR md. 6/1-b).
+- Hile ve kötüye kullanımın önlenmesi, uygunsuz dövüşçü adlarının denetlenmesi, yönetici işlemlerinin kayıt altına alınması: meşru menfaat (KVKK md. 5/2-f, GDPR md. 6/1-f).
+- Onay ve başvuru kayıtlarının saklanması: hukuki yükümlülük ve bir hakkın tesisi, kullanılması veya korunması (KVKK md. 5/2-ç ve 5/2-e).
+- Yenilik ve etkinlik e-postaları: yalnızca ayrıca verdiğin açık rıza ile (KVKK md. 5/1). İznini istediğin an Hesap sekmesinden geri alabilirsin; oyunu oynamak için gerekli değildir.
+- Otomatik karar alma veya profil çıkarma yapılmaz.
 
+## Nasıl topluyoruz?
 
-## Kimlerle paylaşıyoruz?
+- Uygulamadaki kayıt formu ve oyun içi işlemlerin aracılığıyla, elektronik ortamda.
 
-- Barındırma sağlayıcımız [SAĞLAYICI, ÜLKE] ve e-posta gönderim hizmetimiz [SAĞLAYICI, ÜLKE]. Verini satmayız; reklam veya analitik amaçla paylaşmayız.
+## Kimlere aktarıyoruz?
 
+- Barındırma sağlayıcısı: [SAĞLAYICI], sunucular [ÜLKE / BÖLGE].
+- E-posta gönderim hizmeti: [SAĞLAYICI], [ÜLKE / BÖLGE].
+- Bu firmalar yalnızca talimatımızla, veri işleyen sözleşmesiyle çalışır. Sunucu veya e-posta hizmeti yurt dışındaysa aktarım KVKK md. 9 kapsamında [standart sözleşme / yeterlilik kararı] ile yapılır.
+- Yetkili kamu kurumlarına yalnızca kanunen zorunlu olduğunda.
+- Verini satmayız; reklam veya pazarlama amacıyla üçüncü kişilerle paylaşmayız.
 
-## Ne kadar saklıyoruz?
+## Ne kadar saklıyoruz? (Saklama ve İmha Politikası)
 
-- Hesabın açık olduğu sürece. Hesabını uygulama içinden sildiğinde verilerin hemen silinir. 24 ay giriş yapılmayan hesaplar uyarıdan sonra silinir.
+- Hesap verileri: hesabın açık olduğu sürece. Hesabını uygulamadan sildiğinde hemen silinir.
+- E-postasını doğrulamamış kayıtlar: 7 gün.
+- Hareketsiz hesaplar: yaklaşık 23 ay giriş yapılmazsa e-postayla uyarılır; uyarıdan sonra en az 30 gün içinde giriş yapılmazsa ve hareketsizlik 24 ayı bulmuşsa hesap silinir.
+- Sefer ve araştırma raporları: 90 gün.
+- Yönetici işlem kayıtları: 24 ay.
+- KVKK başvuruları: yanıtlandıktan sonra 24 ay (başvurunun usulüne uygun yanıtlandığını ispat için).
+- Süresi dolan veriler sunucuda 6 saatte bir çalışan otomatik görevle silinir.
 
+## Güvenlik
 
-## Hakların
+- Bağlantılar şifrelidir (HTTPS). Şifreler ve oturum anahtarları yalnızca özet olarak saklanır. Yönetici erişimi iki adımlı doğrulamaya bağlıdır ve her erişim kayıt altına alınır; e-posta adresin yöneticiye maskeli gösterilir.
 
-- KVKK md. 11 ve GDPR kapsamında bilgi isteme, düzeltme, silme, itiraz ve şikâyet haklarına sahipsin. [destek@alanadi] adresine yazabilirsin.
+## Hakların (KVKK md. 11, GDPR md. 15-22)
 
+- Verilerinin işlenip işlenmediğini öğrenme, bilgi isteme, amacını öğrenme, aktarıldığı kişileri bilme.
+- Eksik veya yanlış işlenmişse düzeltilmesini, KVKK md. 7 şartlarıyla silinmesini isteme ve bunun aktarılan kişilere bildirilmesini isteme.
+- Otomatik sistemlerle aleyhine bir sonuç çıkmasına itiraz etme; kanuna aykırı işleme nedeniyle zararının giderilmesini isteme.
+- Uygulama içinden hemen kullanabileceklerin: Hesap > Verilerimi indir (tüm verilerinin kopyası), e-posta ve şifre değiştirme, pazarlama iznini geri alma, hesabımı sil.
+- Diğer talepler için: Hesap > KVKK başvurusu yap, ya da [kvkk@alanadi] / [KEP ADRESİ] / [POSTA ADRESİ]. Başvurunu en geç 30 gün içinde ücretsiz yanıtlarız.
+- Yanıtımızı yeterli bulmazsan Kişisel Verileri Koruma Kurulu'na şikâyette bulunabilirsin (AB'de yaşıyorsan bulunduğun ülkenin denetim makamına da başvurabilirsin).
+
+## Çocuklar
+
+- Oyuna kayıt için en az 16 yaşında olmak gerekir. Bu yaşın altında olduğunu öğrendiğimiz hesaplar silinir.
 
 ## Sohbet yok
 
-- Oyunda oyuncular arası mesajlaşma yoktur. Dövüşçü adları yönetici tarafından denetlenebilir.
+- Oyunda oyuncular arası mesajlaşma yoktur. Başkalarına görünen tek oyuncu metni dövüşçü adlarıdır; yönetim uygunsuz adları değiştirebilir.
+
+## Değişiklikler
+
+- Bu metin değişirse uygulamayı açtığında güncel sürümü okuyup onaylaman istenir.

@@ -3,7 +3,8 @@
 //   GAME_SPEED=1 npm run dev → real durations
 import { spawn } from 'node:child_process';
 
-const env = { ...process.env, GAME_SPEED: process.env.GAME_SPEED ?? '20', DB_PATH: process.env.DB_PATH ?? 'arena-dev.db' };
+// Same default DB as `npm run server` and `npm run admin:create` (apps/server/arena.db).
+const env = { ...process.env, GAME_SPEED: process.env.GAME_SPEED ?? '20' };
 const opts = { stdio: 'inherit', env, shell: process.platform === 'win32' };
 
 const server = spawn('npm', ['run', 'dev', '-w', '@arena/server'], opts);

@@ -1,14 +1,18 @@
 import { Hono } from 'hono';
 import { game, isValidName, normalizeName } from '@arena/core';
 import type { AccountRow, FighterRow } from '../accounts/repo';
-import { accountById, audit, effectiveStatus, fightersOf, revokeSessions } from '../accounts/repo';
+import { accountById, audit, deleteAccount, effectiveStatus, fightersOf, revokeSessions } from '../accounts/repo';
 import { createSession, endSession, requireSession } from '../accounts/sessions';
 import type { Db } from '../db/database';
+import type { Mailer } from '../lib/mailer';
 import { DUMMY_HASH, maskEmail, verifyPassword, verifyTotp } from '../lib/security';
+import { exportAccountData } from '../privacy/export';
+import { runRetention } from '../privacy/retention';
 
 export interface AdminDeps {
   db: Db;
   now: () => number;
+  mailer: Mailer;
 }
 
 interface AdminRow {
@@ -24,7 +28,7 @@ interface AdminRow {
  * 30-minute idle timeout, every action written to an audit log. Player emails are masked
  * unless explicitly revealed (which is itself audited).
  */
-export function adminRoutes({ db, now }: AdminDeps) {
+export function adminRoutes({ db, now, mailer }: AdminDeps) {
   const app = new Hono<{ Variables: { subjectId: string; tokenHash: string } }>();
 
   app.post('/login', async (c) => {
@@ -158,10 +162,50 @@ export function adminRoutes({ db, now }: AdminDeps) {
     if (reason.length < 3) return c.json({ error: 'reason_required' }, 400);
     const acc = accountById(db, c.req.param('id'));
     if (!acc) return c.json({ error: 'not_found' }, 404);
-    revokeSessions(db, acc.id);
-    db.prepare('DELETE FROM accounts WHERE id = ?').run(acc.id);
+    deleteAccount(db, acc.id);
     log(c, 'delete_account', acc.id, reason);
     return c.body(null, 204);
+  });
+
+  /** Copy of everything held about a player, e.g. to answer an access request. Audited. */
+  app.get('/players/:id/export', (c) => {
+    const data = exportAccountData(db, c.req.param('id'), now());
+    if (!data) return c.json({ error: 'not_found' }, 404);
+    log(c, 'export_data', c.req.param('id'));
+    return c.json(data);
+  });
+
+  // ---- KVKK applications (md. 11 / 13): 30-day deadline ----
+  app.get('/requests', (c) => {
+    const status = c.req.query('status');
+    const rows = db
+      .prepare(`SELECT * FROM data_requests ${status ? 'WHERE status = ?' : ''} ORDER BY CASE status WHEN 'open' THEN 0 ELSE 1 END, due_at`)
+      .all(...(status ? [status] : []));
+    return c.json({ requests: rows });
+  });
+
+  app.post('/requests/:id/answer', async (c) => {
+    const b = await c.req.json().catch(() => null);
+    const status = b?.status === 'rejected' ? 'rejected' : 'answered';
+    const answer = typeof b?.answer === 'string' ? b.answer.trim().slice(0, 4000) : '';
+    if (answer.length < 3) return c.json({ error: 'answer_required' }, 400);
+    const req = db.prepare('SELECT * FROM data_requests WHERE id = ?').get(c.req.param('id')) as { id: string; account_id: string | null } | undefined;
+    if (!req) return c.json({ error: 'not_found' }, 404);
+    db.prepare('UPDATE data_requests SET status = ?, answer = ?, answered_at = ? WHERE id = ?').run(status, answer, now(), req.id);
+    log(c, 'answer_request', req.account_id, status);
+    const acc = req.account_id ? accountById(db, req.account_id) : undefined;
+    if (acc) {
+      await mailer.send({ to: acc.email, subject: 'KVKK başvurun yanıtlandı', text: 'Başvurunun yanıtı oyunda Hesap > KVKK başvurularım bölümünde.' }).catch(() => undefined);
+    }
+    return c.json({ id: req.id, status });
+  });
+
+  // ---- Storage & destruction ----
+  app.get('/retention', (c) => c.json({ runs: db.prepare('SELECT * FROM retention_runs ORDER BY id DESC LIMIT 20').all() }));
+  app.post('/retention/run', async (c) => {
+    const summary = await runRetention(db, mailer, now());
+    log(c, 'run_retention', null, JSON.stringify(summary));
+    return c.json(summary);
   });
 
   app.get('/notifications', (c) =>

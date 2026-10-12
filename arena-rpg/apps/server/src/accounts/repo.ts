@@ -19,6 +19,9 @@ export interface AccountRow {
   gold: number;
   research_json: string;
   active_research: string | null;
+  age_confirmed_at: number | null;
+  inactivity_warned_at: number | null;
+  pending_email: string | null;
 }
 
 export interface FighterRow {
@@ -65,4 +68,22 @@ export function addNotification(db: Db, kind: string, accountId: string | null, 
 
 export function audit(db: Db, adminId: string, action: string, target: string | null, detail: string | null, now: number) {
   db.prepare('INSERT INTO admin_audit (admin_id, action, target, detail, at) VALUES (?, ?, ?, ?, ?)').run(adminId, action, target, detail, now);
+}
+
+export function logConsent(db: Db, accountId: string, kind: 'terms' | 'privacy' | 'marketing' | 'age', value: string, now: number) {
+  db.prepare('INSERT INTO consent_log (account_id, kind, value, at) VALUES (?, ?, ?, ?)').run(accountId, kind, value, now);
+}
+
+/** Last activity drives the inactivity clock; written at most once per hour per account. */
+export function touchActivity(db: Db, accountId: string, now: number) {
+  db.prepare('UPDATE accounts SET last_login_at = ? WHERE id = ? AND (last_login_at IS NULL OR last_login_at < ?)').run(now, accountId, now - 3_600_000);
+  // Any activity cancels a pending inactivity warning, so a future deletion always gets a fresh warning.
+  db.prepare('UPDATE accounts SET inactivity_warned_at = NULL WHERE id = ? AND inactivity_warned_at IS NOT NULL').run(accountId);
+}
+
+/** Full deletion of an account and everything linked to it. */
+export function deleteAccount(db: Db, accountId: string) {
+  db.prepare('DELETE FROM sessions WHERE subject_id = ?').run(accountId);
+  db.prepare('DELETE FROM admin_notifications WHERE account_id = ?').run(accountId);
+  db.prepare('DELETE FROM accounts WHERE id = ?').run(accountId); // fighters, codes, expeditions, reports, consents cascade
 }

@@ -14,7 +14,7 @@ const json = (body: unknown, method = 'POST', token?: string) => ({
 });
 const auth = (token: string) => ({ headers: { authorization: `Bearer ${token}` } });
 
-const legal = { acceptTerms: true, privacyNoticeAck: true, termsVersion: LEGAL_VERSIONS.terms, privacyVersion: LEGAL_VERSIONS.privacy };
+const legal = { acceptTerms: true, privacyNoticeAck: true, ageConfirmed: true, termsVersion: LEGAL_VERSIONS.terms, privacyVersion: LEGAL_VERSIONS.privacy };
 
 function setup() {
   let t = Date.UTC(2026, 9, 12, 10);

@@ -3,9 +3,11 @@
 Metin ve menü tabanlı, sıra tabanlı savaşlı bir mobil arena RPG iskeleti. Tasarımın merkezinde iki ilke var: **hesap yok** ve **kişisel veri saklanmıyor**.
 
 - 📐 Mimari, veri akışları, gelir modeli, yasal notlar → [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- 🔒 Gizlilik / aydınlatma metni şablonu → [`docs/PRIVACY_NOTICE.md`](docs/PRIVACY_NOTICE.md)
+- 🔒 Aydınlatma metni ve kullanım koşulları → [`docs/PRIVACY_NOTICE.md`](docs/PRIVACY_NOTICE.md), [`docs/TERMS.md`](docs/TERMS.md)
 - ✅ Yayın öncesi kontrol listesi → [`docs/LEGAL_CHECKLIST.md`](docs/LEGAL_CHECKLIST.md)
 - ⚔️ v2: sınıflar, yetenekler, seferler, e-posta üyelik ve yönetici paneli → [`docs/DESIGN_V2.md`](docs/DESIGN_V2.md)
+- 🛡️ Yönetici paneli kurulumu → [`docs/ADMIN_SETUP.md`](docs/ADMIN_SETUP.md)
+- ⚖️ KVKK / GDPR uyumu (kodda olanlar ve sizin yapmanız gerekenler) → [`docs/KVKK_COMPLIANCE.md`](docs/KVKK_COMPLIANCE.md)
 
 ## Paketler
 
@@ -22,6 +24,7 @@ npm install                       # tüm workspace'ler (Node 22.13+ veya 24+)
 npm run dev                       # sunucu + Expo (QR kod) birlikte; süreler test için 20 kat hızlı
 npm test                          # çekirdek + sunucu testleri
 npm run typecheck                 # çekirdek + sunucu + mobil
+npm run legal:docs                # yasal metinleri uygulamadaki metinden yeniden üretir
 
 ADMIN_PASSWORD="en-az-14-karakter" npm run admin:create -w @arena/server -- siz@ornek.com
 # Yönetim paneli: http://<bilgisayarın-IP-adresi>:8787/admin

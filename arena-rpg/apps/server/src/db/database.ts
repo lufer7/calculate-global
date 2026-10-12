@@ -108,6 +108,38 @@ const MIGRATIONS: string[] = [
   );
   CREATE INDEX reports_account ON reports(account_id, id);
   `,
+  `
+  ALTER TABLE accounts ADD COLUMN age_confirmed_at INTEGER;
+  ALTER TABLE accounts ADD COLUMN inactivity_warned_at INTEGER;
+  ALTER TABLE accounts ADD COLUMN pending_email TEXT;
+  -- Append-only evidence of every consent / acknowledgement (KVKK md. 5, ispat yükü).
+  CREATE TABLE consent_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    kind       TEXT NOT NULL CHECK (kind IN ('terms', 'privacy', 'marketing', 'age')),
+    value      TEXT NOT NULL,
+    at         INTEGER NOT NULL
+  );
+  CREATE INDEX consent_log_account ON consent_log(account_id);
+  -- KVKK md. 11 applications. Kept (account_id nulled) after account deletion as proof of handling.
+  CREATE TABLE data_requests (
+    id           TEXT PRIMARY KEY,
+    account_id   TEXT REFERENCES accounts(id) ON DELETE SET NULL,
+    display_name TEXT NOT NULL,
+    kind         TEXT NOT NULL CHECK (kind IN ('access', 'rectification', 'erasure', 'objection', 'other')),
+    message      TEXT NOT NULL,
+    status       TEXT NOT NULL CHECK (status IN ('open', 'answered', 'rejected')),
+    created_at   INTEGER NOT NULL,
+    due_at       INTEGER NOT NULL,
+    answered_at  INTEGER,
+    answer       TEXT
+  );
+  CREATE TABLE retention_runs (
+    id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    at      INTEGER NOT NULL,
+    summary TEXT NOT NULL
+  );
+  `,
 ];
 
 export function openDatabase(path = ':memory:'): Db {

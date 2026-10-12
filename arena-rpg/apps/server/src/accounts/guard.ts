@@ -1,6 +1,6 @@
 import type { MiddlewareHandler } from 'hono';
 import type { Db } from '../db/database';
-import { accountById, effectiveStatus, revokeSessions } from './repo';
+import { accountById, effectiveStatus, revokeSessions, touchActivity } from './repo';
 import { resolveSession } from './sessions';
 
 /** Valid player session on an existing, non-banned account. */
@@ -13,6 +13,7 @@ export function playerGuard(db: Db, now: () => number): MiddlewareHandler<{ Vari
       revokeSessions(db, acc.id);
       return c.json({ error: 'banned', reason: acc.ban_reason, until: acc.banned_until }, 403);
     }
+    touchActivity(db, acc.id, now());
     c.set('subjectId', s.subjectId);
     c.set('tokenHash', s.tokenHash);
     await next();

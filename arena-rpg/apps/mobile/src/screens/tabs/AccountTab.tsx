@@ -6,6 +6,7 @@ import { LEGAL } from '../../legal/texts';
 import type { GameState } from '../../lib/api';
 import { ApiError, api } from '../../lib/api';
 import { classColor, colors, ui } from '../theme';
+import { PrivacyTools } from './PrivacyTools';
 
 export function AccountTab({ state, onLegal, onSignedOut }: { state: GameState; onLegal: (w: 'privacy' | 'terms') => void; onSignedOut: () => void }) {
   const [email, setEmail] = useState<string | null>(null);
@@ -17,8 +18,9 @@ export function AccountTab({ state, onLegal, onSignedOut }: { state: GameState; 
   const perk = state.account.mainClassPerk;
   const main = state.account.mainClass;
 
+  const loadMe = () => api.me().then((m) => { setEmail(m.email); setMarketing(m.marketingConsent); }).catch(() => undefined);
   useEffect(() => {
-    api.me().then((m) => { setEmail(m.email); setMarketing(m.marketingConsent); }).catch(() => undefined);
+    void loadMe();
   }, []);
 
   return (
@@ -49,6 +51,8 @@ export function AccountTab({ state, onLegal, onSignedOut }: { state: GameState; 
           <Switch value={marketing} onValueChange={async (v) => { setMarketing(v); await api.setMarketing(v).catch(() => setMarketing(!v)); }} />
         </View>
       </Card>
+
+ <PrivacyTools onEmailChanged={loadMe} />
 
       <Button title="Çıkış yap" kind="ghost" onPress={async () => { await api.logout().catch(() => undefined); onSignedOut(); }} />
 
