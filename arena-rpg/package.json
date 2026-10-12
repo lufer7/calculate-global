@@ -7,7 +7,13 @@
     "apps/mobile"
   ],
   "scripts": {
+    "mobile": "node scripts/check-node.mjs && npm run start -w @arena/mobile",
+    "mobile:tunnel": "node scripts/check-node.mjs && npm run start -w @arena/mobile -- --tunnel",
+    "server": "node scripts/check-node.mjs && npm run dev -w @arena/server",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0"
   }
 }

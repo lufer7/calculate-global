@@ -24,7 +24,17 @@ npm run typecheck                 # core + server + mobile
 
 npm run dev -w @arena/server      # http://localhost:8787  (panel: /admin)
 ADMIN_PASSWORD="en-az-14-karakter" npm run admin:create -w @arena/server -- siz@ornek.com
-npm run start -w @arena/mobile    # Expo dev server (Expo Go / development build)
+npm run mobile                    # Expo + QR kod (Expo Go ile okutun)
 ```
 
 > `expo-sqlite` ve `expo-secure-store` Expo Go'da çalışır. Mağaza derlemesi için `npx expo prebuild` veya EAS Build kullanın.
+
+## Sorun giderme (QR / Expo Go)
+
+| Belirti | Çözüm |
+|---|---|
+| `Node.js ... bulundu, ancak bu proje Node 22.13+ ...` veya `EBADENGINE` / Metro hatası | nodejs.org'dan LTS sürümünü (22 veya 24) kurun, terminali yeniden açın, `npm install` tekrar. |
+| QR görünmüyor | Komutu `arena-rpg` klasöründe, normal bir terminalde çalıştırın: `npm run mobile`. QR çıkmazsa terminaldeki `exp://...` adresini Expo Go'da "Enter URL manually" ile girin. |
+| Telefonda "Could not connect" / "Something went wrong" | Telefon ve bilgisayar aynı Wi-Fi'da olmalı; VPN kapalı olmalı. Olmazsa `npm run mobile:tunnel`. |
+| Windows'ta `running scripts is disabled on this system` | PowerShell yerine "Komut İstemi" (cmd) kullanın ya da `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. |
+| Expo Go'da "Project is incompatible with this version of Expo Go" | Expo Go uygulamasını mağazadan güncelleyin (proje Expo SDK 57 kullanıyor). |
