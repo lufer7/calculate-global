@@ -75,6 +75,39 @@ const MIGRATIONS: string[] = [
     read       INTEGER NOT NULL DEFAULT 0
   );
   `,
+  `
+  ALTER TABLE accounts ADD COLUMN gold INTEGER NOT NULL DEFAULT 200;
+  ALTER TABLE accounts ADD COLUMN research_json TEXT NOT NULL DEFAULT '{}';
+  ALTER TABLE accounts ADD COLUMN active_research TEXT;
+  ALTER TABLE fighters ADD COLUMN skills_json TEXT NOT NULL DEFAULT '{}';
+  ALTER TABLE fighters ADD COLUMN hp_ratio REAL NOT NULL DEFAULT 1;
+  ALTER TABLE fighters ADD COLUMN status_kind TEXT NOT NULL DEFAULT 'idle';
+  ALTER TABLE fighters ADD COLUMN status_until INTEGER;
+  ALTER TABLE fighters ADD COLUMN respec_count INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE fighters ADD COLUMN respec_at INTEGER;
+  CREATE TABLE expeditions (
+    id               TEXT PRIMARY KEY,
+    account_id       TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    zone_id          TEXT NOT NULL,
+    fighter_ids      TEXT NOT NULL,           -- JSON array
+    started_at       INTEGER NOT NULL,
+    ends_at          INTEGER NOT NULL,
+    base_duration_ms INTEGER NOT NULL,
+    seed             INTEGER NOT NULL,        -- server RNG seed, kept for audits
+    state            TEXT NOT NULL CHECK (state IN ('active', 'recalled', 'done'))
+  );
+  CREATE INDEX expeditions_account ON expeditions(account_id, state);
+  CREATE TABLE reports (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    kind       TEXT NOT NULL,
+    title      TEXT NOT NULL,
+    body_json  TEXT NOT NULL,
+    at         INTEGER NOT NULL,
+    read       INTEGER NOT NULL DEFAULT 0
+  );
+  CREATE INDEX reports_account ON reports(account_id, id);
+  `,
 ];
 
 export function openDatabase(path = ':memory:'): Db {

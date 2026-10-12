@@ -182,3 +182,20 @@ describe('main-class perks', () => {
     expect(MAIN_CLASS_PERKS.seer.perks.researchDurationReduction).toBe(0.2);
   });
 });
+
+describe('loot, injuries and research', () => {
+  it('pays nothing-tier trips only XP and scales with tier', () => {
+    const base = { extraReward: null, event: 'none' as const, rewardMultiplier: 1, injured: [] };
+    const none = game.expeditionLoot('dark_forest', { ...base, reward: 'nothing' }, () => 0.5);
+    const epic = game.expeditionLoot('dark_forest', { ...base, reward: 'epic' }, () => 0.5);
+    expect(none.gold).toBe(0);
+    expect(none.xp).toBe(10);
+    expect(epic.gold).toBe(180);
+  });
+  it('injury and research durations respect their floors', () => {
+    const zone = ZONES.dark_forest!;
+    expect(game.injuryDurationMs(zone, [0.9, 0.9])).toBe(Math.round(zone.baseDurationMs * 0.25));
+    const def = game.RESEARCH.expedition_logistics!;
+    expect(game.researchDuration(def, 1, [0.2])).toBe(Math.round(def.durationMs(1) * 0.8));
+  });
+});

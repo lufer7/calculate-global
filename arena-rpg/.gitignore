@@ -3,3 +3,4 @@ dist/
 .expo/
 *.log
 arena.db*
+arena-dev.db*

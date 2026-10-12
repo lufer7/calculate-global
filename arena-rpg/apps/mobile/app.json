@@ -28,11 +28,10 @@
       ]
     },
     "plugins": [
-      "expo-sqlite",
       "expo-secure-store"
     ],
     "extra": {
-      "apiBaseUrl": "https://api.example.invalid"
+      "apiBaseUrl": ""
     },
     "web": {
       "bundler": "metro",

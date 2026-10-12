@@ -3,11 +3,12 @@ import { displayNameFromId, game, isValidName, normalizeName } from '@arena/core
 import type { Db } from '../db/database';
 import type { Mailer } from '../lib/mailer';
 import { DUMMY_HASH, hashPassword, randomId, sha256, sixDigitCode, verifyPassword } from '../lib/security';
+import { playerGuard } from './guard';
 import { accountByEmail, accountById, addNotification, effectiveStatus, fightersOf, revokeSessions } from './repo';
-import { createSession, endSession, requireSession } from './sessions';
+import { createSession, endSession } from './sessions';
 
-/** Bump when the texts change; players must accept the new version on next login. */
-export const LEGAL_VERSIONS = { terms: '2026-10-12', privacy: '2026-10-12' };
+/** Bump in @arena/core when the texts change; players must accept the new version on next login. */
+export const LEGAL_VERSIONS = game.LEGAL_VERSIONS;
 
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/;
 const CODE_TTL_MS = 15 * 60_000;
@@ -23,7 +24,6 @@ export interface AccountDeps {
 
 export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
   const app = new Hono<{ Variables: { subjectId: string; tokenHash: string } }>();
-  const auth = requireSession(db, 'player', now);
 
   async function sendCode(accountId: string, email: string) {
     const code = sixDigitCode();
@@ -99,17 +99,8 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
   });
 
   // Everything below needs a valid session on a non-banned account.
-  for (const path of ['/me', '/me/*', '/fighters', '/account', '/auth/logout']) {
-    app.use(path, auth, async (c, next) => {
-      const acc = accountById(db, c.get('subjectId'));
-      if (!acc) return c.json({ error: 'unauthorized' }, 401);
-      if (effectiveStatus(db, acc, now()) === 'banned') {
-        revokeSessions(db, acc.id);
-        return c.json({ error: 'banned', reason: acc.ban_reason, until: acc.banned_until }, 403);
-      }
-      await next();
-    });
-  }
+  const guard = playerGuard(db, now);
+  for (const path of ['/me', '/me/*', '/fighters', '/account', '/auth/logout']) app.use(path, guard);
 
   app.post('/auth/logout', (c) => {
     endSession(db, c.get('tokenHash'));

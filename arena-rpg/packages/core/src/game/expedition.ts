@@ -223,3 +223,33 @@ export function prophecyZone(dayKey: string, serverSecret: string): string {
   const h = sha256(utf8.encode(`${serverSecret}:prophecy:${dayKey}`));
   return visible[h[0]! % visible.length]!.id;
 }
+
+/** Base loot per zone; reward tiers multiply it. Starting values – tune with live data. */
+export const ZONE_LOOT: Record<string, { gold: number; xp: number }> = {
+  dark_forest: { gold: 30, xp: 20 },
+  misty_marsh: { gold: 90, xp: 55 },
+  abandoned_mines: { gold: 220, xp: 130 },
+  lost_lands: { gold: 400, xp: 220 },
+};
+
+const TIER_MULTIPLIER: Record<RewardTier, number> = { nothing: 0, common: 1, rare: 2.5, epic: 6, legendary: 15 };
+
+/** Turns a rolled outcome into gold (for the account) and XP (per fighter). */
+export function expeditionLoot(zoneId: string, outcome: ExpeditionOutcome, rng: () => number): { gold: number; xp: number } {
+  const base = ZONE_LOOT[zoneId] ?? { gold: 0, xp: 0 };
+  const jitter = () => 0.8 + rng() * 0.4;
+  let gold = base.gold * TIER_MULTIPLIER[outcome.reward] * jitter();
+  if (outcome.extraReward) gold += base.gold * TIER_MULTIPLIER[outcome.extraReward] * jitter();
+  if (outcome.event === 'merchant') gold *= 1.1;
+  if (outcome.event === 'lost_treasure') gold += base.gold * 2;
+  if (outcome.event === 'cursed_chest') gold *= 0.5;
+  gold *= outcome.rewardMultiplier;
+  const xp = base.xp * (outcome.reward === 'nothing' ? 0.5 : 1) * jitter();
+  return { gold: Math.round(gold), xp: Math.round(xp) };
+}
+
+/** Injury lasts as long as the trip, shortened by skills/perks, but never below 25%. */
+export function injuryDurationMs(zone: Zone, reductions: number[]): number {
+  const factor = reductions.reduce((f, r) => f * (1 - r), 1);
+  return Math.round(zone.baseDurationMs * Math.max(0.25, factor));
+}

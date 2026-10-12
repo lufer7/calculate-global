@@ -28,9 +28,13 @@ const app = createApp({
   clientKey: clientIp,
   adminNotifyEmail: process.env.ADMIN_NOTIFY_EMAIL,
   adminAllowed: adminIps.length ? (c) => adminIps.includes(clientIp(c)) : undefined,
+  gameSpeed: production ? 1 : Number(process.env.GAME_SPEED ?? 1),
+  prophecySecret: process.env.PROPHECY_SECRET ?? 'dev-prophecy',
+  corsOrigin: production ? undefined : '*',
 });
 
 serve({ fetch: app.fetch, port }, () => {
   // Startup message only – the server never logs requests.
-  console.log(`arena server listening on :${port} (admin panel: /admin)`);
+  const speed = Number(process.env.GAME_SPEED ?? 1);
+  console.log(`arena server listening on :${port} (admin panel: /admin)${speed > 1 ? ` · test mode: timers ${speed}x faster` : ''}`);
 });

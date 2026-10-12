@@ -5,3 +5,5 @@ export * from './skills';
 export * from './fighters';
 export * from './expedition';
 export * from './pvpRules';
+export * from './research';
+export * from './legal';

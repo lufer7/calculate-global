@@ -16,6 +16,9 @@ export interface AccountRow {
   privacy_version: string;
   marketing_consent: number;
   consent_at: number;
+  gold: number;
+  research_json: string;
+  active_research: string | null;
 }
 
 export interface FighterRow {
@@ -26,6 +29,12 @@ export interface FighterRow {
   level: number;
   xp: number;
   created_at: number;
+  skills_json: string;
+  hp_ratio: number;
+  status_kind: 'idle' | 'expedition' | 'injured' | 'arena';
+  status_until: number | null;
+  respec_count: number;
+  respec_at: number | null;
 }
 
 export const accountById = (db: Db, id: string) =>

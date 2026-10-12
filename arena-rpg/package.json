@@ -7,6 +7,8 @@
     "apps/mobile"
   ],
   "scripts": {
+    "dev": "node scripts/check-node.mjs && node scripts/dev.mjs",
+    "dev:tunnel": "node scripts/check-node.mjs && node scripts/dev.mjs --tunnel",
     "mobile": "node scripts/check-node.mjs && npm run start -w @arena/mobile",
     "mobile:tunnel": "node scripts/check-node.mjs && npm run start -w @arena/mobile -- --tunnel",
     "server": "node scripts/check-node.mjs && npm run dev -w @arena/server",

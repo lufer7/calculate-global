@@ -113,3 +113,24 @@ Betik, kimlik doğrulama uygulamanıza ekleyeceğiniz anahtarı bir kez gösteri
 **"Oyun içinde" panel.** Panel tarayıcıda çalışır ve telefon ekranına da uyumludur. Mobil uygulamaya ayrı bir sekme olarak eklemek mümkün: sekme yalnızca yönetici girişi yapıldığında görünür, aynı API'yi ve aynı TOTP korumasını kullanır. Güvenliği istemci değil sunucu sağlar.
 
 **Henüz eksik:** Gerçek e-posta gönderimi (şu an geliştirme modunda kodlar terminale yazılıyor; sunucu üretim modunda bu yüzden başlamayı reddediyor). Ayrıca PostgreSQL'e geçiş, v2 aydınlatma metni ve kullanım koşulları metinleri.
+
+## 8. Mobil uygulama (v2)
+
+Uygulama artık sunucuya bağlı çalışıyor; cihazda yalnızca oturum anahtarı (Keychain/Keystore) tutuluyor.
+
+- **Açılış:** Liman manzaralı yer tutucu yükleme ekranı ve dönen ipuçları.
+- **Kayıt / giriş:** E-posta, şifre, iki zorunlu onay (Aydınlatma Metni, Kullanım Koşulları), ayrı ve isteğe bağlı pazarlama izni, 6 haneli doğrulama kodu. Yasaklı hesap gerekçeyi ve bitiş tarihini görür.
+- **Ana karakter:** Üç sınıf, savaş tarzları ve ana sınıf avantajlarıyla birlikte gösterilir.
+- **Sekmeler:** Dövüşçüler (yetenek ağacı, kademe kilitleri, puan sıfırlama), Seferler (slotlar, kehanet bölgesi, boş kale ve düşük seviye uyarıları, geri çağırma), Kafa Kazanı, Raporlar, Hesap (ana sınıf avantajı, metinler, pazarlama izni, çıkış, hesap silme). Salı Pazarı, Envanter ve Arena "yakında" olarak içerikleriyle listelenir.
+- **Zaman:** Bütün süreler sunucuda; uygulama geri sayımı sunucu saatine göre gösterir ve süre dolunca durumu yeniler.
+
+**Test modu:** `npm run dev` süreleri 20 kat hızlandırır (`GAME_SPEED`). Üretimde her zaman 1'dir.
+
+## 9. Sıradaki adımlar (güncel)
+
+1. Gerçek e-posta servisi (AB bölgeli, veri işleme sözleşmeli) ve üretim ayarları.
+2. 24 ay giriş yapmayan hesapların uyarılıp silinmesi. Aydınlatma metni bunu vaat ediyor, kodda henüz yok; yayından önce eklenmeli.
+3. Envanter + karakter giydirme + demirci, Salı Pazarı (saatlik NPC stoğu), iksirler (Unutma İksiri ile ücretli respec).
+4. Savaş motorunun sınıf ve yeteneklere göre genişletilmesi; Arena ve PvP saldırıları, casusluk.
+5. Push bildirimleri (sefer dönüşü, saldırı uyarısı; ayarlardan kapatılabilir).
+6. PostgreSQL'e geçiş ve canlı sunucu kurulumu.

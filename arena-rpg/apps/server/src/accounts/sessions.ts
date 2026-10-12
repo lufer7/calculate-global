@@ -17,24 +17,28 @@ export function createSession(db: Db, kind: SessionKind, subjectId: string, now:
   return token;
 }
 
-/** Bearer-token auth. Tokens are stored only as SHA-256 hashes. */
+/** Looks up a Bearer token (stored only as a SHA-256 hash) and refreshes its idle timer. */
+export function resolveSession(db: Db, kind: SessionKind, authorization: string | undefined, now: number) {
+  const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
+  if (!token) return null;
+  const hash = sha256(token);
+  const row = db.prepare('SELECT * FROM sessions WHERE token_hash = ? AND kind = ?').get(hash, kind) as
+    | { subject_id: string; expires_at: number; last_seen_at: number }
+    | undefined;
+  if (!row || row.expires_at <= now || now - row.last_seen_at > SESSION_POLICY[kind].idleMs) {
+    if (row) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(hash);
+    return null;
+  }
+  db.prepare('UPDATE sessions SET last_seen_at = ? WHERE token_hash = ?').run(now, hash);
+  return { subjectId: row.subject_id, tokenHash: hash };
+}
+
 export function requireSession(db: Db, kind: SessionKind, now: () => number): MiddlewareHandler<{ Variables: { subjectId: string; tokenHash: string } }> {
   return async (c, next) => {
-    const header = c.req.header('authorization') ?? '';
-    const token = header.startsWith('Bearer ') ? header.slice(7) : '';
-    if (!token) return c.json({ error: 'unauthorized' }, 401);
-    const hash = sha256(token);
-    const row = db.prepare('SELECT * FROM sessions WHERE token_hash = ? AND kind = ?').get(hash, kind) as
-      | { subject_id: string; expires_at: number; last_seen_at: number }
-      | undefined;
-    const t = now();
-    if (!row || row.expires_at <= t || t - row.last_seen_at > SESSION_POLICY[kind].idleMs) {
-      if (row) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(hash);
-      return c.json({ error: 'unauthorized' }, 401);
-    }
-    db.prepare('UPDATE sessions SET last_seen_at = ? WHERE token_hash = ?').run(t, hash);
-    c.set('subjectId', row.subject_id);
-    c.set('tokenHash', hash);
+    const s = resolveSession(db, kind, c.req.header('authorization'), now());
+    if (!s) return c.json({ error: 'unauthorized' }, 401);
+    c.set('subjectId', s.subjectId);
+    c.set('tokenHash', s.tokenHash);
     await next();
   };
 }

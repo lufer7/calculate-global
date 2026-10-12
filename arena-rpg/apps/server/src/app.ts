@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
+import { cors } from 'hono/cors';
 import type { PvpSnapshot } from '@arena/core';
 import {
   displayNameFromId, eloDelta, generateOpponent, isValidLadderToken, ladderIdFromToken,
@@ -11,6 +12,7 @@ import { accountRoutes } from './accounts/routes';
 import { addNotification } from './accounts/repo';
 import { adminPanelHtml } from './admin/panel';
 import { adminRoutes } from './admin/routes';
+import { gameRoutes } from './game/routes';
 import type { Db } from './db/database';
 import { openDatabase } from './db/database';
 import type { Mailer } from './lib/mailer';
@@ -41,6 +43,11 @@ export interface AppDeps {
   adminNotifyEmail?: string;
   /** Extra gate for /admin (e.g. an IP allowlist). Return false to answer 404. */
   adminAllowed?: (c: Context) => boolean;
+  /** Development only: makes every timer N times faster. */
+  gameSpeed?: number;
+  prophecySecret?: string;
+  /** Development web preview runs on another port; native apps do not need CORS. */
+  corsOrigin?: string;
 }
 
 export function createApp(deps: AppDeps = {}) {
@@ -68,10 +75,11 @@ export function createApp(deps: AppDeps = {}) {
   });
 
   // Deliberately NO logger middleware: no access logs, no IPs, no user agents on disk.
+  if (deps.corsOrigin) app.use('/v1/*', cors({ origin: deps.corsOrigin, allowHeaders: ['content-type', 'authorization'], allowMethods: ['GET', 'POST', 'PUT', 'DELETE'] }));
   for (const path of ['/v1/*', '/admin/*']) {
     app.use(path, bodyLimit({ maxSize: TRANSFER_MAX_BYTES + 1024, onError: (c) => c.json({ error: 'too_large' }, 413) }));
   }
-  app.use('/v1/*', rateLimit({ windowMs: 60_000, max: deps.rateLimitPerMinute ?? 30, clientKey, now }));
+  app.use('/v1/*', rateLimit({ windowMs: 60_000, max: deps.rateLimitPerMinute ?? 120, clientKey, now }));
   // Credential endpoints get a much tighter budget against password guessing.
   for (const path of ['/v1/auth/*', '/admin/api/login']) {
     app.use(path, rateLimit({ windowMs: 60_000, max: 10, clientKey, now }));
@@ -85,6 +93,7 @@ export function createApp(deps: AppDeps = {}) {
 
   // ---- Accounts (email sign-up) ----
   app.route('/v1', accountRoutes({ db, mailer, now, notifyAdmin }));
+  app.route('/v1/game', gameRoutes(db, { now, speed: deps.gameSpeed ?? 1, prophecySecret: deps.prophecySecret ?? 'dev-prophecy' }));
 
   // ---- Owner-only admin panel ----
   app.use('/admin', async (c, next) => ((deps.adminAllowed?.(c) ?? true) ? next() : c.notFound()));

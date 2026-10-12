@@ -13,21 +13,21 @@ Metin ve menü tabanlı, sıra tabanlı savaşlı bir mobil arena RPG iskeleti. 
 |---|---|
 | `packages/core` | Ortak oyun çekirdeği: statlar, karakter, eşyalar, ekonomi, enerji, görevler, deterministik savaş, kayıt şeması, transfer kodu kriptosu, PvP doğrulama |
 | `apps/server` | Hono API: e-posta ile üyelik, dövüşçüler, yönetici paneli (`/admin`), PvP, sıralama, transfer rölesi |
-| `apps/mobile` | Expo uygulaması: şifreli SQLite kaydı, Keychain anahtarı, karakter oluşturma, gizlilik ekranı |
+| `apps/mobile` | Expo uygulaması: kayıt/giriş, ana sınıf seçimi, dövüşçüler ve yetenek ağacı, seferler, Kafa Kazanı, raporlar, hesap ve hesap silme |
 
 ## Komutlar
 
 ```bash
-npm install                       # tüm workspace'ler
-npm test                          # core + server testleri (vitest)
-npm run typecheck                 # core + server + mobile
+npm install                       # tüm workspace'ler (Node 22.13+ veya 24+)
+npm run dev                       # sunucu + Expo (QR kod) birlikte; süreler test için 20 kat hızlı
+npm test                          # çekirdek + sunucu testleri
+npm run typecheck                 # çekirdek + sunucu + mobil
 
-npm run dev -w @arena/server      # http://localhost:8787  (panel: /admin)
 ADMIN_PASSWORD="en-az-14-karakter" npm run admin:create -w @arena/server -- siz@ornek.com
-npm run mobile                    # Expo + QR kod (Expo Go ile okutun)
+# Yönetim paneli: http://<bilgisayarın-IP-adresi>:8787/admin
 ```
 
-> `expo-sqlite` ve `expo-secure-store` Expo Go'da çalışır. Mağaza derlemesi için `npx expo prebuild` veya EAS Build kullanın.
+**Telefonda denemek:** `npm run dev` çalıştırın, QR'ı Expo Go ile okutun. Kayıt olurken e-posta doğrulama kodu (henüz gerçek e-posta servisi bağlı olmadığı için) **sunucunun terminal çıktısına** yazılır: `[dev-mail] ... doğrulama kodun: 123456`. Telefon ve bilgisayar aynı Wi-Fi'da olmalı; uygulama sunucuya bilgisayarın adresinden (port 8787) bağlanır.
 
 ## Sorun giderme (QR / Expo Go)
 
@@ -35,6 +35,7 @@ npm run mobile                    # Expo + QR kod (Expo Go ile okutun)
 |---|---|
 | `Node.js ... bulundu, ancak bu proje Node 22.13+ ...` veya `EBADENGINE` / Metro hatası | nodejs.org'dan LTS sürümünü (22 veya 24) kurun, terminali yeniden açın, `npm install` tekrar. |
 | QR görünmüyor | Komutu `arena-rpg` klasöründe, normal bir terminalde çalıştırın: `npm run mobile`. QR çıkmazsa terminaldeki `exp://...` adresini Expo Go'da "Enter URL manually" ile girin. |
-| Telefonda "Could not connect" / "Something went wrong" | Telefon ve bilgisayar aynı Wi-Fi'da olmalı; VPN kapalı olmalı. Olmazsa `npm run mobile:tunnel`. |
+| Telefonda "Could not connect" / "Something went wrong" | Telefon ve bilgisayar aynı Wi-Fi'da olmalı; VPN kapalı olmalı. |
+| Uygulamada "Sunucuya ulaşılamadı" | `npm run dev` ile sunucunun da açık olduğundan emin olun. Bilgisayarın güvenlik duvarı 8787 portuna izin vermeli (Windows ilk açılışta sorar: "Özel ağlar"a izin verin). |
 | Windows'ta `running scripts is disabled on this system` | PowerShell yerine "Komut İstemi" (cmd) kullanın ya da `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. |
 | Expo Go'da "Project is incompatible with this version of Expo Go" | Expo Go uygulamasını mağazadan güncelleyin (proje Expo SDK 57 kullanıyor). |
