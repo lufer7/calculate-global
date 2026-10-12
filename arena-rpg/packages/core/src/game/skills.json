@@ -1,0 +1,713 @@
+{
+  "version": 1,
+  "skills": [
+    {
+      "id": "swift_steps",
+      "class": "scout",
+      "branch": "exploration",
+      "tier": 1,
+      "name": "Hızlı Adımlar",
+      "max_rank": 5,
+      "effect": "expedition.duration_reduction",
+      "unit": "ratio",
+      "description": "Katıldığı seferlerin süresi −%4 / rütbe",
+      "value_per_rank": 0.04
+    },
+    {
+      "id": "treasure_hunter",
+      "class": "scout",
+      "branch": "exploration",
+      "tier": 1,
+      "name": "Hazine Avcısı",
+      "max_rank": 5,
+      "effect": "expedition.rare_chance_relative",
+      "unit": "ratio",
+      "description": "Nadir ve üstü ödül şansı +%3 (göreli) / rütbe",
+      "value_per_rank": 0.03
+    },
+    {
+      "id": "trap_sense",
+      "class": "scout",
+      "branch": "exploration",
+      "tier": 2,
+      "name": "Tuzak Sezgisi",
+      "max_rank": 5,
+      "effect": "expedition.bad_event_reduction",
+      "unit": "ratio",
+      "description": "Kötü olay şansı −%5 (göreli) / rütbe",
+      "value_per_rank": 0.05
+    },
+    {
+      "id": "pathfinding",
+      "class": "scout",
+      "branch": "exploration",
+      "tier": 2,
+      "name": "Yol Bilgisi",
+      "max_rank": 3,
+      "effect": "expedition.injury_recovery_reduction",
+      "unit": "ratio",
+      "description": "Seferde yaralananların iyileşme süresi −%15 / rütbe",
+      "value_per_rank": 0.15
+    },
+    {
+      "id": "explorer_spirit",
+      "class": "scout",
+      "branch": "exploration",
+      "tier": 3,
+      "name": "Kaşif Ruhu",
+      "max_rank": 3,
+      "effect": "expedition.extra_reward_chance",
+      "unit": "ratio",
+      "description": "Ekstra 1 ödül şansı +%5 / rütbe",
+      "value_per_rank": 0.05
+    },
+    {
+      "id": "lost_lands",
+      "class": "scout",
+      "branch": "exploration",
+      "tier": 4,
+      "name": "Kayıp Diyarlar",
+      "max_rank": 1,
+      "effect": "expedition.unlock_hidden_zones",
+      "unit": "flag",
+      "description": "Yalnızca Gözcülerin girebildiği gizli bölgeleri açar",
+      "value_per_rank": 1
+    },
+    {
+      "id": "espionage",
+      "class": "scout",
+      "branch": "shadow",
+      "tier": 1,
+      "name": "Casusluk",
+      "max_rank": 5,
+      "effect": "pvp.spy_level",
+      "unit": "level",
+      "description": "Rakibin dövüşçü, seviye ve ekipmanını görür; rütbe arttıkça rapor netleşir, yakalanma düşer",
+      "value_per_rank": 1
+    },
+    {
+      "id": "first_strike",
+      "class": "scout",
+      "branch": "shadow",
+      "tier": 1,
+      "name": "İlk Vuruş",
+      "max_rank": 1,
+      "effect": "combat.first_turn",
+      "unit": "flag",
+      "description": "Savaşta 1. turu her zaman ilk oynar",
+      "value_per_rank": 1
+    },
+    {
+      "id": "blend_into_shadow",
+      "class": "scout",
+      "branch": "shadow",
+      "tier": 2,
+      "name": "Gölgeye Karış",
+      "max_rank": 3,
+      "effect": "combat.flee_chance",
+      "unit": "ratio",
+      "description": "Can < %30 iken savaştan çekilme şansı",
+      "values_by_rank": [
+        0.2,
+        0.35,
+        0.5
+      ]
+    },
+    {
+      "id": "silent_approach",
+      "class": "scout",
+      "branch": "shadow",
+      "tier": 2,
+      "name": "Sessiz Yaklaşım",
+      "max_rank": 3,
+      "effect": "pvp.attack_warning_reduction",
+      "unit": "ratio",
+      "description": "Rakibin saldırı uyarısı kısalır",
+      "values_by_rank": [
+        0.2,
+        0.35,
+        0.5
+      ]
+    },
+    {
+      "id": "weak_spot",
+      "class": "scout",
+      "branch": "shadow",
+      "tier": 3,
+      "name": "Zayıf Nokta",
+      "max_rank": 5,
+      "effect": "combat.spied_target_damage_first2",
+      "unit": "ratio",
+      "description": "Casusluk yapılmış hedefe ilk 2 turda +%3 hasar / rütbe",
+      "value_per_rank": 0.03
+    },
+    {
+      "id": "shadow_strike",
+      "class": "scout",
+      "branch": "shadow",
+      "tier": 4,
+      "name": "Gölge Saldırısı",
+      "max_rank": 1,
+      "effect": "pvp.attack_warning_cancel",
+      "unit": "flag",
+      "description": "Rakip saldırıyı varışa kadar göremez",
+      "value_per_rank": 1
+    },
+    {
+      "id": "keen_eye",
+      "class": "scout",
+      "branch": "hunter",
+      "tier": 1,
+      "name": "Keskin Göz",
+      "max_rank": 5,
+      "effect": "combat.crit_chance",
+      "unit": "ratio",
+      "description": "Kritik şansı +%2 / rütbe",
+      "value_per_rank": 0.02
+    },
+    {
+      "id": "agility",
+      "class": "scout",
+      "branch": "hunter",
+      "tier": 1,
+      "name": "Çeviklik",
+      "max_rank": 5,
+      "effect": "combat.evasion",
+      "unit": "ratio",
+      "description": "Kaçınma +%2 / rütbe",
+      "value_per_rank": 0.02
+    },
+    {
+      "id": "double_shot",
+      "class": "scout",
+      "branch": "hunter",
+      "tier": 2,
+      "name": "Çift Ok",
+      "max_rank": 3,
+      "effect": "combat.double_hit_chance",
+      "unit": "ratio",
+      "description": "İkinci kez vurma şansı +%6 / rütbe",
+      "value_per_rank": 0.06
+    },
+    {
+      "id": "hunting",
+      "class": "scout",
+      "branch": "hunter",
+      "tier": 2,
+      "name": "Avcılık",
+      "max_rank": 5,
+      "effect": "economy.hunting_per_hour",
+      "unit": "units_per_hour",
+      "description": "Pasif deri, kemik ve av eti üretimi (saatlik, rütbe başına)",
+      "value_per_rank": 1
+    },
+    {
+      "id": "deadly_aim",
+      "class": "scout",
+      "branch": "hunter",
+      "tier": 3,
+      "name": "Ölümcül Nişan",
+      "max_rank": 5,
+      "effect": "combat.crit_damage",
+      "unit": "ratio",
+      "description": "Kritik hasarı +%8 / rütbe",
+      "value_per_rank": 0.08
+    },
+    {
+      "id": "hunters_patience",
+      "class": "scout",
+      "branch": "hunter",
+      "tier": 4,
+      "name": "Avcının Sabrı",
+      "max_rank": 1,
+      "effect": "combat.crit_after_evade",
+      "unit": "flag",
+      "description": "Kaçındığı her saldırıdan sonraki vuruş kesin kritik",
+      "value_per_rank": 1
+    },
+    {
+      "id": "heavy_blow",
+      "class": "swordmaster",
+      "branch": "blade",
+      "tier": 1,
+      "name": "Ağır Darbe",
+      "max_rank": 5,
+      "effect": "combat.base_damage",
+      "unit": "ratio",
+      "description": "Temel hasar +%3 / rütbe",
+      "value_per_rank": 0.03
+    },
+    {
+      "id": "weapon_mastery",
+      "class": "swordmaster",
+      "branch": "blade",
+      "tier": 1,
+      "name": "Silah Ustalığı",
+      "max_rank": 5,
+      "effect": "combat.accuracy",
+      "unit": "ratio",
+      "description": "İsabet +%2 / rütbe",
+      "value_per_rank": 0.02
+    },
+    {
+      "id": "cleave",
+      "class": "swordmaster",
+      "branch": "blade",
+      "tier": 2,
+      "name": "Yarma",
+      "max_rank": 3,
+      "effect": "combat.cleave_ratio",
+      "unit": "ratio",
+      "description": "Takım savaşında vuruşun bir kısmı ikinci hedefe sıçrar",
+      "values_by_rank": [
+        0.15,
+        0.25,
+        0.35
+      ]
+    },
+    {
+      "id": "rage",
+      "class": "swordmaster",
+      "branch": "blade",
+      "tier": 2,
+      "name": "Öfke",
+      "max_rank": 3,
+      "effect": "combat.low_hp_damage",
+      "unit": "ratio",
+      "description": "Can < %50 iken hasar artışı",
+      "values_by_rank": [
+        0.05,
+        0.1,
+        0.15
+      ]
+    },
+    {
+      "id": "armor_piercer",
+      "class": "swordmaster",
+      "branch": "blade",
+      "tier": 3,
+      "name": "Zırh Delici",
+      "max_rank": 5,
+      "effect": "combat.armor_ignore",
+      "unit": "ratio",
+      "description": "Rakip zırhının %4ünü yok sayar / rütbe",
+      "value_per_rank": 0.04
+    },
+    {
+      "id": "blade_storm",
+      "class": "swordmaster",
+      "branch": "blade",
+      "tier": 4,
+      "name": "Kılıç Fırtınası",
+      "max_rank": 1,
+      "effect": "combat.hit_all_every_3",
+      "unit": "flag",
+      "description": "3 turda bir tüm rakiplere vurur",
+      "value_per_rank": 1
+    },
+    {
+      "id": "iron_skin",
+      "class": "swordmaster",
+      "branch": "shield",
+      "tier": 1,
+      "name": "Demir Deri",
+      "max_rank": 5,
+      "effect": "combat.armor",
+      "unit": "ratio",
+      "description": "Zırh +%3 / rütbe",
+      "value_per_rank": 0.03
+    },
+    {
+      "id": "protector",
+      "class": "swordmaster",
+      "branch": "shield",
+      "tier": 1,
+      "name": "Koruyucu",
+      "max_rank": 3,
+      "effect": "combat.intercept_chance",
+      "unit": "ratio",
+      "description": "Canı en düşük arkadaşa gelen hasarı üstlenme şansı",
+      "values_by_rank": [
+        0.15,
+        0.25,
+        0.35
+      ]
+    },
+    {
+      "id": "resolve",
+      "class": "swordmaster",
+      "branch": "shield",
+      "tier": 2,
+      "name": "Kararlılık",
+      "max_rank": 1,
+      "effect": "combat.cheat_death",
+      "unit": "flag",
+      "description": "Savaş başına bir kez ölümcül darbeden 1 canla kurtulur",
+      "value_per_rank": 1
+    },
+    {
+      "id": "fort_defender",
+      "class": "swordmaster",
+      "branch": "shield",
+      "tier": 2,
+      "name": "Kale Savunucusu",
+      "max_rank": 5,
+      "effect": "pvp.home_defense",
+      "unit": "ratio",
+      "description": "Kendi kalesi saldırıya uğrayınca takım savunması +%2 / rütbe",
+      "value_per_rank": 0.02
+    },
+    {
+      "id": "tough_body",
+      "class": "swordmaster",
+      "branch": "shield",
+      "tier": 3,
+      "name": "Sert Bünye",
+      "max_rank": 3,
+      "effect": "fighter.injury_duration_reduction",
+      "unit": "ratio",
+      "description": "Yaralanma süresi −%15 / rütbe",
+      "value_per_rank": 0.15
+    },
+    {
+      "id": "unshakable",
+      "class": "swordmaster",
+      "branch": "shield",
+      "tier": 4,
+      "name": "Sarsılmaz",
+      "max_rank": 1,
+      "effect": "pvp.gold_loss_reduction",
+      "unit": "ratio",
+      "description": "Bu dövüşçü ayaktayken takımın kaybettiği altın %50 azalır",
+      "value_per_rank": 0.5
+    },
+    {
+      "id": "plunderer",
+      "class": "swordmaster",
+      "branch": "warlord",
+      "tier": 1,
+      "name": "Yağmacı",
+      "max_rank": 5,
+      "effect": "pvp.plunder_bonus",
+      "unit": "ratio",
+      "description": "Kazanılan saldırılarda alınan altın +%4 / rütbe",
+      "value_per_rank": 0.04
+    },
+    {
+      "id": "arena_fame",
+      "class": "swordmaster",
+      "branch": "warlord",
+      "tier": 1,
+      "name": "Arena Şöhreti",
+      "max_rank": 5,
+      "effect": "arena.points_bonus",
+      "unit": "ratio",
+      "description": "Arena puanı +%2 / rütbe",
+      "value_per_rank": 0.02
+    },
+    {
+      "id": "smiths_friend",
+      "class": "swordmaster",
+      "branch": "warlord",
+      "tier": 2,
+      "name": "Demirci Dostu",
+      "max_rank": 5,
+      "effect": "smith.cost_reduction",
+      "unit": "ratio",
+      "description": "Onarım ve güçlendirme maliyeti −%4 / rütbe",
+      "value_per_rank": 0.04
+    },
+    {
+      "id": "war_cries",
+      "class": "swordmaster",
+      "branch": "warlord",
+      "tier": 2,
+      "name": "Savaş Naraları",
+      "max_rank": 3,
+      "effect": "combat.team_damage",
+      "unit": "ratio",
+      "description": "Savaş başında tüm takıma hasar",
+      "values_by_rank": [
+        0.02,
+        0.04,
+        0.06
+      ]
+    },
+    {
+      "id": "loot_eye",
+      "class": "swordmaster",
+      "branch": "warlord",
+      "tier": 3,
+      "name": "Ganimet Gözü",
+      "max_rank": 3,
+      "effect": "combat.equipment_drop_chance",
+      "unit": "ratio",
+      "description": "Kazanılan savaşlardan ekipman düşme şansı +%5 / rütbe",
+      "value_per_rank": 0.05
+    },
+    {
+      "id": "conqueror",
+      "class": "swordmaster",
+      "branch": "warlord",
+      "tier": 4,
+      "name": "Fatih",
+      "max_rank": 1,
+      "effect": "pvp.conqueror",
+      "unit": "ratio",
+      "description": "Sezon sonu unvan ve sandık; kazanılan saldırılarda altın +%10",
+      "value_per_rank": 0.1
+    },
+    {
+      "id": "daily_prophecy",
+      "class": "seer",
+      "branch": "stars",
+      "tier": 1,
+      "name": "Günlük Kehanet",
+      "max_rank": 3,
+      "effect": "expedition.prophecy_bonus",
+      "unit": "ratio",
+      "description": "Şanslı bölgeye giden seferlere ödül bonusu",
+      "values_by_rank": [
+        0.07,
+        0.14,
+        0.2
+      ]
+    },
+    {
+      "id": "astronomy",
+      "class": "seer",
+      "branch": "stars",
+      "tier": 1,
+      "name": "Gökbilim",
+      "max_rank": 5,
+      "effect": "research.duration_reduction",
+      "unit": "ratio",
+      "description": "Bu Müneccim kalede iken araştırma süresi −%4 / rütbe",
+      "value_per_rank": 0.04
+    },
+    {
+      "id": "attack_foresight",
+      "class": "seer",
+      "branch": "stars",
+      "tier": 2,
+      "name": "Saldırı Öngörüsü",
+      "max_rank": 3,
+      "effect": "pvp.attack_warning_minutes",
+      "unit": "minutes",
+      "description": "Gelen saldırılar varıştan önce bildirilir (dakika)",
+      "values_by_rank": [
+        4,
+        7,
+        10
+      ]
+    },
+    {
+      "id": "time_warp",
+      "class": "seer",
+      "branch": "stars",
+      "tier": 2,
+      "name": "Zaman Büküm",
+      "max_rank": 3,
+      "effect": "timer.warp_uses_per_day",
+      "unit": "count",
+      "description": "Günde N kez bir zamanlayıcının kalan süresini %25 kısaltır",
+      "values_by_rank": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "id": "star_map",
+      "class": "seer",
+      "branch": "stars",
+      "tier": 3,
+      "name": "Yıldız Haritası",
+      "max_rank": 3,
+      "effect": "guild.prophecy_share",
+      "unit": "ratio",
+      "description": "Lonca üyelerine kehanet bonusunun payı",
+      "values_by_rank": [
+        0.5,
+        0.75,
+        1.0
+      ]
+    },
+    {
+      "id": "eclipse",
+      "class": "seer",
+      "branch": "stars",
+      "tier": 4,
+      "name": "Tutulma",
+      "max_rank": 1,
+      "effect": "expedition.finish_all_weekly",
+      "unit": "flag",
+      "description": "Haftada bir tüm sefer zamanlayıcılarını anında bitirir",
+      "value_per_rank": 1
+    },
+    {
+      "id": "fireball",
+      "class": "seer",
+      "branch": "curse",
+      "tier": 1,
+      "name": "Ateş Topu",
+      "max_rank": 5,
+      "effect": "combat.magic_damage",
+      "unit": "ratio",
+      "description": "Büyü hasarı +%3 / rütbe",
+      "value_per_rank": 0.03
+    },
+    {
+      "id": "curse_of_weakness",
+      "class": "seer",
+      "branch": "curse",
+      "tier": 1,
+      "name": "Zayıflık Laneti",
+      "max_rank": 5,
+      "effect": "combat.enemy_damage_reduction",
+      "unit": "ratio",
+      "description": "Bir rakibin hasarı savaş boyunca −%2 / rütbe",
+      "value_per_rank": 0.02
+    },
+    {
+      "id": "blind_star",
+      "class": "seer",
+      "branch": "curse",
+      "tier": 2,
+      "name": "Kör Yıldız",
+      "max_rank": 3,
+      "effect": "combat.enemy_accuracy_debuff_turns",
+      "unit": "turns",
+      "description": "Rakibin isabeti −%10, süre (tur)",
+      "values_by_rank": [
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "id": "night_power",
+      "class": "seer",
+      "branch": "curse",
+      "tier": 2,
+      "name": "Gece Gücü",
+      "max_rank": 3,
+      "effect": "combat.night_magic_damage",
+      "unit": "ratio",
+      "description": "22:00–06:00 (sunucu saati) büyü hasarı artışı",
+      "values_by_rank": [
+        0.05,
+        0.1,
+        0.15
+      ]
+    },
+    {
+      "id": "blood_bond",
+      "class": "seer",
+      "branch": "curse",
+      "tier": 3,
+      "name": "Kan Bağı",
+      "max_rank": 5,
+      "effect": "combat.magic_lifesteal",
+      "unit": "ratio",
+      "description": "Verdiği büyü hasarının %3ü kadar iyileşir / rütbe",
+      "value_per_rank": 0.03
+    },
+    {
+      "id": "black_moon",
+      "class": "seer",
+      "branch": "curse",
+      "tier": 4,
+      "name": "Kara Ay",
+      "max_rank": 1,
+      "effect": "combat.armor_curse_all",
+      "unit": "ratio",
+      "description": "Savaş başında 3 tur tüm rakiplerin zırhı −%20",
+      "value_per_rank": 0.2
+    },
+    {
+      "id": "potion_making",
+      "class": "seer",
+      "branch": "alchemy",
+      "tier": 1,
+      "name": "İksir Yapımı",
+      "max_rank": 5,
+      "effect": "alchemy.recipe_level",
+      "unit": "level",
+      "description": "İksir üretir; rütbeyle yeni tarifler ve kısa üretim",
+      "value_per_rank": 1
+    },
+    {
+      "id": "healer",
+      "class": "seer",
+      "branch": "alchemy",
+      "tier": 1,
+      "name": "Şifacı",
+      "max_rank": 5,
+      "effect": "combat.heal_lowest_every_3",
+      "unit": "ratio",
+      "description": "3 turda bir canı en düşük arkadaşı %4 iyileştirir / rütbe",
+      "value_per_rank": 0.04
+    },
+    {
+      "id": "blessing",
+      "class": "seer",
+      "branch": "alchemy",
+      "tier": 2,
+      "name": "Kutsama",
+      "max_rank": 3,
+      "effect": "combat.ally_damage_buff",
+      "unit": "ratio",
+      "description": "Savaş başında bir arkadaşa hasar",
+      "values_by_rank": [
+        0.05,
+        0.08,
+        0.12
+      ]
+    },
+    {
+      "id": "infirmary_lore",
+      "class": "seer",
+      "branch": "alchemy",
+      "tier": 2,
+      "name": "Şifahane Bilgisi",
+      "max_rank": 3,
+      "effect": "fighter.injury_duration_reduction_all",
+      "unit": "ratio",
+      "description": "Tüm dövüşçülerin yaralanma süresi azalır",
+      "values_by_rank": [
+        0.1,
+        0.2,
+        0.3
+      ]
+    },
+    {
+      "id": "master_alchemist",
+      "class": "seer",
+      "branch": "alchemy",
+      "tier": 3,
+      "name": "Usta Simyacı",
+      "max_rank": 3,
+      "effect": "alchemy.double_output_chance",
+      "unit": "ratio",
+      "description": "İksir üretiminde 2 adet çıkma şansı",
+      "values_by_rank": [
+        0.1,
+        0.2,
+        0.3
+      ]
+    },
+    {
+      "id": "philosophers_stone",
+      "class": "seer",
+      "branch": "alchemy",
+      "tier": 4,
+      "name": "Filozof Taşı",
+      "max_rank": 1,
+      "effect": "alchemy.daily_rare_potion",
+      "unit": "flag",
+      "description": "Günde bir nadir iksir veya Unutma İksiri",
+      "value_per_rank": 1
+    }
+  ]
+}

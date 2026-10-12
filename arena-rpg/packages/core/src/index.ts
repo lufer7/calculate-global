@@ -13,3 +13,4 @@ export * from './encoding';
 export * from './transfer';
 export * from './names';
 export * from './pvp';
+export * as game from './game';

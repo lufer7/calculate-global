@@ -1,0 +1,217 @@
+import { sha256 } from '@noble/hashes/sha2.js';
+import { utf8 } from '../encoding';
+import type { Result } from '../result';
+import { err, ok } from '../result';
+import { GAME_CONFIG } from './config';
+import type { Fighter } from './fighters';
+import { isAvailable } from './fighters';
+import { SKILLS_BY_ID, skillValue } from './skills';
+
+/** Design doc §6 – Ogame-style expeditions into the dark forests. */
+
+export const REWARD_TIERS = ['nothing', 'common', 'rare', 'epic', 'legendary'] as const;
+export type RewardTier = (typeof REWARD_TIERS)[number];
+export const EVENTS = ['none', 'ambush', 'trap', 'cursed_chest', 'merchant', 'lost_treasure'] as const;
+export type ExpeditionEvent = (typeof EVENTS)[number];
+const BAD_EVENTS: readonly ExpeditionEvent[] = ['ambush', 'trap', 'cursed_chest'];
+
+export interface Zone {
+  id: string;
+  name: string;
+  minLevel: number;
+  baseDurationMs: number;
+  rewardWeights: Record<RewardTier, number>;
+  eventWeights: Record<ExpeditionEvent, number>;
+  /** Base injury chance per fighter at/above minLevel. */
+  injuryChance: number;
+  hidden?: boolean;
+}
+
+const MIN = 60_000;
+export const ZONES: Record<string, Zone> = {
+  dark_forest: {
+    id: 'dark_forest', name: 'Karanlık Orman', minLevel: 1, baseDurationMs: 30 * MIN, injuryChance: 0.05,
+    rewardWeights: { nothing: 25, common: 55, rare: 15, epic: 4, legendary: 1 },
+    eventWeights: { none: 60, ambush: 10, trap: 8, cursed_chest: 5, merchant: 10, lost_treasure: 7 },
+  },
+  misty_marsh: {
+    id: 'misty_marsh', name: 'Sisli Bataklık', minLevel: 20, baseDurationMs: 90 * MIN, injuryChance: 0.08,
+    rewardWeights: { nothing: 20, common: 50, rare: 20, epic: 8, legendary: 2 },
+    eventWeights: { none: 55, ambush: 12, trap: 10, cursed_chest: 6, merchant: 10, lost_treasure: 7 },
+  },
+  abandoned_mines: {
+    id: 'abandoned_mines', name: 'Terk Edilmiş Madenler', minLevel: 45, baseDurationMs: 4 * 60 * MIN, injuryChance: 0.12,
+    rewardWeights: { nothing: 15, common: 45, rare: 25, epic: 12, legendary: 3 },
+    eventWeights: { none: 50, ambush: 14, trap: 12, cursed_chest: 8, merchant: 8, lost_treasure: 8 },
+  },
+  lost_lands: {
+    id: 'lost_lands', name: 'Kayıp Diyarlar', minLevel: 60, baseDurationMs: 6 * 60 * MIN, injuryChance: 0.1, hidden: true,
+    rewardWeights: { nothing: 10, common: 35, rare: 30, epic: 18, legendary: 7 },
+    eventWeights: { none: 50, ambush: 10, trap: 10, cursed_chest: 5, merchant: 10, lost_treasure: 15 },
+  },
+};
+
+/** §6.1: research slots + 1 per 25 levels of the account's highest Scout (not stacking across scouts). */
+export function expeditionSlots(researchLevel: number, highestScoutLevel: number): number {
+  const { slots_by_research, research_max_level, scout_slot_per_levels } = GAME_CONFIG.expedition;
+  const research = slots_by_research[Math.max(0, Math.min(researchLevel, research_max_level))]!;
+  return research + Math.floor(highestScoutLevel / scout_slot_per_levels);
+}
+
+export function highestScoutLevel(fighters: Pick<Fighter, 'class' | 'level' | 'status'>[], now: number): number {
+  // An injured scout still counts for slots (doc: losing the source only blocks *new* sends – handled by callers).
+  return fighters.filter((f) => f.class === 'scout').reduce((m, f) => Math.max(m, f.level), 0);
+}
+
+/** §6.2: exploration bonuses apply only to the expedition the scout joins; same skill across scouts → max, not sum. */
+export interface PartyBonuses {
+  durationReduction: number;
+  rareChanceRelative: number;
+  badEventReduction: number;
+  injuryRecoveryReduction: number;
+  extraRewardChance: number;
+  canEnterHidden: boolean;
+}
+
+export function partyBonuses(party: Pick<Fighter, 'skills'>[]): PartyBonuses {
+  const best = (skillId: string) => {
+    const skill = SKILLS_BY_ID.get(skillId)!;
+    return party.reduce((m, f) => Math.max(m, skillValue(skill, f.skills[skillId] ?? 0)), 0);
+  };
+  return {
+    durationReduction: best('swift_steps'),
+    rareChanceRelative: best('treasure_hunter'),
+    badEventReduction: best('trap_sense'),
+    injuryRecoveryReduction: best('pathfinding'),
+    extraRewardChance: best('explorer_spirit'),
+    canEnterHidden: best('lost_lands') > 0,
+  };
+}
+
+/** Stacked reductions (skill, Hız İksiri, …) never push below 40% of the base duration. */
+export function expeditionDuration(zone: Zone, bonuses: PartyBonuses, extraReductions: number[] = []): number {
+  const factor = [bonuses.durationReduction, ...extraReductions].reduce((f, r) => f * (1 - r), 1);
+  return Math.round(zone.baseDurationMs * Math.max(GAME_CONFIG.expedition.min_duration_ratio, factor));
+}
+
+export interface ExpeditionRecord {
+  id: string;
+  zoneId: string;
+  fighterIds: string[];
+  startedAt: number;
+  endsAt: number;
+  baseDurationMs: number;
+  seed: number;
+}
+
+export type StartError = 'unknown_zone' | 'hidden_zone' | 'empty_party' | 'fighter_busy' | 'no_free_slot';
+
+export function planExpedition(input: {
+  zoneId: string;
+  party: Fighter[];
+  allFighters: Fighter[];
+  activeExpeditions: number;
+  researchLevel: number;
+  now: number;
+  extraReductions?: number[];
+}): Result<{ endsAt: number; durationMs: number; leavesCastleEmpty: boolean; underLevel: string[] }, StartError> {
+  const zone = Object.prototype.hasOwnProperty.call(ZONES, input.zoneId) ? ZONES[input.zoneId] : undefined;
+  if (!zone) return err('unknown_zone');
+  if (input.party.length === 0) return err('empty_party');
+  if (input.party.some((f) => !isAvailable(f, input.now))) return err('fighter_busy');
+  const bonuses = partyBonuses(input.party);
+  if (zone.hidden && !bonuses.canEnterHidden) return err('hidden_zone');
+  const slots = expeditionSlots(input.researchLevel, highestScoutLevel(input.allFighters, input.now));
+  if (input.activeExpeditions >= slots) return err('no_free_slot');
+
+  const durationMs = expeditionDuration(zone, bonuses, input.extraReductions);
+  const partyIds = new Set(input.party.map((f) => f.id));
+  return ok({
+    endsAt: input.now + durationMs,
+    durationMs,
+    leavesCastleEmpty: !input.allFighters.some((f) => !partyIds.has(f.id) && isAvailable(f, input.now)),
+    underLevel: input.party.filter((f) => f.level < zone.minLevel).map((f) => f.id),
+  });
+}
+
+function pick<K extends string>(weights: Record<K, number>, rng: () => number): K {
+  const entries = Object.entries(weights) as [K, number][];
+  const total = entries.reduce((s, [, w]) => s + w, 0);
+  let roll = rng() * total;
+  for (const [k, w] of entries) {
+    roll -= w;
+    if (roll < 0) return k;
+  }
+  return entries[entries.length - 1]![0];
+}
+
+/** Scales rare+ weights by (1 + relative bonus), keeping total rare+ probability under the cap. */
+export function boostedRewardWeights(base: Record<RewardTier, number>, relative: number): Record<RewardTier, number> {
+  const rarePlus: RewardTier[] = ['rare', 'epic', 'legendary'];
+  const total = REWARD_TIERS.reduce((s, t) => s + base[t], 0);
+  const rareBase = rarePlus.reduce((s, t) => s + base[t], 0);
+  const targetShare = Math.min(GAME_CONFIG.expedition.chance_cap, (rareBase / total) * (1 + relative));
+  const scaleRare = (targetShare * total) / rareBase;
+  const scaleRest = ((1 - targetShare) * total) / (total - rareBase);
+  return Object.fromEntries(REWARD_TIERS.map((t) => [t, base[t] * (rarePlus.includes(t) ? scaleRare : scaleRest)])) as Record<RewardTier, number>;
+}
+
+export interface ExpeditionOutcome {
+  reward: RewardTier;
+  extraReward: RewardTier | null;
+  event: ExpeditionEvent;
+  /** Prophecy etc. multiply reward amounts, not tiers. */
+  rewardMultiplier: number;
+  injured: string[];
+}
+
+/**
+ * Server-side resolution. `rng` must be seeded by the server and the seed stored with the
+ * expedition record, so every roll is reproducible for audits/support ("loglanabilir RNG").
+ */
+export function resolveExpedition(
+  zone: Zone,
+  party: Pick<Fighter, 'id' | 'level' | 'skills'>[],
+  rng: () => number,
+  opts: { prophecyBonus?: number } = {},
+): ExpeditionOutcome {
+  const bonuses = partyBonuses(party);
+  const cap = GAME_CONFIG.expedition.chance_cap;
+  const rewardWeights = boostedRewardWeights(zone.rewardWeights, bonuses.rareChanceRelative);
+
+  const reward = pick(rewardWeights, rng);
+  const extraReward = rng() < Math.min(cap, bonuses.extraRewardChance) ? pick(rewardWeights, rng) : null;
+
+  const eventWeights = { ...zone.eventWeights };
+  for (const e of BAD_EVENTS) eventWeights[e] *= 1 - Math.min(cap, bonuses.badEventReduction);
+  const event = pick(eventWeights, rng);
+
+  const injured = party
+    .filter((f) => {
+      const underLevel = Math.max(0, zone.minLevel - f.level);
+      const eventRisk = event === 'ambush' || event === 'trap' ? 0.15 : 0;
+      return rng() < Math.min(cap, zone.injuryChance + underLevel * 0.03 + eventRisk);
+    })
+    .map((f) => f.id);
+
+  return { reward, extraReward, event, rewardMultiplier: 1 + (opts.prophecyBonus ?? 0), injured };
+}
+
+/** Early recall: fighters walk back as long as they have been out; no reward. */
+export function recallReturnTime(startedAt: number, now: number): number {
+  return now + Math.max(0, now - startedAt);
+}
+
+/** Müneccim "Zaman Büküm": cut the remaining time by 25%, respecting the 40% floor. */
+export function applyTimeWarp(exp: Pick<ExpeditionRecord, 'startedAt' | 'endsAt' | 'baseDurationMs'>, now: number): number {
+  const remaining = Math.max(0, exp.endsAt - now);
+  const warped = now + Math.round(remaining * (1 - GAME_CONFIG.seer.time_warp_reduction));
+  return Math.max(warped, exp.startedAt + Math.round(exp.baseDurationMs * GAME_CONFIG.expedition.min_duration_ratio));
+}
+
+/** Daily prophecy: deterministic per server day + server secret, so it can never "be wrong". */
+export function prophecyZone(dayKey: string, serverSecret: string): string {
+  const visible = Object.values(ZONES).filter((z) => !z.hidden);
+  const h = sha256(utf8.encode(`${serverSecret}:prophecy:${dayKey}`));
+  return visible[h[0]! % visible.length]!.id;
+}
