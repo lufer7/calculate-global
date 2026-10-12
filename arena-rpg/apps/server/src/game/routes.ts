@@ -7,7 +7,7 @@ import { accountById, fightersOf } from '../accounts/repo';
 import type { Db } from '../db/database';
 import { randomId } from '../lib/security';
 import type { ExpeditionRow, GameClock } from './settle';
-import { bestSkill, dayKey, researchOf, settle, skillsOf } from './settle';
+import { bestSkill, dayKey, researchOf, settle, skillsOf, zoneProgress } from './settle';
 import { battlerOf, registerGangRoutes } from './gangRoutes';
 import { countOf, consume, equippedOf, itemView } from './items';
 import type { ItemRow } from './items';
@@ -59,7 +59,8 @@ export function gameRoutes(db: Db, clock: GameClock) {
         };
       }),
       luckPotions: countOf(db, acc.id, 'potion_luck'),
-      expeditions: active.map((e) => ({ id: e.id, zoneId: e.zone_id, fighterIds: JSON.parse(e.fighter_ids), startedAt: e.started_at, endsAt: e.ends_at, recalled: e.state === 'recalled' })),
+      zoneProgress: zoneProgress(db, acc.id),
+      expeditions: active.map((e) => ({ id: e.id, zoneId: e.zone_id, stage: e.stage, fighterIds: JSON.parse(e.fighter_ids), startedAt: e.started_at, endsAt: e.ends_at, recalled: e.state === 'recalled' })),
       unreadReports: (db.prepare('SELECT COUNT(*) n FROM reports WHERE account_id = ? AND read = 0').get(acc.id) as { n: number }).n,
     });
   });
@@ -100,6 +101,10 @@ export function gameRoutes(db: Db, clock: GameClock) {
     });
     if (!plan.ok) return c.json({ error: plan.error }, 400);
     const zone = game.ZONES[b.zoneId]!;
+    const cleared = zoneProgress(db, acc.id)[zone.id] ?? 0;
+    const stage = b?.stage === undefined ? Math.min(cleared + 1, game.STAGES_PER_ZONE) : Number(b.stage);
+    if (!Number.isInteger(stage) || stage < 1 || stage > game.STAGES_PER_ZONE) return c.json({ error: 'invalid_stage' }, 400);
+    if (stage > cleared + 1) return c.json({ error: 'stage_locked' }, 400);
     let luck = 0;
     if (b?.useLuck === true) {
       const potion = db.prepare("SELECT * FROM items WHERE account_id = ? AND template_id = 'potion_luck' AND fighter_id IS NULL").get(acc.id) as ItemRow | undefined;
@@ -107,13 +112,14 @@ export function gameRoutes(db: Db, clock: GameClock) {
       consume(db, potion);
       luck = 1;
     }
-    const durationMs = Math.max(1000, Math.round(plan.value.durationMs / clock.speed));
+    // Stage length scales the zone's base duration; perks and skills (already in plan) still apply.
+    const durationMs = Math.max(1000, Math.round((plan.value.durationMs * game.stageDurationMs(zone, stage)) / zone.baseDurationMs / clock.speed));
     const id = randomId();
-    db.prepare('INSERT INTO expeditions (id, account_id, zone_id, fighter_ids, started_at, ends_at, base_duration_ms, seed, state, luck) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
-      id, acc.id, zone.id, JSON.stringify(ids), now, now + durationMs, Math.round(zone.baseDurationMs / clock.speed), randomBytes(4).readUInt32LE(0), 'active', luck,
+    db.prepare('INSERT INTO expeditions (id, account_id, zone_id, fighter_ids, started_at, ends_at, base_duration_ms, seed, state, luck, stage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').run(
+      id, acc.id, zone.id, JSON.stringify(ids), now, now + durationMs, Math.round(game.stageDurationMs(zone, stage) / clock.speed), randomBytes(4).readUInt32LE(0), 'active', luck, stage,
     );
     for (const f of party) db.prepare("UPDATE fighters SET status_kind = 'expedition', status_until = ? WHERE id = ?").run(now + durationMs, f.id);
-    return c.json({ id, endsAt: now + durationMs, underLevel: plan.value.underLevel }, 201);
+    return c.json({ id, stage, endsAt: now + durationMs, underLevel: plan.value.underLevel }, 201);
   });
 
   app.post('/expeditions/:id/recall', (c) => {

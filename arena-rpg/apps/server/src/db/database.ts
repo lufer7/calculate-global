@@ -171,6 +171,16 @@ const MIGRATIONS: string[] = [
     PRIMARY KEY (account_id, hour_key, offer_id)
   );
   `,
+  `
+  -- Expedition trail progress per zone ("kaldığı yerden devam").
+  CREATE TABLE zone_progress (
+    account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    zone_id    TEXT NOT NULL,
+    cleared    INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (account_id, zone_id)
+  );
+  ALTER TABLE expeditions ADD COLUMN stage INTEGER NOT NULL DEFAULT 1;
+  `,
 ];
 
 export function openDatabase(path = ':memory:'): Db {

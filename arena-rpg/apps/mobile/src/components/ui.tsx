@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import type { TextInputProps, ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NavIcon } from '../art/NavIcon';
 import { colors, fonts, ui } from '../screens/theme';
 
@@ -123,6 +124,7 @@ export function Gold({ amount, size = 15 }: { amount: number; size?: number }) {
 
 /** Bottom sheet for item details, confirmations and pickers. */
 export function Sheet({ visible, onClose, title, children }: { visible: boolean; onClose: () => void; title?: string; children: ReactNode }) {
+  const insets = useSafeAreaInsets();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: '#000000a0' }} onPress={onClose} />
@@ -131,7 +133,7 @@ export function Sheet({ visible, onClose, title, children }: { visible: boolean;
           <Text style={[ui.h2, { flex: 1 }]}>{title ?? ''}</Text>
           <Pressable onPress={onClose} hitSlop={12} accessibilityLabel="Kapat"><NavIcon name="close" color={colors.muted} /></Pressable>
         </View>
-        <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}>{children}</ScrollView>
+        <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 + insets.bottom }}>{children}</ScrollView>
       </View>
     </Modal>
   );

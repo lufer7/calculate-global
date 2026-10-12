@@ -83,3 +83,26 @@ describe('economy', () => {
     expect(createRng(1)()).toBeGreaterThan(0);
   });
 });
+
+describe('expedition stages', () => {
+  const z = game.ZONES.dark_forest!;
+  it('gets harder and longer stage by stage', () => {
+    expect(game.stageLevel(z, 1)).toBe(1);
+    expect(game.stageLevel(z, 10)).toBe(19);
+    expect(game.stageDurationMs(z, 10)).toBeGreaterThan(game.stageDurationMs(z, 1));
+    const p = game.referencePower(5);
+    expect(game.successChance(p, 5, 1)).toBeGreaterThan(game.successChance(p, 5, 10));
+    expect(game.successChance(p * 3, 5, 10)).toBe(0.97);
+    expect(game.successChance(1, 50, 10)).toBe(0.1);
+  });
+  it('party power favours the strongest member', () => {
+    expect(game.partyPower([100, 100])).toBe(135);
+  });
+  it('zones have their own loot and the boss pays a relic once', () => {
+    const forest = game.zoneExtraItems('dark_forest', 1, 3, 5, false);
+    expect(forest.some((i) => game.RESOURCE_IDS.includes(i.templateId))).toBe(true);
+    const boss = game.zoneExtraItems('dark_forest', 1, 10, 19, true);
+    expect(boss.some((i) => ['rare', 'epic', 'legendary'].includes(i.rarity))).toBe(true);
+    expect(game.zoneGoldMultiplier('abandoned_mines')).toBe(1.5);
+  });
+});

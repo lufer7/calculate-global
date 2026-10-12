@@ -1,79 +1,136 @@
 import { useEffect, useRef, useState } from 'react';
-import { Modal, ScrollView, Text, View } from 'react-native';
+import { Animated, Easing, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { game } from '@arena/core';
+import { NavIcon } from '../art/NavIcon';
 import { Portrait } from '../art/Portrait';
 import { Scene } from '../art/Scene';
 import { Bar, Button, Gold } from '../components/ui';
 import type { FightResult } from '../lib/api';
-import { colors, ui } from './theme';
+import { colors, fonts, ui } from './theme';
 
-/** Replays the server's battle log turn by turn: portraits, HP bars and a chronicle. */
+const native = Platform.OS !== 'web';
+
+/**
+ * Gladiatus-style: the result is decided the moment you attack. A ~1 s clash animation,
+ * then the outcome; the round-by-round chronicle is folded away for those who want it.
+ */
 export function BattleReplay({ result, onClose }: { result: FightResult; onClose: () => void }) {
-  const [step, setStep] = useState(0);
-  const log = result.outcome.log;
-  const done = step >= log.length;
-  const scroll = useRef<ScrollView>(null);
-  useEffect(() => {
-    if (done) return;
-    const t = setTimeout(() => setStep((s) => s + 1), 650);
-    return () => clearTimeout(t);
-  }, [step, done]);
+  const insets = useSafeAreaInsets();
+  const [phase, setPhase] = useState<'clash' | 'result'>('clash');
+  const [details, setDetails] = useState(false);
+  const charge = useRef(new Animated.Value(0)).current;
+  const flash = useRef(new Animated.Value(0)).current;
+  const reveal = useRef(new Animated.Value(0)).current;
+  const o = result.outcome;
 
-  const hp = step === 0 ? result.outcome.startHp : log[Math.min(step, log.length) - 1]!.hp;
-  const names = { a: result.me.name, b: result.foe.name };
-  const last = step > 0 ? log[step - 1] : undefined;
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(charge, { toValue: 1, duration: 420, easing: Easing.in(Easing.quad), useNativeDriver: native }),
+      Animated.timing(flash, { toValue: 1, duration: 120, useNativeDriver: native }),
+      Animated.parallel([
+        Animated.timing(charge, { toValue: 0, duration: 380, easing: Easing.out(Easing.back(2)), useNativeDriver: native }),
+        Animated.timing(flash, { toValue: 0, duration: 380, useNativeDriver: native }),
+      ]),
+    ]).start(() => {
+      setPhase('result');
+      Animated.timing(reveal, { toValue: 1, duration: 320, easing: Easing.out(Easing.quad), useNativeDriver: native }).start();
+    });
+  }, [charge, flash, reveal]);
+
+  const left = charge.interpolate({ inputRange: [0, 1], outputRange: [0, 70] });
+  const right = charge.interpolate({ inputRange: [0, 1], outputRange: [0, -70] });
+  const swordScale = flash.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1.6] });
+
+  const stats = summarize(o.log);
+  const won = result.won;
+  const verdict = won ? 'ZAFER' : o.fled === 'a' ? 'GERİ ÇEKİLDİN' : o.winner === 'draw' ? 'BERABERE' : 'YENİLGİ';
+  const loser = won ? 'b' : 'a';
 
   return (
     <Modal visible animationType="fade" onRequestClose={onClose}>
-      <View style={{ flex: 1, backgroundColor: colors.bg }}>
-        <Scene name="arena" height={210} style={{ borderRadius: 0 }}>
+      <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top, paddingBottom: insets.bottom }}>
+        <Scene name="arena" height={220} style={{ borderRadius: 0 }}>
           <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', padding: 14 }}>
             {(['a', 'b'] as const).map((side) => {
               const who = side === 'a' ? result.me : result.foe;
-              const hit = last && last.actor !== side && (last.kind === 'hit' || last.kind === 'crit' || last.kind === 'double');
+              const down = phase === 'result' && side === loser && o.winner !== 'draw';
               return (
-                <View key={side} style={{ alignItems: 'center', gap: 4, width: 130, transform: [{ translateX: hit ? (side === 'a' ? -4 : 4) : 0 }] }}>
-                  <Portrait cls={who.class} size={70} />
+                <Animated.View key={side} style={{ alignItems: 'center', gap: 4, width: 132, opacity: down ? 0.55 : 1, transform: [{ translateX: side === 'a' ? left : right }] }}>
+                  <Portrait cls={who.class} size={74} />
                   <Text style={{ color: '#fff', fontWeight: '800', textShadowColor: '#000', textShadowRadius: 3 }} numberOfLines={1}>{who.name}</Text>
+                  <Text style={{ color: '#f2e6cc', fontSize: 11, textShadowColor: '#000', textShadowRadius: 3 }}>Sv {who.level}</Text>
                   <View style={{ width: 120 }}>
-                    <Bar ratio={hp[side] / result.outcome.maxHp[side]} color={colors.hp} label={`${hp[side]} / ${result.outcome.maxHp[side]}`} />
+                    <Bar ratio={(phase === 'result' ? o.hp[side] : o.startHp[side]) / o.maxHp[side]} color={colors.hp} label={`${phase === 'result' ? o.hp[side] : o.startHp[side]} / ${o.maxHp[side]}`} />
                   </View>
-                </View>
+                </Animated.View>
               );
             })}
           </View>
-          <View style={{ position: 'absolute', top: 70, left: 0, right: 0, alignItems: 'center' }}>
-            <Text style={{ color: '#fff', fontSize: 28, fontWeight: '900', textShadowColor: '#000', textShadowRadius: 6 }}>VS</Text>
-            {last && last.value > 0 && <Text style={{ color: last.kind === 'heal' ? colors.good : last.kind === 'crit' ? colors.warn : '#fff', fontSize: 22, fontWeight: '900', textShadowColor: '#000', textShadowRadius: 4 }}>{last.kind === 'heal' ? '+' : '-'}{last.value}</Text>}
-          </View>
+          <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 64, left: 0, right: 0, alignItems: 'center', opacity: phase === 'clash' ? 1 : 0, transform: [{ scale: swordScale }] }}>
+            <NavIcon name="swords" color="#fff6d8" size={56} />
+          </Animated.View>
+          <Animated.View pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: '#fff3c4', opacity: flash.interpolate({ inputRange: [0, 1], outputRange: [0, 0.45] }) }} />
         </Scene>
-        <ScrollView ref={scroll} onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })} contentContainerStyle={{ padding: 14, gap: 6 }}>
-          {log.slice(0, step).map((e, i) => (
-            <Text key={i} style={[ui.text, { fontSize: 14, color: e.actor === 'a' ? colors.text : '#d8c9b0' }]}>
-              <Text style={{ color: colors.faint }}>{e.round > 0 ? `${e.round}. tur  ` : ''}</Text>
-              {line(e, names)}
-            </Text>
-          ))}
-          {done && (
-            <View style={{ gap: 10, marginTop: 10, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: result.won ? colors.trim : colors.danger, backgroundColor: colors.panel }}>
-              <Text style={[ui.title, { color: result.won ? colors.trim : colors.danger, textAlign: 'center' }]}>{result.won ? 'ZAFER' : result.outcome.fled === 'a' ? 'GERİ ÇEKİLDİN' : 'YENİLGİ'}</Text>
-              <View style={[ui.row, { justifyContent: 'center', gap: 16 }]}>
-                <Gold amount={result.rewards.gold} />
-                <Text style={[ui.text, { color: colors.xp }]}>+{result.rewards.xp} deneyim</Text>
-                <Text style={[ui.text, { color: result.rewards.points >= 0 ? colors.good : colors.danger }]}>{result.rewards.points >= 0 ? '+' : ''}{result.rewards.points} şöhret</Text>
+
+        <ScrollView contentContainerStyle={{ padding: 14, gap: 12 }}>
+          {phase === 'result' && (
+            <Animated.View style={{ gap: 12, opacity: reveal, transform: [{ translateY: reveal.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }] }}>
+              <View style={{ alignItems: 'center', gap: 6, padding: 14, borderRadius: 8, borderWidth: 1, borderColor: won ? colors.trim : colors.danger, backgroundColor: colors.panel }}>
+                <Text style={{ fontFamily: fonts.display, fontSize: 30, fontWeight: '900', letterSpacing: 3, color: won ? colors.trim : colors.danger }}>{verdict}</Text>
+                <Text style={ui.muted}>{o.rounds} tur sürdü</Text>
+                <View style={[ui.row, { gap: 16, marginTop: 4 }]}>
+                  <Gold amount={result.rewards.gold} />
+                  <Text style={[ui.text, { color: colors.xp, fontWeight: '700' }]}>+{result.rewards.xp} deneyim</Text>
+                  <Text style={[ui.text, { color: result.rewards.points >= 0 ? colors.good : colors.danger, fontWeight: '700' }]}>{result.rewards.points >= 0 ? '+' : ''}{result.rewards.points} şöhret</Text>
+                </View>
+                {result.rewards.levelsGained > 0 && <Text style={[ui.h2, { color: colors.good }]}>Seviye atladın!</Text>}
+                {!won && <Text style={[ui.muted, { textAlign: 'center' }]}>Canın %{Math.round(result.hpRatio * 100)}'e düştü. Arenada yaralanma ya da altın kaybı yok.</Text>}
               </View>
-              {result.rewards.levelsGained > 0 && <Text style={[ui.h2, { textAlign: 'center', color: colors.good }]}>Seviye atladın!</Text>}
-              {!result.won && <Text style={[ui.muted, { textAlign: 'center' }]}>Canın %{Math.round(result.hpRatio * 100)}'e düştü. Arenada yaralanma ya da altın kaybı yok.</Text>}
-            </View>
+
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {[
+                  ['Verdiğin hasar', String(stats.dealt.a)], ['Aldığın hasar', String(stats.dealt.b)],
+                  ['Kritik', String(stats.crits.a)], ['Kaçınma', String(stats.dodges.a)],
+                ].map(([k, v]) => (
+                  <View key={k} style={{ flex: 1, backgroundColor: colors.inset, borderRadius: 6, paddingVertical: 8, alignItems: 'center' }}>
+                    <Text style={{ color: colors.muted, fontSize: 10 }}>{k}</Text>
+                    <Text style={[{ color: colors.text, fontWeight: '800', fontSize: 15 }, ui.num]}>{v}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <Pressable onPress={() => setDetails(!details)} style={[ui.between, { paddingVertical: 8, borderBottomWidth: 1, borderColor: colors.border }]}>
+                <Text style={[ui.label, { fontSize: 12 }]}>Savaş detayları</Text>
+                <Text style={{ color: colors.trim }}>{details ? '▲ Gizle' : '▼ Göster'}</Text>
+              </Pressable>
+              {details && o.log.map((e, i) => (
+                <Text key={i} style={[ui.text, { fontSize: 13, color: e.actor === 'a' ? colors.text : '#d8c9b0' }]}>
+                  <Text style={{ color: colors.faint }}>{e.round > 0 ? `${e.round}. tur  ` : ''}</Text>
+                  {line(e, { a: result.me.name, b: result.foe.name })}
+                </Text>
+              ))}
+            </Animated.View>
           )}
         </ScrollView>
-        <View style={{ padding: 14, flexDirection: 'row', gap: 10 }}>
-          {!done && <Button title="Atla" kind="ghost" onPress={() => setStep(log.length)} style={{ flex: 1 }} />}
-          <Button title={done ? 'Arenaya dön' : 'Kapat'} onPress={onClose} style={{ flex: 1 }} />
+        <View style={{ padding: 14 }}>
+          <Button title={phase === 'result' ? 'Arenaya dön' : '…'} disabled={phase !== 'result'} onPress={onClose} />
         </View>
       </View>
     </Modal>
   );
+}
+
+function summarize(log: game.BattleEvent[]) {
+  const dealt = { a: 0, b: 0 };
+  const crits = { a: 0, b: 0 };
+  const dodges = { a: 0, b: 0 };
+  for (const e of log) {
+    if (e.kind === 'hit' || e.kind === 'crit' || e.kind === 'double') dealt[e.actor] += e.value;
+    if (e.kind === 'crit') crits[e.actor]++;
+    if (e.kind === 'dodge') dodges[e.actor === 'a' ? 'b' : 'a']++;
+  }
+  return { dealt, crits, dodges };
 }
 
 function line(e: game.BattleEvent, n: Record<'a' | 'b', string>): string {
@@ -92,4 +149,3 @@ function line(e: game.BattleEvent, n: Record<'a' | 'b', string>): string {
     default: return '';
   }
 }
-

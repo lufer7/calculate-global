@@ -17,6 +17,7 @@ let token: string | null = null;
 export const setToken = (t: string | null) => {
   token = t;
 };
+export const getToken = () => token;
 
 /** The only network client in the app: JSON in/out, Bearer token, no cookies. */
 async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {

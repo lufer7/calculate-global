@@ -1,10 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { SafeAreaView, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from './src/components/ui';
 import { tr } from './src/i18n/tr';
 import type { GameState } from './src/lib/api';
-import { ApiError, api, setToken } from './src/lib/api';
+import { ApiError, api, getToken, setToken } from './src/lib/api';
 import { session } from './src/lib/session';
 import { loadServerOverride } from './src/config';
 import { AuthScreen } from './src/screens/AuthScreen';
@@ -25,6 +26,16 @@ type Phase =
 const MIN_SPLASH_MS = 1200;
 
 export default function App() {
+  return (
+    <SafeAreaProvider>
+      <Root />
+    </SafeAreaProvider>
+  );
+}
+
+function Root() {
+  // Real device insets: keeps the bottom bar above Android's navigation buttons and the header below the notch.
+  const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
 
   const enter = useCallback(async () => {
@@ -33,7 +44,8 @@ export default function App() {
     const wait = () => new Promise((r) => setTimeout(r, Math.max(0, MIN_SPLASH_MS - (Date.now() - started))));
     try {
       await loadServerOverride();
-      const token = await session.get();
+      // "Beni hatırla" off → the token only lives in memory for this run of the app.
+      const token = getToken() ?? (await session.get());
       if (!token) {
         await wait();
         return setPhase({ kind: 'auth' });
@@ -68,24 +80,29 @@ export default function App() {
   }, [enter]);
 
   return (
-    <SafeAreaView style={styles.root}>
+    <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }]}>
       <StatusBar style="light" />
       {phase.kind === 'loading' && <LoadingScreen />}
       {phase.kind === 'auth' && (
-        <AuthScreen onSignedIn={async (token) => { await session.set(token); setToken(token); await enter(); }} />
+        <AuthScreen onSignedIn={async (token, remember) => {
+          if (remember) await session.set(token);
+          else await session.clear();
+          setToken(token);
+          await enter();
+        }} />
       )}
       {phase.kind === 'reaccept' && <ReacceptScreen onDone={enter} onSignOut={signOut} />}
       {phase.kind === 'first-fighter' && <CreateFighterScreen isFirst onCreated={enter} />}
       {phase.kind === 'game' && <MainScreen initial={phase.state} onSignedOut={signOut} />}
       {phase.kind === 'error' && (
-        <SafeAreaView style={[ui.screen, { flex: 1, justifyContent: 'center' }]}>
+        <View style={[ui.screen, { flex: 1, justifyContent: 'center' }]}>
           <Text style={ui.h2}>Bağlantı sorunu</Text>
           <Text style={ui.text}>{phase.message}</Text>
           <Button title="Tekrar dene" onPress={enter} />
           <Button title="Çıkış yap" kind="ghost" onPress={signOut} />
-        </SafeAreaView>
+        </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

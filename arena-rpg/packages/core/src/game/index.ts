@@ -10,3 +10,4 @@ export * from './legal';
 export * from './gear';
 export * from './battle';
 export * from './economy';
+export * from './stages';

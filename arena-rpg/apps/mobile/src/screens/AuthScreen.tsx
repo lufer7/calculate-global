@@ -12,7 +12,7 @@ import { colors, ui } from './theme';
 
 type Mode = 'login' | 'register' | 'verify';
 
-export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void }) {
+export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string, remember: boolean) => void }) {
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,6 +20,7 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
   const [marketing, setMarketing] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [age, setAge] = useState(false);
   const [legal, setLegal] = useState<'privacy' | 'terms' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +84,7 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
             <ErrorText message={error} />
             <Button title="Doğrula ve başla" busy={busy} onPress={() => run(async () => {
               if (code.trim().length !== 6) throw new ApiError('invalid_code', 0, null);
-              onSignedIn((await api.verify(email, code.trim())).token);
+              onSignedIn((await api.verify(email, code.trim())).token, remember);
             })} />
             <Button title="Geri" kind="ghost" onPress={() => setMode('register')} />
           </>
@@ -108,12 +109,16 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
                 </Checkbox>
               </View>
             )}
+            <Checkbox checked={remember} onChange={setRemember}>
+              <Text style={ui.text}>Beni hatırla</Text>
+              <Text style={[ui.muted, { fontSize: 12 }]}>İşaretli değilse uygulamayı kapattığında oturumun kapanır.</Text>
+            </Checkbox>
             <ErrorText message={error} />
             {mode === 'login' ? (
               <Button title="Giriş yap" busy={busy} onPress={() => run(async () => {
                 if (!email.trim() || !password) throw new ApiError('missing_fields', 0, null);
                 const r = await api.login(email, password);
-                onSignedIn(r.token);
+                onSignedIn(r.token, remember);
               })} />
             ) : (
               <Button title="Kayıt ol" busy={busy} onPress={() => run(async () => {
@@ -128,7 +133,17 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
             {mode === 'register' && password.length > 0 && password.length < 10 && <Text style={ui.muted}>Şifre en az 10 karakter olmalı.</Text>}
           </>
         )}
-        <Pressable onPress={checkServer} style={[ui.row, { marginTop: 12, opacity: 0.85 }]}>
+        {/* Players only see a friendly message; addresses and manual setup are developer tools. */}
+        {!__DEV__ && server === 'down' && (
+          <Pressable onPress={checkServer} style={[ui.row, { marginTop: 12 }]}>
+            <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: colors.danger }} />
+            <Text style={[ui.muted, { flex: 1, fontSize: 12 }]}>Oyun sunucusuna bağlanılamıyor. İnternet bağlantını kontrol edip tekrar dene.</Text>
+          </Pressable>
+        )}
+        {__DEV__ && (
+          <View style={{ gap: 6, marginTop: 12, padding: 10, borderRadius: 6, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}>
+            <Text style={[ui.label, { fontSize: 10, color: colors.faint }]}>Geliştirici bilgisi (yayın sürümünde görünmez)</Text>
+            <Pressable onPress={checkServer} style={[ui.row, { opacity: 0.85 }]}>
           <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: server === 'ok' ? colors.good : server === 'down' ? colors.danger : colors.warn }} />
           <Text style={[ui.muted, { flex: 1, fontSize: 12 }]}>
             {server === 'ok' ? 'Sunucuya bağlı' : server === 'down' ? 'Sunucuya ulaşılamıyor (dokun: tekrar dene)' : 'Sunucu kontrol ediliyor…'} · {apiBaseUrl()}
@@ -156,7 +171,9 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
             <Button title="Otomatik adrese dön" kind="ghost" small onPress={async () => { await setServerOverride(null); setEditingServer(false); checkServer(); }} />
           </View>
         )}
-        <Text style={[ui.muted, { fontSize: 11, opacity: 0.7 }]}>Sürüm: {APP_BUILD}</Text>
+            <Text style={[ui.muted, { fontSize: 11, opacity: 0.7 }]}>Sürüm: {APP_BUILD}</Text>
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

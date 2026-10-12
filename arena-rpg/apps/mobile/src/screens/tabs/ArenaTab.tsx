@@ -55,7 +55,7 @@ export function ArenaTab({ state, fighterId, setFighterId, now, refresh }: { sta
           <Text style={ui.muted} numberOfLines={1}>{tr.classes[o.class].name} · Sv {o.level}{o.owner ? ` · ${o.owner}` : ''}</Text>
           <View style={ui.row}><Pill text={`Güç ${o.power}`} color={classColor(o.class)} /><Pill text={odds[0]!} color={odds[1]} /></View>
         </View>
-        <Button title="Meydan oku" small disabled={!!blocked} busy={busy === `${type}${o.id}`} onPress={() => challenge(type, o)} />
+        <Button title="Saldır" small disabled={!!blocked} busy={busy === `${type}${o.id}`} onPress={() => challenge(type, o)} />
       </Card>
     );
   };

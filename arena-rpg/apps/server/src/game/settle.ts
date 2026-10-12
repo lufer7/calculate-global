@@ -2,7 +2,7 @@ import { createRng, game } from '@arena/core';
 import type { AccountRow, FighterRow } from '../accounts/repo';
 import { accountById, fightersOf } from '../accounts/repo';
 import type { Db } from '../db/database';
-import { addItem } from './items';
+import { addItem, fighterGear as fighterGearOf } from './items';
 
 export interface GameClock {
   now: () => number;
@@ -109,6 +109,12 @@ export interface ExpeditionRow {
   seed: number;
   state: 'active' | 'recalled' | 'done';
   luck: number;
+  stage: number;
+}
+
+export function zoneProgress(db: Db, accountId: string): Record<string, number> {
+  const rows = db.prepare('SELECT zone_id, cleared FROM zone_progress WHERE account_id = ?').all(accountId) as { zone_id: string; cleared: number }[];
+  return Object.fromEntries(rows.map((r) => [r.zone_id, r.cleared]));
 }
 
 function finishRecall(db: Db, acc: AccountRow, exp: ExpeditionRow) {
@@ -138,7 +144,29 @@ function finishExpedition(db: Db, acc: AccountRow, exp: ExpeditionRow, clock: Ga
       extraRareRelative: exp.luck ? 0.15 : 0,
     },
   );
-  const loot = game.expeditionLoot(zone.id, outcome, rng);
+  // Stage check: party strength vs the stage, rolled on the same seeded RNG.
+  const stage = exp.stage ?? 1;
+  const level = game.stageLevel(zone, stage);
+  const power = game.partyPower(party.map((f) => game.powerScore(game.battleProfile({
+    name: f.name, class: f.class as game.ClassId, level: f.level, skills: skillsOf(f), gear: fighterGearOf(db, f.id), hpRatio: 1,
+  }))));
+  const chance = game.successChance(power, level, stage);
+  const success = rng() < chance;
+  const cleared = zoneProgress(db, acc.id)[zone.id] ?? 0;
+  const firstBossClear = success && stage === game.STAGES_PER_ZONE && cleared < stage;
+  if (success && stage > cleared) {
+    db.prepare('INSERT INTO zone_progress (account_id, zone_id, cleared) VALUES (?, ?, ?) ON CONFLICT(account_id, zone_id) DO UPDATE SET cleared = MAX(cleared, excluded.cleared)').run(acc.id, zone.id, stage);
+  }
+  if (!success) {
+    // A failed stage still pays a little, but the party may come back hurt.
+    for (const f of party) if (rng() < 0.35 && !outcome.injured.includes(f.id)) outcome.injured.push(f.id);
+  }
+  const baseLoot = game.expeditionLoot(zone.id, outcome, rng);
+  const mult = game.stageLootMultiplier(stage) * (success ? 1 : 0.25);
+  const loot = {
+    gold: Math.max(success ? 5 : 1, Math.round((baseLoot.gold + 8 * stage) * mult * game.zoneGoldMultiplier(zone.id))),
+    xp: Math.round(baseLoot.xp * game.stageLootMultiplier(stage) * (success ? 1 : 0.5)),
+  };
   const highest = Math.max(...all.map((f) => f.level));
   const perks = game.accountPerks(mainClass);
   const partyPathfinding = bestSkill(party, 'pathfinding');
@@ -160,10 +188,13 @@ function finishExpedition(db: Db, acc: AccountRow, exp: ExpeditionRow, clock: Ga
 
   db.prepare('UPDATE accounts SET gold = gold + ? WHERE id = ?').run(loot.gold, acc.id);
   db.prepare("UPDATE expeditions SET state = 'done' WHERE id = ?").run(exp.id);
-  const found = game.expeditionItems(exp.seed, outcome.reward, outcome.extraReward, Math.max(...party.map((f) => f.level)));
+  const found = success
+    ? [...game.expeditionItems(exp.seed, outcome.reward, outcome.extraReward, level), ...game.zoneExtraItems(zone.id, exp.seed, stage, level, firstBossClear)]
+    : [];
   const items = found.map((item) => ({ name: game.itemName(item), rarity: item.rarity, icon: game.template(item.templateId)?.icon, qty: item.qty, kept: addItem(db, acc.id, item, exp.ends_at) !== null }));
-  addReport(db, acc.id, 'expedition', `${zone.name} seferi döndü`, {
-    zoneId: zone.id, reward: outcome.reward, extraReward: outcome.extraReward, event: outcome.event,
+  const stageName = game.ZONE_STAGES[zone.id]?.stageNames[stage - 1] ?? `Bölüm ${stage}`;
+  addReport(db, acc.id, 'expedition', `${zone.name} · ${stage}. ${stageName}: ${success ? 'geçildi' : 'geçilemedi'}`, {
+    zoneId: zone.id, stage, stageName, success, chance: Math.round(chance * 100), firstBossClear, reward: outcome.reward, extraReward: outcome.extraReward, event: outcome.event,
     gold: loot.gold, rewardMultiplier: outcome.rewardMultiplier, fighters: fighterResults, items, seed: exp.seed,
   }, exp.ends_at);
 }
