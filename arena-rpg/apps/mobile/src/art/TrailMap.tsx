@@ -84,11 +84,11 @@ export function TrailMap({ zoneId, cleared, selected, width, onSelect, activeSta
               width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center',
               backgroundColor: done ? colors.trim : next ? '#1d2a31' : '#151b1f',
               borderWidth: on ? 3 : 2, borderColor: on ? '#ffffff' : next ? colors.trim : done ? '#f4e2ad' : '#3a464d',
-              opacity: open ? 1 : 0.55,
+              opacity: open ? 1 : 0.8,
               shadowColor: next ? colors.trim : '#000', shadowOpacity: next ? 0.9 : 0.4, shadowRadius: next ? 8 : 3, elevation: next ? 6 : 2,
             }}
           >
-            <Text style={{ color: done ? colors.accentInk : open ? colors.text : colors.faint, fontWeight: '900', fontSize: boss ? 15 : 12 }}>
+            <Text style={{ color: done ? colors.accentInk : open ? colors.text : colors.muted, fontWeight: '900', fontSize: boss ? 15 : 12 }}>
               {boss ? '☠' : done ? '✓' : stage}
             </Text>
             {activeStages.includes(stage) && <View style={{ position: 'absolute', right: -4, top: -4, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.warn, borderWidth: 1, borderColor: '#000' }} />}

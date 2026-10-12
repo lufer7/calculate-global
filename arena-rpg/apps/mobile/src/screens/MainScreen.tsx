@@ -36,6 +36,7 @@ export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSig
   const [state, setState] = useState(initial);
   const [tab, setTab] = useState<TabId>('gang');
   const [more, setMore] = useState<MoreId | null>(null);
+  const [dragLock, setDragLock] = useState(false);
   const [fighterId, setFighterId] = useState<string>(initial.fighters[0]?.id ?? '');
   const [openFighter, setOpenFighter] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -106,12 +107,13 @@ export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSig
 
       <ScrollView
         style={{ flex: 1 }}
+        scrollEnabled={!dragLock}
         contentContainerStyle={ui.screen}
         refreshControl={<RefreshControl refreshing={refreshing} tintColor={colors.trim} onRefresh={async () => { setRefreshing(true); await refresh(); setRefreshing(false); }} />}
       >
         <ErrorText message={error} />
         {tab === 'gang' && <GangTab state={state} now={now} onOpen={(f) => setOpenFighter(f.id)} onNew={() => setCreating(true)} />}
-        {tab === 'inventory' && <InventoryTab state={state} fighterId={fighterId} setFighterId={selectFighter} refresh={refresh} />}
+        {tab === 'inventory' && <InventoryTab state={state} fighterId={fighterId} setFighterId={selectFighter} refresh={refresh} lockScroll={setDragLock} />}
         {tab === 'expeditions' && <ExpeditionsTab state={state} now={now} refresh={refresh} />}
         {tab === 'arena' && <ArenaTab state={state} fighterId={fighterId} setFighterId={selectFighter} now={now} refresh={refresh} />}
         {tab === 'market' && <MarketTab state={state} fighterId={fighterId} setFighterId={selectFighter} now={now} refresh={refresh} />}
