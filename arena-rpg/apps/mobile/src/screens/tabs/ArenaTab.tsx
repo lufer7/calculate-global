@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
+import { Banner } from '../../art/Banner';
 import { Portrait } from '../../art/Portrait';
 import { Scene } from '../../art/Scene';
 import { FighterPicker } from '../../components/FighterPicker';
@@ -52,7 +53,7 @@ export function ArenaTab({ state, fighterId, setFighterId, now, refresh }: { sta
         <Portrait cls={o.class} size={48} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={[ui.text, { fontWeight: '800' }]} numberOfLines={1}>{o.name}</Text>
-          <Text style={ui.muted} numberOfLines={1}>{tr.classes[o.class].name} · Sv {o.level}{o.owner ? ` · ${o.owner}` : ''}</Text>
+          <Text style={ui.muted} numberOfLines={1}>{tr.classes[o.class].name} · Sv {o.level}{o.owner ? ` · ${o.clanTag ? `[${o.clanTag}] ` : ''}${o.owner}` : ''}</Text>
           <View style={ui.row}><Pill text={`Güç ${o.power}`} color={classColor(o.class)} /><Pill text={odds[0]!} color={odds[1]} /></View>
         </View>
         <Button title="Saldır" small disabled={!!blocked} busy={busy === `${type}${o.id}`} onPress={() => challenge(type, o)} />
@@ -101,12 +102,30 @@ export function ArenaTab({ state, fighterId, setFighterId, now, refresh }: { sta
               <Text style={[ui.text, ui.num, { width: 28, color: i < 3 ? colors.trim : colors.muted, fontWeight: '800' }]}>{i + 1}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={[ui.text, { fontWeight: '700', color: classColor(r.class) }]} numberOfLines={1}>{r.name}</Text>
-                <Text style={ui.muted} numberOfLines={1}>{r.owner} · Sv {r.level}</Text>
+                <Text style={ui.muted} numberOfLines={1}>{r.clanTag ? `[${r.clanTag}] ` : ''}{r.owner} · Sv {r.level}</Text>
               </View>
               <Text style={[ui.text, ui.num, { fontWeight: '800' }]}>{r.points}</Text>
             </View>
           ))}
         </Card>
+      )}
+      {view === 'ranking' && info && info.clanRanking.length > 0 && (
+        <>
+          <SectionTitle>Sancak sıralaması</SectionTitle>
+          <Card>
+            {info.clanRanking.map((c, i) => (
+              <View key={c.tag} style={[ui.between, { paddingVertical: 4, gap: 8 }]}>
+                <Text style={[ui.text, ui.num, { width: 22, color: i < 3 ? colors.trim : colors.muted, fontWeight: '800' }]}>{i + 1}</Text>
+                <Banner color={c.color} symbol={c.symbol} size={22} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[ui.text, { fontWeight: '700' }]} numberOfLines={1}>{c.name} <Text style={{ color: colors.trim }}>[{c.tag}]</Text></Text>
+                  <Text style={ui.muted}>{c.members} üye</Text>
+                </View>
+                <Text style={[ui.text, ui.num, { fontWeight: '800' }]}>{c.points}</Text>
+              </View>
+            ))}
+          </Card>
+        </>
       )}
       {result && <BattleReplay result={result} onClose={async () => { setResult(null); await refresh(); await load(); }} />}
     </View>

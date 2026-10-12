@@ -30,9 +30,7 @@ export function ExpeditionsTab({ state, now, refresh }: { state: GameState; now:
   const [busy, setBusy] = useState<string | null>(null);
 
   const idle = state.fighters.filter((f) => f.status === 'idle');
-  const canHidden = state.fighters.some((f) => (f.skills.lost_lands ?? 0) > 0);
-  const zones = Object.values(game.ZONES).filter((z) => !z.hidden || canHidden);
-  const perkCut = game.accountPerks(state.account.mainClass).expeditionDurationReduction;
+  const zones = Object.values(game.ZONES);
   const used = state.expeditions.length;
   const cleared = (id: string) => Math.min(N, state.zoneProgress?.[id] ?? 0);
 
@@ -88,7 +86,7 @@ export function ExpeditionsTab({ state, now, refresh }: { state: GameState; now:
     const info = game.ZONE_STAGES[zone.id];
     const done = cleared(zone.id);
     const level = game.stageLevel(zone, stage);
-    const duration = Math.round((game.stageDurationMs(zone, stage) * (1 - perkCut)) / state.gameSpeed);
+    const duration = Math.round(game.stageDurationMs(zone, stage) / state.gameSpeed);
     const party = state.fighters.filter((f) => picked.includes(f.id));
     const chance = party.length ? game.successChance(game.partyPower(party.map((f) => f.power)), level, stage) : null;
     const boss = stage === N;

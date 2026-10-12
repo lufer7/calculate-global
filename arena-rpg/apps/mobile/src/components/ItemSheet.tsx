@@ -37,6 +37,7 @@ export function ItemDetails({ item, compareTo }: { item: ItemView; compareTo?: I
           {item.kind === 'resource' && <Text style={ui.muted}>Aktar malzemesi. Müneccimler iksir kaynatmak için kullanır.</Text>}
         </View>
       </View>
+      {item.kind === 'resource' && <ResourceSources templateId={item.templateId} />}
       {item.stats && (
         <View style={{ gap: 4, backgroundColor: colors.inset, borderRadius: 6, padding: 10 }}>
           {STAT_LABELS.filter(([k]) => item.stats![k] !== 0 || (compareTo?.stats?.[k] ?? 0) !== 0).map(([k, label, kind]) => (
@@ -49,9 +50,25 @@ export function ItemDetails({ item, compareTo }: { item: ItemView; compareTo?: I
   );
 }
 
-/** Item actions: equip/unequip for the selected fighter, use, blacksmith upgrade, sell. */
-export function ItemSheet({ item, fighter, gold, onClose, onChanged, expeditionId }: {
-  item: ItemView | null; fighter?: FighterView; gold: number; onClose: () => void; onChanged: () => Promise<void>; expeditionId?: string;
+/** "Nereden bulunur?" box for hunter materials (Aktar). */
+export function ResourceSources({ templateId }: { templateId: string }) {
+  const lines = tr.resourceSources[templateId];
+  if (!lines) return null;
+  return (
+    <View style={{ gap: 4, backgroundColor: colors.inset, borderRadius: 6, padding: 10 }}>
+      <Text style={[ui.label, { fontSize: 11 }]}>Nereden bulunur?</Text>
+      {lines.map((l) => <Text key={l} style={[ui.text, { fontSize: 13 }]}>• {l}</Text>)}
+    </View>
+  );
+}
+
+/** Same item, same rarity, not equipped → can be merged into `item` for +1. */
+export const mergeCandidates = (item: ItemView, items: ItemView[]) =>
+  items.filter((x) => x.id !== item.id && !x.fighterId && x.kind === 'equipment' && x.templateId === item.templateId && x.rarity === item.rarity);
+
+/** Item actions: equip/unequip for the selected fighter, use, "+ basma" (merge), sell. */
+export function ItemSheet({ item, items = [], fighter, gold, onClose, onChanged, expeditionId }: {
+  item: ItemView | null; items?: ItemView[]; fighter?: FighterView; gold: number; onClose: () => void; onChanged: () => Promise<void>; expeditionId?: string;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -93,15 +110,22 @@ export function ItemSheet({ item, fighter, gold, onClose, onChanged, expeditionI
       {item.templateId === 'potion_haste' && (
         <Button title={expeditionId ? 'Yoldaki sefere kullan' : 'Yolda sefer yok'} disabled={!expeditionId} busy={busy === 'use'} onPress={() => act('use', () => api.use(item.id, { expeditionId }))} />
       )}
-      {item.upgradeCost !== null && (
-        <View style={[ui.between, { backgroundColor: colors.inset, padding: 10, borderRadius: 6 }]}>
-          <View>
-            <Text style={ui.text}>Demirci: +{item.upgrade + 1}</Text>
-            <Gold amount={item.upgradeCost} size={13} />
+      {item.upgradeCost !== null && (() => {
+        const dupes = mergeCandidates(item, items);
+        return (
+          <View style={{ gap: 6, backgroundColor: colors.inset, padding: 10, borderRadius: 6 }}>
+            <View style={ui.between}>
+              <View style={{ flex: 1 }}>
+                <Text style={ui.text}>+ basma: {item.name.replace(/ \+\d+$/, '')} +{item.upgrade + 1}</Text>
+                <View style={ui.row}><Gold amount={item.upgradeCost} size={13} /><Text style={ui.muted}>+ {dupes.length > 0 ? `aynı eşyadan 1 tane (${dupes.length} var)` : 'aynı eşyadan 1 tane'}</Text></View>
+              </View>
+              <Button title="+1 bas" small disabled={dupes.length === 0 || gold < item.upgradeCost} busy={busy === 'up'}
+                onPress={() => act('up', () => api.merge(item.id, [...dupes].sort((a, b) => a.upgrade - b.upgrade)[0]!.id), false)} />
+            </View>
+            <Text style={[ui.muted, { fontSize: 12 }]}>Aynı eşyanın aynı renktekini çantada bu eşyanın üstüne sürükleyip bırakarak da basabilirsin. Her + bir öncekinden pahalıdır.</Text>
           </View>
-          <Button title="Güçlendir" small disabled={gold < item.upgradeCost} busy={busy === 'up'} onPress={() => act('up', () => api.upgrade(item.id), false)} />
-        </View>
-      )}
+        );
+      })()}
       {!equippedHere && (
         <View style={ui.between}>
           <Text style={ui.muted}>Tüccara sat</Text>

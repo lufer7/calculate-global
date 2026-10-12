@@ -72,7 +72,7 @@ export interface FighterView {
   xp: number;
   xpToNext: number;
   hpRatio: number;
-  status: 'idle' | 'expedition' | 'injured' | 'arena';
+  status: 'idle' | 'expedition' | 'exploration' | 'injured' | 'arena';
   statusUntil: number | null;
   skills: Record<string, number>;
   skillPoints: number;
@@ -103,14 +103,37 @@ export interface GameState {
   unreadReports: number;
   luckPotions: number;
   zoneProgress: Record<string, number>;
+  explorationSlots: number;
+  explorations: ExplorationView[];
+  clan: ClanCard & { role: ClanRole } | null;
+}
+
+export interface ExplorationView {
+  id: string; fighterIds: string[]; startedAt: number; endsAt: number; travelMs: number; exploreMs: number; recalled: boolean; arriveAt: number; leaveAt: number;
+}
+
+export type ClanRole = 'leader' | 'officer' | 'member';
+export interface ClanCard { id: string; name: string; tag: string; color: number; symbol: number; policy: 'open' | 'request'; level: number; xp: number; members: number; maxMembers: number }
+export interface ClanDetail {
+  clan: (ClanCard & { nextLevelXp: number | null; levelXp: number; goldBonus: number }) | null;
+  me?: { role: ClanRole; contribution: number };
+  members?: { accountId: string; name: string; role: ClanRole; contribution: number; joinedAt: number; fighters: number; top: { name: string; class: game.ClassId; level: number } | null; me: boolean }[];
+  requests?: { accountId: string; name: string; at: number; topLevel: number }[];
+  raid?: { id: string; bossId: string; hp: number; maxHp: number; startedAt: number; endsAt: number; state: 'active' | 'won' | 'expired'; hits: { name: string; damage: number; hits: number; me: boolean }[] } | null;
+  bosses?: { id: string; name: string; level: number; hp: number; clanLevel: number; gold: number; unlocked: boolean }[];
+  myFighters?: { id: string; raidReadyAt: number | null }[];
+  helps?: { kind: 'research' | 'expedition' | 'exploration'; id: string; owner: string; label: string; endsAt: number; helps: number; helped: boolean }[];
+  log?: { text: string; at: number }[];
+  rules?: { raidCooldownMs: number; raidMinHp: number; helpCut: number; maxHelps: number; donationGoldPerXp: number };
 }
 
 export interface MarketOffer { offerId: string; section: 'equipment' | 'food' | 'potion'; price: number; soldOut: boolean; item: ItemView }
-export interface ArenaOpponent { id: string; name: string; class: game.ClassId; level: number; power: number; owner?: string; points?: number }
+export interface ArenaOpponent { id: string; name: string; class: game.ClassId; level: number; power: number; owner?: string; clanTag?: string | null; points?: number }
 export interface ArenaInfo {
   fighterId: string; readyAt: number | null; hpRatio: number; minHp: number;
   npcs: ArenaOpponent[]; players: ArenaOpponent[];
-  ranking: { name: string; class: game.ClassId; level: number; points: number; wins: number; owner: string }[];
+  ranking: { name: string; class: game.ClassId; level: number; points: number; wins: number; owner: string; clanTag: string | null }[];
+  clanRanking: { name: string; tag: string; color: number; symbol: number; points: number; members: number }[];
 }
 export interface FightResult {
   won: boolean; seed: number; outcome: game.BattleOutcome;
@@ -136,7 +159,7 @@ export interface DataRequest {
 
 export interface Report {
   id: number;
-  kind: 'expedition' | 'expedition_recalled' | 'research' | 'alchemy';
+  kind: 'expedition' | 'expedition_recalled' | 'exploration' | 'exploration_recalled' | 'raid' | 'research' | 'alchemy';
   title: string;
   at: number;
   read: boolean;
@@ -184,7 +207,7 @@ export const api = {
   equip: (itemId: string, fighterId: string, slot?: game.EquipSlot) => call<{ slot: game.EquipSlot }>(`/v1/game/items/${itemId}/equip`, 'POST', { fighterId, slot }),
   unequip: (itemId: string) => call<void>(`/v1/game/items/${itemId}/unequip`, 'POST', {}),
   sell: (itemId: string, qty?: number) => call<{ gold: number }>(`/v1/game/items/${itemId}/sell`, 'POST', { qty }),
-  upgrade: (itemId: string) => call<{ upgrade: number; cost: number }>(`/v1/game/items/${itemId}/upgrade`, 'POST', {}),
+  merge: (targetId: string, sourceId: string) => call<{ upgrade: number; itemLevel: number; cost: number }>(`/v1/game/items/${targetId}/merge`, 'POST', { sourceId }),
   use: (itemId: string, target: { fighterId?: string; expeditionId?: string }) => call<Record<string, unknown>>(`/v1/game/items/${itemId}/use`, 'POST', target),
   market: () => call<{ nextRefresh: number; offers: MarketOffer[] }>('/v1/game/market'),
   buy: (offerId: string) => call<{ gold: number }>('/v1/game/market/buy', 'POST', { offerId }),
@@ -195,5 +218,20 @@ export const api = {
   recall: (id: string) => call<{ returnsAt: number }>(`/v1/game/expeditions/${id}/recall`, 'POST', {}),
   reports: () => call<{ reports: Report[] }>('/v1/game/reports'),
   markReportsRead: () => call<void>('/v1/game/reports/read', 'POST', {}),
+  startExploration: (fighterIds: string[], travelMs: number, exploreMs: number) => call<{ id: string; endsAt: number }>('/v1/game/explorations', 'POST', { fighterIds, travelMs, exploreMs }),
+  recallExploration: (id: string) => call<{ returnsAt: number }>(`/v1/game/explorations/${id}/recall`, 'POST', {}),
+  clans: (q = '') => call<{ clans: (ClanCard & { requested: boolean })[]; createCost: number; joinBlockedUntil: number | null }>(`/v1/game/clans?q=${encodeURIComponent(q)}`),
+  createClan: (b: { name: string; tag: string; color: number; symbol: number; policy: 'open' | 'request' }) => call<{ id: string }>('/v1/game/clans', 'POST', b),
+  joinClan: (id: string) => call<{ joined?: boolean; requested?: boolean }>(`/v1/game/clans/${id}/join`, 'POST', {}),
+  cancelClanRequest: (id: string) => call<void>(`/v1/game/clans/${id}/request`, 'DELETE'),
+  clan: () => call<ClanDetail>('/v1/game/clan'),
+  leaveClan: () => call<void>('/v1/game/clan/leave', 'POST', {}),
+  clanMember: (accountId: string, action: 'kick' | 'promote' | 'demote' | 'transfer') => call<void>(`/v1/game/clan/members/${accountId}`, 'POST', { action }),
+  clanRequest: (accountId: string, accept: boolean) => call<void>(`/v1/game/clan/requests/${accountId}`, 'POST', { accept }),
+  clanSettings: (b: { color?: number; symbol?: number; policy?: 'open' | 'request' }) => call<void>('/v1/game/clan/settings', 'POST', b),
+  donate: (gold: number) => call<{ xp: number }>('/v1/game/clan/donate', 'POST', { gold }),
+  startRaid: (bossId: string) => call<{ id: string }>('/v1/game/clan/raid', 'POST', { bossId }),
+  raidAttack: (fighterId: string) => call<{ damage: number; rounds: number; hpRatio: number; bossHp: number; maxHp: number; won: boolean; readyAt: number }>('/v1/game/clan/raid/attack', 'POST', { fighterId }),
+  clanHelp: (target: { all: true } | { kind: string; id: string }) => call<{ helped: number }>('/v1/game/clan/help', 'POST', target),
   startResearch: (id: string) => call<{ until: number; cost: number }>('/v1/game/research', 'POST', { id }),
 };

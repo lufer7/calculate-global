@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from './src/components/ui';
@@ -23,6 +23,8 @@ type Phase =
   | { kind: 'game'; state: GameState }
   | { kind: 'error'; message: string };
 
+/** The opening screen stays a little on purpose so the artwork and the tip can be read (rev3). */
+const FIRST_SPLASH_MS = 2600;
 const MIN_SPLASH_MS = 1200;
 
 export default function App() {
@@ -37,11 +39,14 @@ function Root() {
   // Real device insets: keeps the bottom bar above Android's navigation buttons and the header below the notch.
   const insets = useSafeAreaInsets();
   const [phase, setPhase] = useState<Phase>({ kind: 'loading' });
+  const firstRun = useRef(true);
 
   const enter = useCallback(async () => {
     setPhase({ kind: 'loading' });
     const started = Date.now();
-    const wait = () => new Promise((r) => setTimeout(r, Math.max(0, MIN_SPLASH_MS - (Date.now() - started))));
+    const minMs = firstRun.current ? FIRST_SPLASH_MS : MIN_SPLASH_MS;
+    firstRun.current = false;
+    const wait = () => new Promise((r) => setTimeout(r, Math.max(0, minMs - (Date.now() - started))));
     try {
       await loadServerOverride();
       // "Beni hatırla" off → the token only lives in memory for this run of the app.
@@ -82,7 +87,7 @@ function Root() {
   return (
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: insets.bottom, paddingLeft: insets.left, paddingRight: insets.right }]}>
       <StatusBar style="light" />
-      {phase.kind === 'loading' && <LoadingScreen />}
+      {phase.kind === 'loading' && <LoadingScreen durationMs={FIRST_SPLASH_MS} />}
       {phase.kind === 'auth' && (
         <AuthScreen onSignedIn={async (token, remember) => {
           if (remember) await session.set(token);

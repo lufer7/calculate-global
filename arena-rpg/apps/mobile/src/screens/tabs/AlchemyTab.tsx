@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { ItemIcon } from '../../art/ItemIcon';
 import { Portrait } from '../../art/Portrait';
-import { Button, Card, ErrorText, Gold, SectionTitle } from '../../components/ui';
+import { ResourceSources } from '../../components/ItemSheet';
+import { Button, Card, ErrorText, Gold, SectionTitle, Sheet } from '../../components/ui';
 import { tr } from '../../i18n/tr';
 import type { AlchemyInfo, GameState } from '../../lib/api';
 import { ApiError, api } from '../../lib/api';
@@ -10,13 +11,14 @@ import { colors, ui } from '../theme';
 
 const RES_NAMES: Record<string, string> = { leather: 'Deri', bone: 'Kemik', game_meat: 'Av Eti' };
 
-/** Seers brew potions from the hunters' resources. */
+/** Aktar: Seers brew potions from the hunters' resources. */
 export function AlchemyTab({ state, refresh }: { state: GameState; refresh: () => Promise<void> }) {
   const [info, setInfo] = useState<AlchemyInfo | null>(null);
   const [seerId, setSeerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [source, setSource] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -37,18 +39,30 @@ export function AlchemyTab({ state, refresh }: { state: GameState; refresh: () =
   return (
     <View style={{ gap: 12 }}>
       <Card trim>
-        <Text style={ui.h2}>Simya</Text>
+        <Text style={ui.h2}>Aktar</Text>
         <Text style={ui.muted}>Müneccimler, Gözcülerin avladığı deri, kemik ve etten iksir kaynatır. İksir Yapımı rütbesi yükseldikçe yeni tarifler açılır.</Text>
       </Card>
       <SectionTitle>Malzemeler</SectionTitle>
       <View style={[ui.row, { justifyContent: 'space-around' }]}>
         {Object.entries(info.resources).map(([id, qty]) => (
-          <View key={id} style={{ alignItems: 'center', gap: 3 }}>
+          <Pressable key={id} onPress={() => setSource(id)} accessibilityRole="button" accessibilityLabel={`${RES_NAMES[id]}: nereden bulunur?`} style={{ alignItems: 'center', gap: 3 }}>
             <ItemIcon icon={id} size={48} qty={qty} />
             <Text style={ui.muted}>{RES_NAMES[id]} · {qty}</Text>
-          </View>
+            <Text style={{ color: colors.trim, fontSize: 11 }}>ⓘ Nereden?</Text>
+          </Pressable>
         ))}
       </View>
+      <Sheet visible={!!source} onClose={() => setSource(null)} title={source ? RES_NAMES[source] : ''}>
+        {source && (
+          <View style={{ gap: 10 }}>
+            <View style={ui.row}>
+              <ItemIcon icon={source} size={56} qty={info.resources[source]} />
+              <Text style={[ui.text, { flex: 1 }]}>Elinde {info.resources[source] ?? 0} adet var. Müneccimler bunu iksir kaynatmak için kullanır.</Text>
+            </View>
+            <ResourceSources templateId={source} />
+          </View>
+        )}
+      </Sheet>
       {info.seers.length === 0 ? (
         <Card><Text style={ui.muted}>Çetende Müneccim yok. Bir Müneccim katılınca iksir kaynatabilirsin.</Text></Card>
       ) : (

@@ -3,7 +3,7 @@
 > Şablondur, hukuki tavsiye değildir. [Köşeli parantez] alanlarını doldurup bir avukata kontrol ettirin.
 > Bu dosya `apps/mobile/src/legal/texts.ts` dosyasından üretilir (`npm run legal:docs`); doğrudan düzenlemeyin.
 
-**Sürüm:** 2026-10-13
+**Sürüm:** 2026-10-14
 
 Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) md. 10 ve AB Genel Veri Koruma Tüzüğü (GDPR) md. 13 uyarınca hazırlanmıştır.
 
@@ -15,7 +15,8 @@ Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) md. 10 ve AB
 
 - Kimlik / iletişim: e-posta adresin.
 - Hesap güvenliği: şifren (geri döndürülemez özet olarak, scrypt), oturum anahtarlarının özeti, son etkinlik zamanı.
-- Oyun verileri: oyun içi takma adın (otomatik üretilir), dövüşçü adların, seviye, yetenek, altın, sefer ve rapor kayıtların.
+- Oyun verileri: oyun içi takma adın (otomatik üretilir), dövüşçü adların, seviye, yetenek, altın, sefer, keşif ve rapor kayıtların.
+- Sancak verileri: katıldığın sancak, rolün, katılım tarihin, katkı puanın, av hasarların ve yaptığın yardımlar. Sancak üyeleri takma adını, rolünü ve en güçlü dövüşçünü görür.
 - Onay kayıtları: hangi metin sürümünü, yaş beyanını ve pazarlama iznini ne zaman verdiğin veya geri aldığın.
 - Başvurular: bize yaptığın KVKK başvuruları ve yanıtları.
 - IP adresi: yalnızca bağlantı kurmak ve aşırı istekleri engellemek için bellekte anlık işlenir; diske yazılmaz, günlüğe kaydedilmez.
@@ -24,7 +25,7 @@ Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) md. 10 ve AB
 ## Hangi amaçla ve hangi hukuki sebeple?
 
 - Hesabının açılması, oyunun sunulması, doğrulama ve hesap güvenliği: sözleşmenin kurulması ve ifası (KVKK md. 5/2-c, GDPR md. 6/1-b).
-- Hile ve kötüye kullanımın önlenmesi, uygunsuz dövüşçü adlarının denetlenmesi, yönetici işlemlerinin kayıt altına alınması: meşru menfaat (KVKK md. 5/2-f, GDPR md. 6/1-f).
+- Hile ve kötüye kullanımın önlenmesi, uygunsuz dövüşçü ve sancak adlarının denetlenmesi, yönetici işlemlerinin kayıt altına alınması: meşru menfaat (KVKK md. 5/2-f, GDPR md. 6/1-f).
 - Onay ve başvuru kayıtlarının saklanması: hukuki yükümlülük ve bir hakkın tesisi, kullanılması veya korunması (KVKK md. 5/2-ç ve 5/2-e).
 - Yenilik ve etkinlik e-postaları: yalnızca ayrıca verdiğin açık rıza ile (KVKK md. 5/1). İznini istediğin an Hesap sekmesinden geri alabilirsin; oyunu oynamak için gerekli değildir.
 - Otomatik karar alma veya profil çıkarma yapılmaz.
@@ -46,7 +47,7 @@ Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) md. 10 ve AB
 - Hesap verileri: hesabın açık olduğu sürece. Hesabını uygulamadan sildiğinde hemen silinir.
 - E-postasını doğrulamamış kayıtlar: 7 gün.
 - Hareketsiz hesaplar: yaklaşık 23 ay giriş yapılmazsa e-postayla uyarılır; uyarıdan sonra en az 30 gün içinde giriş yapılmazsa ve hareketsizlik 24 ayı bulmuşsa hesap silinir.
-- Sefer ve araştırma raporları: 90 gün.
+- Sefer, keşif ve araştırma raporları; sancak etkinlik kaydı, yardım ve av kayıtları: 90 gün. Sancak üyeliğin, sancaktan ayrıldığında ya da hesabın silindiğinde hemen silinir.
 - Yönetici işlem kayıtları: 24 ay.
 - KVKK başvuruları: yanıtlandıktan sonra 24 ay (başvurunun usulüne uygun yanıtlandığını ispat için).
 - Süresi dolan veriler sunucuda 6 saatte bir çalışan otomatik görevle silinir.
@@ -70,7 +71,7 @@ Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) md. 10 ve AB
 
 ## Sohbet yok
 
-- Oyunda oyuncular arası mesajlaşma yoktur. Başkalarına görünen tek oyuncu metni dövüşçü adlarıdır; yönetim uygunsuz adları değiştirebilir.
+- Oyunda oyuncular arası mesajlaşma yoktur; sancaklarda da sohbet bulunmaz. Başkalarına görünen oyuncu metinleri yalnızca dövüşçü adları ile sancak adı ve kısaltmasıdır; yönetim uygunsuz adları değiştirebilir, uygunsuz sancakları dağıtabilir.
 
 ## Değişiklikler
 

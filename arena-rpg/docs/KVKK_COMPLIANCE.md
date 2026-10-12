@@ -23,13 +23,16 @@
 | Kullanıcı içeriği ve sorumluluk | 5651 sayılı Kanun | Sohbet yok. Tek oyuncu metni dövüşçü adı: doğrulama + panelden değiştirme |
 | Bildirimlerde veri sızmaması | Minimizasyon | Yöneticiye giden yeni üye bildirimlerinde oyuncunun e-postası yer almaz |
 
+- **Sancak (rev3):** Sohbet yoktur. Oyuncuların yazabildiği tek metin sancak adı ve kısaltmasıdır; kayıt sırasında küfür/nefret/siyasi ve "Aegis/yönetici" gibi taklit içeren adlar engellenir (`packages/core/src/game/clan.ts`). Yönetici panelindeki "Sancaklar" sekmesinden ad sıfırlanır ya da sancak dağıtılır; her işlem işlem kaydına yazılır. Sancak verileri veri dışa aktarımında yer alır, hesap silinince üyelik silinir ve liderlik en eski üyeye geçer.
+
 ## 2. Kişisel veri envanteri (özet)
 
 | Veri kategorisi | Veri | Amaç | Hukuki sebep | Saklama | Aktarım |
 |---|---|---|---|---|---|
 | İletişim | E-posta | Hesap, doğrulama, güvenlik bildirimleri | md. 5/2-c | Hesap süresince | E-posta sağlayıcısı |
 | İşlem güvenliği | Şifre özeti, oturum özetleri, son etkinlik, anlık IP | Hesap güvenliği, kötüye kullanımın önlenmesi | md. 5/2-c, 5/2-f | Hesap süresince; oturumlar en fazla 30 gün; IP saklanmaz | Barındırma |
-| Müşteri işlem | Dövüşçüler, oyun ilerlemesi, raporlar | Oyunun sunulması | md. 5/2-c | Hesap süresince; raporlar 90 gün | Barındırma |
+| Müşteri işlem | Dövüşçüler, oyun ilerlemesi, seferler, keşifler, raporlar | Oyunun sunulması | md. 5/2-c | Hesap süresince; raporlar ve biten keşifler 90 gün | Barındırma |
+| Müşteri işlem (topluluk) | Sancak üyeliği, rol, katkı, av hasarları, yardım kayıtları; sancak adı/kısaltması (herkese açık oyuncu metni) | Sancak özelliğinin sunulması, uygunsuz adların denetimi | md. 5/2-c, 5/2-f | Üyelik ayrılınca/hesap silinince hemen; etkinlik, yardım ve av kayıtları 90 gün | Barındırma |
 | Hukuki işlem | Onay kayıtları, KVKK başvuruları | İspat, yükümlülük | md. 5/2-ç, 5/2-e | Hesapla birlikte; başvurular yanıttan sonra 2 yıl | Barındırma |
 | Pazarlama | Pazarlama izni | Bülten | md. 5/1 (açık rıza) | Geri alınana kadar | E-posta sağlayıcısı |
 

@@ -71,8 +71,14 @@ export function InventoryTab({ state, fighterId, setFighterId, refresh, lockScro
     );
   };
 
+  const byId = (id: string) => items.find((i) => i.id === id);
+  const mergeable = (a: ItemView, b: ItemView | undefined) =>
+    !!b && a.id !== b.id && a.kind === 'equipment' && a.templateId === b.templateId && a.rarity === b.rarity && Math.max(a.upgrade, b.upgrade) < game.MAX_ITEM_UPGRADE;
+
   const accepts = ({ item, from }: Drag, zone: string): boolean => {
     if (zone === 'bag') return from === 'slot';
+    // "+ basma": a bag item dropped on the same item (same rarity)
+    if (zone.startsWith('item:')) return from === 'bag' && mergeable(item, byId(zone.slice(5)));
     if (zone === 'doll') return from === 'bag' && (item.kind === 'equipment' || item.kind === 'food' || USABLE_ON_FIGHTER.includes(item.templateId));
     if (zone.startsWith('slot:')) {
       const s = zone.slice(5) as game.EquipSlot;
@@ -85,7 +91,12 @@ export function InventoryTab({ state, fighterId, setFighterId, refresh, lockScro
     setError(null);
     setNotice(null);
     try {
-      if (zone === 'bag') {
+      const occupant = zone.startsWith('slot:') ? fighter.equipment.find((e) => e.equippedSlot === zone.slice(5)) : undefined;
+      const mergeInto = zone.startsWith('item:') ? byId(zone.slice(5)) : mergeable(item, occupant) ? occupant : undefined;
+      if (mergeInto) {
+        const r = await api.merge(mergeInto.id, item.id);
+        setNotice(`${mergeInto.name.replace(/ \+\d+$/, '')} +${r.upgrade} oldu! (${r.cost} altın)`);
+      } else if (zone === 'bag') {
         await api.unequip(item.id);
         setNotice(`${item.name} çantaya kondu.`);
       } else if (item.kind === 'equipment') {
@@ -147,9 +158,11 @@ export function InventoryTab({ state, fighterId, setFighterId, refresh, lockScro
         {bag.map((it) => {
           const unusable = it.kind === 'equipment' && it.classes !== null && !it.classes.includes(fighter.class);
           return (
-            <Draggable<Drag> key={it.id} payload={{ item: it, from: 'bag' }} size={cell} onTap={() => setSelected(it)} accessibilityLabel={it.name}>
-              <ItemIcon icon={it.icon} rarity={it.rarity} size={cell} qty={it.qty} upgrade={it.upgrade} dim={unusable} />
-            </Draggable>
+            <DropZone key={it.id} id={`item:${it.id}`} round={6}>
+              <Draggable<Drag> payload={{ item: it, from: 'bag' }} size={cell} onTap={() => setSelected(it)} accessibilityLabel={it.name}>
+                <ItemIcon icon={it.icon} rarity={it.rarity} size={cell} qty={it.qty} upgrade={it.upgrade} dim={unusable} />
+              </Draggable>
+            </DropZone>
           );
         })}
         {filter === 'all' && Array.from({ length: Math.max(0, Math.min(12, capacity - bagCount)) }).map((_, i) => (
@@ -158,18 +171,19 @@ export function InventoryTab({ state, fighterId, setFighterId, refresh, lockScro
       </DropZone>
       {bag.length === 0 && filter !== 'all' && <Text style={ui.muted}>Bu türde eşya yok.</Text>}
       <Card>
-        <Text style={ui.muted}>Eşyaya basılı tut ve sürükle: yiyeceği ya da iksiri karaktere bırakırsan kullanılır, ekipmanı karaktere ya da ilgili yuvaya bırakırsan kuşanılır, kuşanılmış eşyayı çantaya bırakırsan çıkarılır. Kısa dokunuş takılı olanla karşılaştırmayı açar. Soluk eşyalar seçili dövüşçünün sınıfına uymaz.</Text>
+        <Text style={ui.muted}>Eşyaya basılı tut ve sürükle: yiyeceği ya da iksiri karaktere bırakırsan kullanılır, ekipmanı karaktere ya da ilgili yuvaya bırakırsan kuşanılır, kuşanılmış eşyayı çantaya bırakırsan çıkarılır. Aynı eşyanın aynı renktekini birbirinin üstüne bırakırsan +1 basılır (altın gerekir, her + daha pahalı). Kısa dokunuş takılı olanla karşılaştırmayı açar. Soluk eşyalar seçili dövüşçünün sınıfına uymaz.</Text>
       </Card>
 
       <ItemSheet
         item={selected}
+        items={items}
         fighter={fighter}
         gold={state.account.gold}
         expeditionId={state.expeditions.find((e) => !e.recalled)?.id}
         onClose={() => setSelected(null)}
         onChanged={async () => {
           const fresh = await reload();
-          // keep the sheet in sync (e.g. after a blacksmith upgrade)
+          // keep the sheet in sync (e.g. after a +1 merge)
           setSelected((cur) => (cur ? fresh.find((i) => i.id === cur.id) ?? null : null));
         }}
       />

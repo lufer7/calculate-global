@@ -3,7 +3,7 @@
 > Şablondur, hukuki tavsiye değildir. [Köşeli parantez] alanlarını doldurup bir avukata kontrol ettirin.
 > Bu dosya `apps/mobile/src/legal/texts.ts` dosyasından üretilir (`npm run legal:docs`); doğrudan düzenlemeyin.
 
-**Sürüm:** 2026-10-13
+**Sürüm:** 2026-10-14
 
 
 ## Taraflar
@@ -19,7 +19,8 @@
 ## Kurallar
 
 - Hile, otomasyon (bot), açık istismarı, sunucuya zarar verecek kullanım yasaktır.
-- Hakaret içeren, nefret söylemi barındıran, başkasının kimliğine bürünen veya marka/telif hakkı ihlal eden dövüşçü adları yasaktır.
+- Hakaret içeren, nefret söylemi barındıran, siyasi/ideolojik propaganda yapan, başkasının kimliğine bürünen veya marka/telif hakkı ihlal eden dövüşçü ve sancak adları yasaktır.
+- Sancak kurmak, sancağa katılmak ve sancaktan ayrılmak oyun içi bir tercihtir; sancak lideri üyeleri çıkarabilir. Sancaktan ayrılan oyuncu bir süre başka sancağa katılamaz.
 - Kurallara aykırılıkta hesap geçici veya kalıcı olarak yasaklanabilir; yasak gerekçesi ve süresi girişte gösterilir.
 
 ## Oyun içi değerler

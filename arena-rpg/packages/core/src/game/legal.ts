@@ -1,5 +1,5 @@
 /** Shared by server and app; bump when the texts change so players re-accept them. */
-export const LEGAL_VERSIONS = { terms: '2026-10-13', privacy: '2026-10-13' } as const;
+export const LEGAL_VERSIONS = { terms: '2026-10-14', privacy: '2026-10-14' } as const;
 
 /** Minimum age confirmed at sign-up (checkbox; no birth date is collected). */
 export const MIN_AGE = 16;

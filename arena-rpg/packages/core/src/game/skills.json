@@ -414,7 +414,7 @@
       "max_rank": 5,
       "effect": "smith.cost_reduction",
       "unit": "ratio",
-      "description": "Onarım ve güçlendirme maliyeti −%4 / rütbe",
+      "description": "Eşyalara + basma maliyeti −%4 / rütbe",
       "value_per_rank": 0.04
     },
     {

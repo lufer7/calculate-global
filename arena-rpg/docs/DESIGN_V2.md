@@ -249,3 +249,63 @@ Oyuncunun bir kalesi, köyü veya şehri yok. Ana karakter (reis) ve sonradan ka
   - Kısa dokunuş karşılaştırma sayfasını açar.
 - **Yayın:** `deploy/` klasöründe Docker, Caddy (otomatik HTTPS) ve yedekleme betiği var. Adımlar için `docs/DEPLOY.md` dosyasına bak.
 
+## 12. Revizyon 3: Aegis, Keşif, Sancak, + basma, yeni menü (v5)
+
+- **Ad:** Oyunun adı artık **Aegis**. Uygulama adı, e-postalar, yönetici paneli ve yasal metinler buna göre güncellendi. Ana sayfada oyunun adı yazmaz.
+- **İsimler:**
+  - Kafa Kazanı → **Rasathane**.
+  - Simya → **Aktar**.
+  - Çete sekmesi → **Ana Sayfa**.
+  - "Keşif Lojistiği" araştırması → **Sefer Lojistiği**, yeni Keşif özelliğiyle karışmasın diye.
+- **Menü:** Altta iki sıra var, her ekran tek dokunuş uzakta:
+  - 1. sıra: Ana Sayfa, Çanta, Sefer, Keşif, Arena, Pazar.
+  - 2. sıra: Sancak, Rasathane, Aktar, Raporlar (okunmamış sayısıyla), Hesap.
+- **Ana Sayfa:**
+  - Kamp ateşi sahnesinde reis ortada, 4 çete yuvası çevresinde.
+  - Kilitli yuvalarda açılış seviyesi yazar; boş yuvaya dokununca yeni dövüşçü katılır.
+  - Her dövüşçüde can çubuğu, durumu (kalan süresiyle) ve harcanmamış yetenek puanı görünür.
+  - Altta süren işler kısa çipler halinde durur.
+  - Avantaj metinleri ana sayfadan kaldırıldı.
+- **Yükleme ekranı:** İlk açılışta en az 2,6 saniye kalır. İlerleme çubuğu ve okunabilir bir ipucu gösterir.
+- **Raporlar:**
+  - Liste kısa satırlardan oluşur; bir rapora dokununca ayrıntı sayfası açılır.
+  - Sefer, keşif, sancak avı ve araştırma raporlarında altın, eşyalar, deneyim ve yaralanma ayrıntıları görünür.
+- **Aktar:** Deri, kemik ve av etine dokununca "nereden bulunur?" bilgisi açılır.
+- **+ basma** (demircinin altınla güçlendirmesinin yerine):
+  - Aynı eşyanın aynı nadirlikteki bir kopyası, çantada eşyanın üstüne ya da takılı olduğu yuvaya sürüklenince eşya +1 olur.
+  - Altın maliyeti her adımda yaklaşık 1,85 kat artar, böylece +5 için beş kopya ve ciddi altın gerekir.
+  - Kılıç Hakkı ve Demirci Dostu maliyeti düşürür.
+  - Eşya sayfasında "+1 bas" düğmesi de var.
+- **Keşif** (`exploration.ts`), Ogame benzeri:
+  - **Süre:** Gidiş süresi (30 dk–6 sa, dönüş aynı) ve keşifte kalma süresi (0–12 sa) sürgüyle, 15 dakikalık adımlarla ayarlanır. En kısa keşif 1 saattir.
+  - **Dönüş saati:** Sürgü kaydırıldıkça dönüş saati anlık olarak gösterilir ("yarın 07:45"). "Sabah 07/08/09'da dönsün" kısayolları var.
+  - **Ödüller:** Hepsi rastgeledir ve seferden daha kalitelidir; sıradan nadirlikte ekipman düşmez.
+  - **Süreye etkisi:**
+    - Uzun keşif altını doğrusal artırır.
+    - Buluntu sayısı en fazla 4'e çıkar (her 3 saatte 1).
+    - Buluntu başına değerli eşya şansı neredeyse aynı kalır: uzak yol en fazla +%12 göreli.
+  - **Riskler:** Yaralanma ve geri çağırma vardır.
+  - **Yuvalar:** 1, artı en yüksek Gözcünün her 25 seviyesi için +1.
+- **Gözcü ayrıcalıkları seferden keşfe taşındı:**
+  - Hızlı Adımlar keşifte saatte daha çok yol demek.
+  - Hazine Avcısı nadir buluntu şansını artırır.
+  - Tuzak Sezgisi yaralanmayı azaltır.
+  - Yol Bilgisi iyileşme süresini kısaltır.
+  - Kaşif Ruhu ekstra buluntu şansı verir.
+  - Kayıp Diyarlar efsanevi şansını iki katına çıkarır.
+  - Kâşifler Yolu ana sınıf avantajı da keşfe uygulanır.
+  - Seferler artık her sınıf için eşit. Kayıp Diyarlar bölgesi 60. seviyeden herkese açık.
+- **Sancak** (`clan.ts`, `clan/routes.ts`), sohbetsiz klan:
+  - **Kuruluş:** 500 altın. Ad (3–20) ve kısaltma (2–4 harf) denetimden geçer. 8 renk ve 8 simge arasından sancak seçilir. Katılım herkese açık ya da başvuru ile olur.
+  - **Roller:** Sancaktar, subay, er. Üye çıkarma, terfi ve devir var. Lider ayrılırsa liderlik en eski subaya ya da üyeye geçer.
+  - **Av:**
+    - Sancaktar ya da subay 5 canavardan birini çağırır; daha güçlü canavarlar sancak seviyesiyle açılır.
+    - Üyelerin her dövüşçüsü saatte bir saldırır. Saldırı 12 turluk bir çatışmadır, can kaybı vardır.
+    - Canavar 24 saatte yenilirse altın verilen hasara göre paylaşılır. Her katılımcı bir de canavarın ganimet tablosundan eşya alır.
+  - **Yardım:** Üyeler birbirinin araştırma, sefer ve keşfini hızlandırır. Her yardım kalan sürenin %5'idir; bir işe en fazla 10 yardım yapılabilir. "Hepsine yardım et" düğmesi de var.
+  - **Hazine:** 10 altın 1 şan eder.
+  - **Seviye** (1–10): Her seviye +%1 sefer/keşif altını ve +2 üye yeri (10'dan 28'e) getirir.
+  - **Arena:** Aynı sancaktakiler arenada eşleşmez. Rakiplerin sancak etiketi görünür ve bir sancak sıralaması var.
+  - **Ayrılma:** Sancaktan ayrılan oyuncu 1 saat başka sancağa katılamaz.
+  - **Denetim:** Yönetici panelindeki "Sancaklar" sekmesinden uygunsuz ad sıfırlanır ya da sancak dağıtılır.
+

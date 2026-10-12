@@ -11,31 +11,38 @@ import { LegalScreen } from './LegalScreen';
 import { AccountTab } from './tabs/AccountTab';
 import { AlchemyTab } from './tabs/AlchemyTab';
 import { ArenaTab } from './tabs/ArenaTab';
+import { ClanTab } from './tabs/ClanTab';
 import { ExpeditionsTab } from './tabs/ExpeditionsTab';
-import { GangTab } from './tabs/GangTab';
+import { ExplorationTab } from './tabs/ExplorationTab';
+import { HomeTab } from './tabs/HomeTab';
 import { InventoryTab } from './tabs/InventoryTab';
 import { MarketTab } from './tabs/MarketTab';
-import type { MoreId } from './tabs/MoreTab';
-import { MoreTab } from './tabs/MoreTab';
 import { ReportsTab } from './tabs/ReportsTab';
 import { ResearchTab } from './tabs/ResearchTab';
-import { colors, fonts, ui } from './theme';
+import { colors, ui } from './theme';
 
-const TABS = [
-  { id: 'gang', title: 'Çete', icon: 'gang' },
+/** Two rows so every screen is one tap away (rev3): play actions on top, gang/services below. */
+const ROW1 = [
+  { id: 'home', title: 'Ana Sayfa', icon: 'home' },
   { id: 'inventory', title: 'Çanta', icon: 'bag' },
   { id: 'expeditions', title: 'Sefer', icon: 'map' },
+  { id: 'exploration', title: 'Keşif', icon: 'compass' },
   { id: 'arena', title: 'Arena', icon: 'swords' },
   { id: 'market', title: 'Pazar', icon: 'market' },
-  { id: 'more', title: 'Daha', icon: 'more' },
 ] as const;
-type TabId = (typeof TABS)[number]['id'];
-const MORE_TITLES: Record<MoreId, string> = { research: 'Rasathane', alchemy: 'Simya', reports: 'Raporlar', account: 'Hesap ve gizlilik' };
+const ROW2 = [
+  { id: 'clan', title: 'Sancak', icon: 'banner' },
+  { id: 'research', title: 'Rasathane', icon: 'telescope' },
+  { id: 'alchemy', title: 'Aktar', icon: 'mortar' },
+  { id: 'reports', title: 'Raporlar', icon: 'scroll' },
+  { id: 'account', title: 'Hesap', icon: 'user' },
+] as const;
+type TabId = (typeof ROW1)[number]['id'] | (typeof ROW2)[number]['id'];
+const TITLES: Record<TabId, string> = Object.fromEntries([...ROW1, ...ROW2].map((t) => [t.id, t.title])) as Record<TabId, string>;
 
 export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSignedOut: () => void }) {
   const [state, setState] = useState(initial);
-  const [tab, setTab] = useState<TabId>('gang');
-  const [more, setMore] = useState<MoreId | null>(null);
+  const [tab, setTab] = useState<TabId>('home');
   const [dragLock, setDragLock] = useState(false);
   const [fighterId, setFighterId] = useState<string>(initial.fighters[0]?.id ?? '');
   const [openFighter, setOpenFighter] = useState<string | null>(null);
@@ -66,6 +73,7 @@ export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSig
   }, [refresh]);
   const nextDue = Math.min(
     ...state.expeditions.map((e) => e.endsAt),
+    ...state.explorations.map((e) => e.endsAt),
     state.account.activeResearch?.until ?? Infinity,
     ...state.fighters.map((f) => f.statusUntil ?? Infinity),
   );
@@ -79,29 +87,32 @@ export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSig
   if (fighter) return <FighterScreen fighter={fighter} onBack={() => setOpenFighter(null)} onChanged={refresh} onInventory={() => { setFighterId(fighter.id); setOpenFighter(null); setTab('inventory'); }} />;
 
   const selectFighter = (id: string) => setFighterId(id);
-  const title = tab === 'more' && more ? MORE_TITLES[more] : null;
+
+  const tabButton = (t: { id: TabId; title: string; icon: string }, compact: boolean) => {
+    const on = tab === t.id;
+    const badge = t.id === 'reports' ? state.unreadReports : 0;
+    return (
+      <Pressable key={t.id} onPress={() => setTab(t.id)} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={t.title}
+        style={{ flex: 1, alignItems: 'center', paddingTop: compact ? 5 : 7, paddingBottom: compact ? 4 : 3, gap: 1, borderTopWidth: 2, borderColor: on ? colors.trim : 'transparent', backgroundColor: on ? '#c9a55c14' : 'transparent' }}>
+        <View>
+          <NavIcon name={t.icon} color={on ? colors.trim : colors.muted} size={compact ? 18 : 21} />
+          {badge > 0 && (
+            <View style={{ position: 'absolute', right: -9, top: -4, minWidth: 15, height: 15, borderRadius: 8, paddingHorizontal: 3, backgroundColor: colors.warn, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#000', fontSize: 9, fontWeight: '900' }}>{badge}</Text>
+            </View>
+          )}
+        </View>
+        <Text numberOfLines={1} style={{ color: on ? colors.text : colors.muted, fontSize: compact ? 9.5 : 10, fontWeight: '700' }}>{t.title}</Text>
+      </Pressable>
+    );
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <View style={{ paddingHorizontal: 14, paddingTop: 10, paddingBottom: 8, borderBottomWidth: 1, borderColor: colors.trimDim, backgroundColor: colors.bgDeep }}>
         <View style={ui.between}>
-          {title ? (
-            <Pressable onPress={() => setMore(null)} style={ui.row} hitSlop={10}>
-              <NavIcon name="back" color={colors.trim} />
-              <Text style={[ui.h2, { color: colors.text }]}>{title}</Text>
-            </Pressable>
-          ) : (
-            <Text style={{ color: colors.text, fontSize: 18, fontWeight: '800', letterSpacing: 2, fontFamily: fonts.display }}>AEGIS</Text>
-          )}
-          <View style={ui.row}>
-            {state.unreadReports > 0 && (
-              <Pressable onPress={() => { setTab('more'); setMore('reports'); }} hitSlop={8} style={ui.row}>
-                <NavIcon name="scroll" color={colors.warn} size={20} />
-                <Text style={{ color: colors.warn, fontWeight: '800' }}>{state.unreadReports}</Text>
-              </Pressable>
-            )}
-            <Gold amount={state.account.gold} />
-          </View>
+          <Text style={[ui.h2, { color: colors.text }]}>{TITLES[tab]}</Text>
+          <Gold amount={state.account.gold} />
         </View>
       </View>
 
@@ -109,32 +120,26 @@ export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSig
         style={{ flex: 1 }}
         scrollEnabled={!dragLock}
         contentContainerStyle={ui.screen}
+        keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} tintColor={colors.trim} onRefresh={async () => { setRefreshing(true); await refresh(); setRefreshing(false); }} />}
       >
         <ErrorText message={error} />
-        {tab === 'gang' && <GangTab state={state} now={now} onOpen={(f) => setOpenFighter(f.id)} onNew={() => setCreating(true)} />}
+        {tab === 'home' && <HomeTab state={state} now={now} onOpen={(f) => setOpenFighter(f.id)} onNew={() => setCreating(true)} onGo={setTab} />}
         {tab === 'inventory' && <InventoryTab state={state} fighterId={fighterId} setFighterId={selectFighter} refresh={refresh} lockScroll={setDragLock} />}
         {tab === 'expeditions' && <ExpeditionsTab state={state} now={now} refresh={refresh} />}
+        {tab === 'exploration' && <ExplorationTab state={state} now={now} refresh={refresh} />}
         {tab === 'arena' && <ArenaTab state={state} fighterId={fighterId} setFighterId={selectFighter} now={now} refresh={refresh} />}
         {tab === 'market' && <MarketTab state={state} fighterId={fighterId} setFighterId={selectFighter} now={now} refresh={refresh} />}
-        {tab === 'more' && !more && <MoreTab state={state} onOpen={setMore} />}
-        {tab === 'more' && more === 'research' && <ResearchTab state={state} now={now} refresh={refresh} />}
-        {tab === 'more' && more === 'alchemy' && <AlchemyTab state={state} refresh={refresh} />}
-        {tab === 'more' && more === 'reports' && <ReportsTab refresh={refresh} />}
-        {tab === 'more' && more === 'account' && <AccountTab state={state} onLegal={setLegal} onSignedOut={onSignedOut} />}
+        {tab === 'clan' && <ClanTab state={state} now={now} refresh={refresh} />}
+        {tab === 'research' && <ResearchTab state={state} now={now} refresh={refresh} />}
+        {tab === 'alchemy' && <AlchemyTab state={state} refresh={refresh} />}
+        {tab === 'reports' && <ReportsTab refresh={refresh} />}
+        {tab === 'account' && <AccountTab state={state} onLegal={setLegal} onSignedOut={onSignedOut} />}
       </ScrollView>
 
-      <View style={{ flexDirection: 'row', borderTopWidth: 1, borderColor: colors.trimDim, backgroundColor: colors.bgDeep, paddingBottom: 4 }}>
-        {TABS.map((t) => {
-          const on = tab === t.id;
-          return (
-            <Pressable key={t.id} onPress={() => { setTab(t.id); setMore(null); }} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={t.title}
-              style={{ flex: 1, alignItems: 'center', paddingTop: 8, paddingBottom: 4, gap: 2, borderTopWidth: 2, borderColor: on ? colors.trim : 'transparent' }}>
-              <NavIcon name={t.icon} color={on ? colors.trim : colors.muted} size={22} />
-              <Text style={{ color: on ? colors.text : colors.muted, fontSize: 10, fontWeight: '700' }}>{t.title}</Text>
-            </Pressable>
-          );
-        })}
+      <View style={{ borderTopWidth: 1, borderColor: colors.trimDim, backgroundColor: colors.bgDeep, paddingBottom: 2 }}>
+        <View style={{ flexDirection: 'row' }}>{ROW1.map((t) => tabButton(t, false))}</View>
+        <View style={{ flexDirection: 'row', borderTopWidth: 1, borderColor: colors.border }}>{ROW2.map((t) => tabButton(t, true))}</View>
       </View>
     </View>
   );

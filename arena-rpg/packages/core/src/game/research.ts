@@ -13,7 +13,7 @@ const MIN = 60_000;
 export const RESEARCH: Record<string, ResearchDefinition> = {
   expedition_logistics: {
     id: 'expedition_logistics',
-    name: 'Keşif Lojistiği',
+    name: 'Sefer Lojistiği',
     description: 'Aynı anda gönderilebilecek sefer sayısını artırır (Sv 2: 2 sefer, Sv 5: 3 sefer).',
     maxLevel: 5,
     cost: (lvl) => Math.round(100 * 3 ** (lvl - 1)),

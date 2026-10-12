@@ -117,7 +117,7 @@ export function resolveExploration(input: {
   const level = Math.max(...input.party.map((f) => f.level), 1);
   const totalH = explorationTotalMs(input.travelMs, input.exploreMs) / HOUR;
   const exploreH = (input.exploreMs / HOUR) * (1 + b.pace);
-  const goldRate = 18 + level * 4; // per hour away
+  const goldRate = 30 + level * 6; // per hour away
   const gold = Math.round((goldRate * totalH * 0.5 + goldRate * exploreH) * (0.85 + rng() * 0.3));
   const xp = Math.round((10 + level * 2) * (totalH * 0.5 + exploreH));
 
@@ -140,6 +140,20 @@ export function resolveExploration(input: {
   const injuryChance = 0.06 * (1 - Math.min(0.75, b.injuryReduction));
   const injured = input.party.filter(() => rng() < injuryChance).map((f) => f.id);
   return { gold, xp, finds, injured };
+}
+
+/** What the UI shows before sending: average gold (±15%), XP and the number of finds. */
+export function explorationEstimate(input: { travelMs: number; exploreMs: number; level: number; pace: number }) {
+  const totalH = explorationTotalMs(input.travelMs, input.exploreMs) / HOUR;
+  const exploreH = (input.exploreMs / HOUR) * (1 + input.pace);
+  const goldRate = 30 + input.level * 6;
+  const avg = goldRate * totalH * 0.5 + goldRate * exploreH;
+  return {
+    goldMin: Math.round(avg * 0.85),
+    goldMax: Math.round(avg * 1.15),
+    xp: Math.round((10 + input.level * 2) * (totalH * 0.5 + exploreH)),
+    finds: findCount(input.exploreMs, input.pace),
+  };
 }
 
 function pickKind(rng: () => number): FindKind {

@@ -5,7 +5,7 @@ import { prefs } from './lib/prefs';
 const SERVER_PORT = 8787;
 
 /** Shown on the sign-in screen so testers can confirm they run the latest bundle. */
-export const APP_BUILD = 'v0.6 (rev1)';
+export const APP_BUILD = 'v0.7 (rev3)';
 
 let manualOverride: string | null = null;
 
