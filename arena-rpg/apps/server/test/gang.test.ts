@@ -129,3 +129,25 @@ describe('hunting, alchemy and potions', () => {
     expect(Array.isArray(report.body.items)).toBe(true);
   });
 });
+
+describe('expedition stages', () => {
+  it('locks later stages, records progress and reports the stage result', async () => {
+    const g = await gang('scout');
+    expect((await g.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [g.fighterId], stage: 3 })).error).toBe('stage_locked');
+    g.db.prepare('UPDATE fighters SET level = 40').run(); // overwhelming power → ~97% success
+    let cleared = 0;
+    for (let i = 0; i < 4 && cleared === 0; i++) {
+      const r = await g.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [g.fighterId], stage: 1 });
+      expect(r.stage).toBe(1);
+      g.clock.advance(6 * 3_600_000);
+      const s = await g.get('/v1/game/state');
+      cleared = s.zoneProgress.dark_forest ?? 0;
+      g.db.prepare("UPDATE fighters SET status_kind = 'idle', status_until = NULL").run();
+    }
+    expect(cleared).toBe(1);
+    const report = (await g.get('/v1/game/reports')).reports.find((r: { body: { stage?: number } }) => r.body.stage === 1);
+    expect(report.title).toContain('Orman Girişi');
+    const next = await g.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [g.fighterId] });
+    expect(next.stage).toBe(2);
+  });
+});

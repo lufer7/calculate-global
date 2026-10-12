@@ -61,6 +61,8 @@ export const tr = {
     rank_too_low: 'Bu tarif için İksir Yapımı rütben yetersiz.',
     missing_resources: 'Malzemeler eksik.',
     no_luck_potion: 'Şans İksirin yok.',
+    stage_locked: 'Bu bölüm henüz kilitli. Önce bir önceki bölümü geç.',
+    invalid_stage: 'Geçersiz bölüm.',
     age_confirmation_required: 'Kayıt için yaş onayı kutusunu işaretlemelisin.',
     missing_fields: 'E-posta ve şifreni gir.',
     email_taken: 'Bu e-posta başka bir hesapta kullanılıyor.',

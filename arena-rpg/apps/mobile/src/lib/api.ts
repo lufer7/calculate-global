@@ -99,9 +99,10 @@ export interface GameState {
   expeditionSlots: number;
   prophecyZone: string | null;
   fighters: FighterView[];
-  expeditions: { id: string; zoneId: string; fighterIds: string[]; startedAt: number; endsAt: number; recalled: boolean }[];
+  expeditions: { id: string; zoneId: string; stage: number; fighterIds: string[]; startedAt: number; endsAt: number; recalled: boolean }[];
   unreadReports: number;
   luckPotions: number;
+  zoneProgress: Record<string, number>;
 }
 
 export interface MarketOffer { offerId: string; section: 'equipment' | 'food' | 'potion'; price: number; soldOut: boolean; item: ItemView }
@@ -177,8 +178,8 @@ export const api = {
   state: () => call<GameState>('/v1/game/state'),
   rankUp: (fighterId: string, skillId: string) => call<{ skills: Record<string, number> }>(`/v1/game/fighters/${fighterId}/skills`, 'POST', { skillId }),
   respec: (fighterId: string) => call<{ skills: Record<string, number> }>(`/v1/game/fighters/${fighterId}/respec`, 'POST', {}),
-  startExpedition: (zoneId: string, fighterIds: string[], useLuck = false) =>
-    call<{ id: string; endsAt: number; underLevel: string[] }>('/v1/game/expeditions', 'POST', { zoneId, fighterIds, useLuck }),
+  startExpedition: (zoneId: string, fighterIds: string[], useLuck = false, stage?: number) =>
+    call<{ id: string; stage: number; endsAt: number; underLevel: string[] }>('/v1/game/expeditions', 'POST', { zoneId, fighterIds, useLuck, stage }),
   inventory: () => call<{ capacity: number; used: number; smithReduction: number; items: ItemView[] }>('/v1/game/inventory'),
   equip: (itemId: string, fighterId: string, slot?: game.EquipSlot) => call<{ slot: game.EquipSlot }>(`/v1/game/items/${itemId}/equip`, 'POST', { fighterId, slot }),
   unequip: (itemId: string) => call<void>(`/v1/game/items/${itemId}/unequip`, 'POST', {}),

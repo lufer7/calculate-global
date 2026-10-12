@@ -52,6 +52,14 @@ function ExpeditionBody({ body, at }: { body: Record<string, unknown>; at: numbe
   const reward = String(body.reward);
   return (
     <View style={{ gap: 6 }}>
+      {typeof body.success === 'boolean' && (
+        <View style={[ui.row, { flexWrap: 'wrap' }]}>
+          <Text style={{ fontWeight: '900', color: body.success ? colors.good : colors.danger }}>{body.success ? '✓ Bölüm geçildi' : '✗ Bölüm geçilemedi'}</Text>
+          <Text style={ui.muted}>(şans %{Number(body.chance)})</Text>
+          {body.firstBossClear === true && <Text style={{ color: colors.trim, fontWeight: '800' }}>☠ Patron ilk kez yenildi!</Text>}
+        </View>
+      )}
+      {body.success === false && <Text style={ui.muted}>Ekip geri çekildi; yalnızca az bir altın ve deneyim getirdi. Daha güçlü bir ekip ya da daha iyi eşyalarla tekrar dene.</Text>}
       <Text style={ui.text}>{tr.events[String(body.event)] ?? ''}</Text>
       <Text style={ui.text}>
         Ganimet: <Text style={{ fontWeight: '700', color: reward === 'nothing' ? colors.muted : colors.accent }}>{tr.tiers[reward]}</Text>
