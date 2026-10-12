@@ -76,7 +76,11 @@ export function createApp(deps: AppDeps = {}) {
   });
 
   // Deliberately NO logger middleware: no access logs, no IPs, no user agents on disk.
-  if (deps.corsOrigin) app.use('/v1/*', cors({ origin: deps.corsOrigin, allowHeaders: ['content-type', 'authorization'], allowMethods: ['GET', 'POST', 'PUT', 'DELETE'] }));
+  if (deps.corsOrigin) {
+    const policy = cors({ origin: deps.corsOrigin, allowHeaders: ['content-type', 'authorization'], allowMethods: ['GET', 'POST', 'PUT', 'DELETE'] });
+    app.use('/v1/*', policy);
+    app.use('/health', policy);
+  }
   for (const path of ['/v1/*', '/admin/*']) {
     app.use(path, bodyLimit({ maxSize: TRANSFER_MAX_BYTES + 1024, onError: (c) => c.json({ error: 'too_large' }, 413) }));
   }

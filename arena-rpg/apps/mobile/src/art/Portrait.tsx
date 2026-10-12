@@ -7,8 +7,8 @@ import { classColor } from '../screens/theme';
 export function Portrait({ cls, size = 64, hpRatio, injured }: { cls: game.ClassId; size?: number; hpRatio?: number; injured?: boolean }) {
   const c = classColor(cls);
   return (
-    <View style={{ width: size, height: size * 1.2, borderRadius: 6, overflow: 'hidden', borderWidth: 1.5, borderColor: c }}>
-      <Svg width="100%" height="100%" viewBox="0 0 100 120">
+    <View pointerEvents="none" style={{ width: size, height: size * 1.2, borderRadius: 6, overflow: 'hidden', borderWidth: 1.5, borderColor: c }}>
+      <Svg pointerEvents="none" width="100%" height="100%" viewBox="0 0 100 120">
         <Defs>
           <RadialGradient id={`pb-${cls}`} cx="50%" cy="35%" r="70%">
             <Stop offset="0" stopColor={c} stopOpacity={0.55} />

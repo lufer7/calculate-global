@@ -25,7 +25,7 @@ export function Button({ title, onPress, kind = 'primary', disabled, busy, style
       ]}
     >
       {kind === 'primary' && (
-        <Svg style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 10 10">
+        <Svg pointerEvents="none" style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }} width="100%" height="100%" preserveAspectRatio="none" viewBox="0 0 10 10">
           <Defs>
             <LinearGradient id="btn-gold" x1="0" y1="0" x2="0" y2="1">
               <Stop offset="0" stopColor="#e8c879" />

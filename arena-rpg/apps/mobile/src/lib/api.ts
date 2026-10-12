@@ -11,6 +11,8 @@ export class ApiError extends Error {
   }
 }
 
+const REQUEST_TIMEOUT_MS = 12_000;
+
 let token: string | null = null;
 export const setToken = (t: string | null) => {
   token = t;
@@ -19,15 +21,21 @@ export const setToken = (t: string | null) => {
 /** The only network client in the app: JSON in/out, Bearer token, no cookies. */
 async function call<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
   let res: Response;
+  // Without a timeout an unreachable server makes buttons look like they do nothing.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     res = await fetch(`${apiBaseUrl()}${path}`, {
       method,
       credentials: 'omit',
+      signal: controller.signal,
       headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch {
     throw new ApiError('network', 0, null);
+  } finally {
+    clearTimeout(timer);
   }
   const data = res.status === 204 ? null : ((await res.json().catch(() => null)) as Record<string, unknown> | null);
   if (!res.ok) throw new ApiError(String(data?.error ?? `http_${res.status}`), res.status, data);
@@ -131,6 +139,20 @@ export interface Report {
   at: number;
   read: boolean;
   body: Record<string, unknown>;
+}
+
+/** Quick reachability check for the sign-in screen. */
+export async function pingServer(): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(`${apiBaseUrl()}/health`, { signal: controller.signal, credentials: 'omit' });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export const api = {

@@ -243,8 +243,8 @@ export function ItemIcon({ icon, rarity = 'common', size = 56, qty, upgrade, dim
   const color = game.RARITY_INFO[rarity]?.color ?? '#888';
   const draw = POTION_COLORS[icon] ? () => <Potion color={POTION_COLORS[icon]!} /> : ICONS[icon];
   return (
-    <View style={{ width: size, height: size, borderRadius: 6, borderWidth: rarity === 'common' ? 1 : 2, borderColor: rarity === 'common' ? '#3a474f' : color, overflow: 'hidden', opacity: dim ? 0.45 : 1 }}>
-      <Svg width="100%" height="100%" viewBox="0 0 64 64">
+    <View pointerEvents="none" style={{ width: size, height: size, borderRadius: 6, borderWidth: rarity === 'common' ? 1 : 2, borderColor: rarity === 'common' ? '#3a474f' : color, overflow: 'hidden', opacity: dim ? 0.45 : 1 }}>
+      <Svg pointerEvents="none" width="100%" height="100%" viewBox="0 0 64 64">
         <Materials />
         <Rect width={64} height={64} fill="url(#ibg)" />
         {rarity !== 'common' && <Rect width={64} height={64} fill={color} opacity={0.12} />}
@@ -264,8 +264,8 @@ export function ItemIcon({ icon, rarity = 'common', size = 56, qty, upgrade, dim
 export function EmptySlot({ slot, size = 56 }: { slot: game.EquipSlot; size?: number }) {
   const icon = { head: 'helm', amulet: 'amulet', chest: 'plate', main_hand: 'sword', off_hand: 'shield', hands: 'gloves', ring1: 'ring', ring2: 'ring', feet: 'boots' }[slot];
   return (
-    <View style={{ width: size, height: size, borderRadius: 6, borderWidth: 1, borderStyle: 'dashed', borderColor: '#3a474f', backgroundColor: '#0d1316', overflow: 'hidden' }}>
-      <Svg width="100%" height="100%" viewBox="0 0 64 64" opacity={0.18}>
+    <View pointerEvents="none" style={{ width: size, height: size, borderRadius: 6, borderWidth: 1, borderStyle: 'dashed', borderColor: '#3a474f', backgroundColor: '#0d1316', overflow: 'hidden' }}>
+      <Svg pointerEvents="none" width="100%" height="100%" viewBox="0 0 64 64" opacity={0.18}>
         <Materials />
         {ICONS[icon]!()}
       </Svg>

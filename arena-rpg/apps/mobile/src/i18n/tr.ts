@@ -17,7 +17,7 @@ export const tr = {
     lost_treasure: 'Kayıp bir hazine buldular!',
   } as Record<string, string>,
   errors: {
-    network: 'Sunucuya ulaşılamadı. Sunucunun açık ve telefonla aynı ağda olduğundan emin ol.',
+    network: 'Sunucuya ulaşılamadı. Bilgisayarda `npm run dev` açık mı, telefon aynı Wi-Fi\'da mı? Aşağıdaki sunucu adresini kontrol et.',
     invalid_email: 'Geçerli bir e-posta adresi gir.',
     weak_password: 'Şifre en az 10 karakter olmalı.',
     legal_acceptance_required: 'Devam etmek için iki onay kutusunu da işaretlemelisin.',
@@ -61,7 +61,8 @@ export const tr = {
     rank_too_low: 'Bu tarif için İksir Yapımı rütben yetersiz.',
     missing_resources: 'Malzemeler eksik.',
     no_luck_potion: 'Şans İksirin yok.',
-    age_confirmation_required: 'Kayıt için yaş onayı gerekiyor.',
+    age_confirmation_required: 'Kayıt için yaş onayı kutusunu işaretlemelisin.',
+    missing_fields: 'E-posta ve şifreni gir.',
     email_taken: 'Bu e-posta başka bir hesapta kullanılıyor.',
     message_required: 'Başvurunu birkaç kelimeyle açıkla.',
     too_many_open_requests: 'Yanıt bekleyen 3 başvurun var. Önce onların yanıtlanmasını bekle.',

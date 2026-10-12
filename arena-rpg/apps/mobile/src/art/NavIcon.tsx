@@ -4,7 +4,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 export function NavIcon({ name, color, size = 24 }: { name: string; color: string; size?: number }) {
   const p = { stroke: color, strokeWidth: 1.8, fill: 'none', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
+    <Svg pointerEvents="none" width={size} height={size} viewBox="0 0 24 24">
       {name === 'gang' && <><Path {...p} d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM16 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" /><Path {...p} d="M2 20c0-3 3-5 6-5s6 2 6 5M12 18c.6-2 2.4-3 4-3 3 0 6 2 6 5" /></>}
       {name === 'bag' && <><Path {...p} d="M5 8h14l-1 12H6L5 8z" /><Path {...p} d="M9 8V6a3 3 0 0 1 6 0v2" /><Path {...p} d="M9 12h6" /></>}
       {name === 'map' && <><Path {...p} d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z" /><Path {...p} d="M9 4v14M15 6v14" /></>}

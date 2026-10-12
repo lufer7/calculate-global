@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Button, Checkbox, ErrorText, Field } from '../components/ui';
 import { tr } from '../i18n/tr';
 import { game } from '@arena/core';
 import { LEGAL } from '../legal/texts';
-import { ApiError, api } from '../lib/api';
+import { ApiError, api, pingServer } from '../lib/api';
+import { apiBaseUrl } from '../config';
 import { LegalScreen } from './LegalScreen';
 import { Scene } from '../art/Scene';
 import { colors, ui } from './theme';
@@ -23,6 +24,12 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
   const [legal, setLegal] = useState<'privacy' | 'terms' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [server, setServer] = useState<'checking' | 'ok' | 'down'>('checking');
+  const checkServer = () => {
+    setServer('checking');
+    void pingServer().then((ok) => setServer(ok ? 'ok' : 'down'));
+  };
+  useEffect(checkServer, []);
 
   const run = async (fn: () => Promise<void>) => {
     setError(null);
@@ -72,7 +79,10 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
             <Text style={ui.muted}>{email} adresine 6 haneli bir kod gönderdik. Kod 15 dakika geçerli.</Text>
             <Field label="Doğrulama kodu" value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} autoComplete="one-time-code" />
             <ErrorText message={error} />
-            <Button title="Doğrula ve başla" busy={busy} disabled={code.length !== 6} onPress={() => run(async () => onSignedIn((await api.verify(email, code)).token))} />
+            <Button title="Doğrula ve başla" busy={busy} onPress={() => run(async () => {
+              if (code.trim().length !== 6) throw new ApiError('invalid_code', 0, null);
+              onSignedIn((await api.verify(email, code.trim())).token);
+            })} />
             <Button title="Geri" kind="ghost" onPress={() => setMode('register')} />
           </>
         ) : (
@@ -98,12 +108,17 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
             )}
             <ErrorText message={error} />
             {mode === 'login' ? (
-              <Button title="Giriş yap" busy={busy} disabled={!email || !password} onPress={() => run(async () => {
+              <Button title="Giriş yap" busy={busy} onPress={() => run(async () => {
+                if (!email.trim() || !password) throw new ApiError('missing_fields', 0, null);
                 const r = await api.login(email, password);
                 onSignedIn(r.token);
               })} />
             ) : (
-              <Button title="Kayıt ol" busy={busy} disabled={!email || password.length < 10 || !terms || !privacy || !age} onPress={() => run(async () => {
+              <Button title="Kayıt ol" busy={busy} onPress={() => run(async () => {
+                if (!email.trim()) throw new ApiError('invalid_email', 0, null);
+                if (password.length < 10) throw new ApiError('weak_password', 0, null);
+                if (!terms || !privacy) throw new ApiError('legal_acceptance_required', 0, null);
+                if (!age) throw new ApiError('age_confirmation_required', 0, null);
                 await api.register({ email, password, acceptTerms: terms, privacyNoticeAck: privacy, ageConfirmed: age, marketingConsent: marketing, termsVersion: LEGAL.versions.terms, privacyVersion: LEGAL.versions.privacy });
                 setMode('verify');
               })} />
@@ -111,6 +126,12 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
             {mode === 'register' && password.length > 0 && password.length < 10 && <Text style={ui.muted}>Şifre en az 10 karakter olmalı.</Text>}
           </>
         )}
+        <Pressable onPress={checkServer} style={[ui.row, { marginTop: 12, opacity: 0.85 }]}>
+          <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: server === 'ok' ? colors.good : server === 'down' ? colors.danger : colors.warn }} />
+          <Text style={[ui.muted, { flex: 1, fontSize: 12 }]}>
+            {server === 'ok' ? 'Sunucuya bağlı' : server === 'down' ? 'Sunucuya ulaşılamıyor (dokun: tekrar dene)' : 'Sunucu kontrol ediliyor…'} · {apiBaseUrl()}
+          </Text>
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );

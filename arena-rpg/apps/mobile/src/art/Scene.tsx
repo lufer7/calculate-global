@@ -233,10 +233,10 @@ const scenes: Record<SceneKey, () => ReactNode> = {
 export function Scene({ name, height = 140, fill, style, children }: { name: SceneKey; height?: number; fill?: boolean; style?: ViewStyle; children?: ReactNode }) {
   return (
     <View style={[fill ? { flex: 1 } : { height }, { overflow: 'hidden', borderRadius: 6 }, style]}>
-      <Svg width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice">
+      <Svg pointerEvents="none" width="100%" height="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice">
         {scenes[name]()}
       </Svg>
-      {children ? <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: 0 }}>{children}</View> : null}
+      {children ? <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, top: 0 }}>{children}</View> : null}
     </View>
   );
 }

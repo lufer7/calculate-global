@@ -39,6 +39,7 @@ ADMIN_PASSWORD="en-az-14-karakter" npm run admin:create -w @arena/server -- siz@
 | `Node.js ... bulundu, ancak bu proje Node 22.13+ ...` veya `EBADENGINE` / Metro hatası | nodejs.org'dan LTS sürümünü (22 veya 24) kurun, terminali yeniden açın, `npm install` tekrar. |
 | QR görünmüyor | Komutu `arena-rpg` klasöründe, normal bir terminalde çalıştırın: `npm run mobile`. QR çıkmazsa terminaldeki `exp://...` adresini Expo Go'da "Enter URL manually" ile girin. |
 | Telefonda "Could not connect" / "Something went wrong" | Telefon ve bilgisayar aynı Wi-Fi'da olmalı; VPN kapalı olmalı. |
+| Giriş ekranının altında kırmızı nokta: "Sunucuya ulaşılamıyor" | Yanında yazan adres bilgisayarınızın IP'si ve 8787 portu olmalı (ör. `http://192.168.1.20:8787`). `npm run dev` açık olmalı; telefonun tarayıcısında bu adrese `/health` ekleyerek açmayı deneyin, `{"ok":true}` görmelisiniz. `--tunnel` ile açtıysanız telefon sunucuya ulaşamaz; aynı Wi-Fi ile normal `npm run dev` kullanın. |
 | Uygulamada "Sunucuya ulaşılamadı" | `npm run dev` ile sunucunun da açık olduğundan emin olun. Bilgisayarın güvenlik duvarı 8787 portuna izin vermeli (Windows ilk açılışta sorar: "Özel ağlar"a izin verin). |
 | Windows'ta `running scripts is disabled on this system` | PowerShell yerine "Komut İstemi" (cmd) kullanın ya da `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. |
 | Expo Go'da "Project is incompatible with this version of Expo Go" | Expo Go uygulamasını mağazadan güncelleyin (proje Expo SDK 57 kullanıyor). |
