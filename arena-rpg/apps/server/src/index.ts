@@ -1,3 +1,4 @@
+import { networkInterfaces } from 'node:os';
 import { serve } from '@hono/node-server';
 import { getConnInfo } from '@hono/node-server/conninfo';
 import type { Context } from 'hono';
@@ -49,4 +50,12 @@ serve({ fetch: app.fetch, port }, () => {
   // Startup message only – the server never logs requests.
   const speed = Number(process.env.GAME_SPEED ?? 1);
   console.log(`arena server listening on :${port} (admin panel: /admin)${speed > 1 && !production ? ` · test mode: timers ${speed}x faster` : ''}`);
+  if (!production) {
+    const lan = Object.values(networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i!.address);
+    console.log('\n================ OYUN SUNUCUSU HAZIR ================');
+    console.log(`Bu bilgisayarda:          http://localhost:${port}/health`);
+    for (const ip of lan) console.log(`Telefondan bağlanmak için: http://${ip}:${port}   (uygulamaya "${ip}" yazman yeterli)`);
+    console.log('Telefonun tarayıcısında bu adresin sonuna /health ekleyip açınca {"ok":true} görmelisin.');
+    console.log('=====================================================\n');
+  }
 });

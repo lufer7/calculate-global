@@ -8,6 +8,13 @@ const env = { ...process.env, GAME_SPEED: process.env.GAME_SPEED ?? '20' };
 const opts = { stdio: 'inherit', env, shell: process.platform === 'win32' };
 
 const server = spawn('npm', ['run', 'dev', '-w', '@arena/server'], opts);
+server.on('exit', (code) => {
+  console.error('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+  console.error(`!!  OYUN SUNUCUSU KAPANDI (çıkış kodu ${code}).`);
+  console.error('!!  Uygulama "Sunucuya ulaşılamıyor" diyecek. Yukarıdaki hata');
+  console.error('!!  satırlarını kopyalayıp gönderirsen sorunu çözebilirim.');
+  console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n');
+});
 const mobile = spawn('npm', ['run', 'start', '-w', '@arena/mobile', '--', ...process.argv.slice(2)], opts);
 
 const stop = () => {

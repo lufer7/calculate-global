@@ -6,6 +6,7 @@ import { tr } from './src/i18n/tr';
 import type { GameState } from './src/lib/api';
 import { ApiError, api, setToken } from './src/lib/api';
 import { session } from './src/lib/session';
+import { loadServerOverride } from './src/config';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { CreateFighterScreen } from './src/screens/CreateFighterScreen';
 import { LoadingScreen } from './src/screens/LoadingScreen';
@@ -31,6 +32,7 @@ export default function App() {
     const started = Date.now();
     const wait = () => new Promise((r) => setTimeout(r, Math.max(0, MIN_SPLASH_MS - (Date.now() - started))));
     try {
+      await loadServerOverride();
       const token = await session.get();
       if (!token) {
         await wait();

@@ -5,7 +5,7 @@ import { tr } from '../i18n/tr';
 import { game } from '@arena/core';
 import { LEGAL } from '../legal/texts';
 import { ApiError, api, pingServer } from '../lib/api';
-import { APP_BUILD, apiBaseUrl } from '../config';
+import { APP_BUILD, apiBaseUrl, normalizeServerUrl, setServerOverride } from '../config';
 import { LegalScreen } from './LegalScreen';
 import { Scene } from '../art/Scene';
 import { colors, ui } from './theme';
@@ -30,6 +30,8 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
     void pingServer().then((ok) => setServer(ok ? 'ok' : 'down'));
   };
   useEffect(checkServer, []);
+  const [editingServer, setEditingServer] = useState(false);
+  const [serverInput, setServerInput] = useState('');
 
   const run = async (fn: () => Promise<void>) => {
     setError(null);
@@ -132,6 +134,28 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string) => void
             {server === 'ok' ? 'Sunucuya bağlı' : server === 'down' ? 'Sunucuya ulaşılamıyor (dokun: tekrar dene)' : 'Sunucu kontrol ediliyor…'} · {apiBaseUrl()}
           </Text>
         </Pressable>
+        {server === 'down' && !editingServer && (
+          <View style={{ gap: 6 }}>
+            <Text style={[ui.muted, { fontSize: 12 }]}>Bilgisayardaki terminalde "Telefondan bağlanmak için" satırında yazan adresi buraya girebilirsin.</Text>
+            <Button title="Sunucu adresini elle gir" kind="ghost" small onPress={() => { setServerInput(''); setEditingServer(true); }} />
+          </View>
+        )}
+        {editingServer && (
+          <View style={{ gap: 8 }}>
+            <Field label="Sunucu adresi (ör. 192.168.1.20)" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" keyboardType="url" />
+            <View style={ui.row}>
+              <Button title="Vazgeç" kind="ghost" small style={{ flex: 1 }} onPress={() => setEditingServer(false)} />
+              <Button title="Kaydet ve dene" small style={{ flex: 1 }} onPress={async () => {
+                const url = normalizeServerUrl(serverInput);
+                if (!url) return setError('Adres anlaşılamadı. Örnek: 192.168.1.20');
+                await setServerOverride(url);
+                setEditingServer(false);
+                checkServer();
+              }} />
+            </View>
+            <Button title="Otomatik adrese dön" kind="ghost" small onPress={async () => { await setServerOverride(null); setEditingServer(false); checkServer(); }} />
+          </View>
+        )}
         <Text style={[ui.muted, { fontSize: 11, opacity: 0.7 }]}>Sürüm: {APP_BUILD}</Text>
       </ScrollView>
     </KeyboardAvoidingView>
