@@ -18,7 +18,7 @@ export const GAME_CONFIG = {
     points_per_level: 1,
     bonus_point_every_levels: 10,
     /** YP cost of buying rank 1..5 of a skill. */
-    rank_costs: [1, 1, 2, 2, 3],
+    rank_costs: [1, 2, 2, 3, 4],
     /** YP spent in a branch needed to unlock tier 1, 2, 3, mastery. */
     tier_unlock_points: [0, 5, 15, 30],
     respec_cooldown_hours: 24,

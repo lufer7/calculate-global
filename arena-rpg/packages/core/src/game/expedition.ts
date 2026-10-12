@@ -2,6 +2,8 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { utf8 } from '../encoding';
 import type { Result } from '../result';
 import { err, ok } from '../result';
+import type { ClassId } from './classes';
+import { accountPerks } from './classPerks';
 import { GAME_CONFIG } from './config';
 import type { Fighter } from './fighters';
 import { isAvailable } from './fighters';
@@ -113,6 +115,8 @@ export function planExpedition(input: {
   activeExpeditions: number;
   researchLevel: number;
   now: number;
+  /** Class of the account's first fighter – grants account-wide perks. */
+  mainClass?: ClassId | null;
   extraReductions?: number[];
 }): Result<{ endsAt: number; durationMs: number; leavesCastleEmpty: boolean; underLevel: string[] }, StartError> {
   const zone = Object.prototype.hasOwnProperty.call(ZONES, input.zoneId) ? ZONES[input.zoneId] : undefined;
@@ -124,7 +128,8 @@ export function planExpedition(input: {
   const slots = expeditionSlots(input.researchLevel, highestScoutLevel(input.allFighters, input.now));
   if (input.activeExpeditions >= slots) return err('no_free_slot');
 
-  const durationMs = expeditionDuration(zone, bonuses, input.extraReductions);
+  const perk = accountPerks(input.mainClass).expeditionDurationReduction;
+  const durationMs = expeditionDuration(zone, bonuses, [perk, ...(input.extraReductions ?? [])]);
   const partyIds = new Set(input.party.map((f) => f.id));
   return ok({
     endsAt: input.now + durationMs,
@@ -173,11 +178,13 @@ export function resolveExpedition(
   zone: Zone,
   party: Pick<Fighter, 'id' | 'level' | 'skills'>[],
   rng: () => number,
-  opts: { prophecyBonus?: number } = {},
+  opts: { prophecyBonus?: number; mainClass?: ClassId | null; isProphecyZone?: boolean } = {},
 ): ExpeditionOutcome {
   const bonuses = partyBonuses(party);
+  const perks = accountPerks(opts.mainClass);
   const cap = GAME_CONFIG.expedition.chance_cap;
-  const rewardWeights = boostedRewardWeights(zone.rewardWeights, bonuses.rareChanceRelative);
+  // Skill and main-class bonuses are both relative; they add up before the cap.
+  const rewardWeights = boostedRewardWeights(zone.rewardWeights, bonuses.rareChanceRelative + perks.expeditionRareChanceRelative);
 
   const reward = pick(rewardWeights, rng);
   const extraReward = rng() < Math.min(cap, bonuses.extraRewardChance) ? pick(rewardWeights, rng) : null;
@@ -194,7 +201,8 @@ export function resolveExpedition(
     })
     .map((f) => f.id);
 
-  return { reward, extraReward, event, rewardMultiplier: 1 + (opts.prophecyBonus ?? 0), injured };
+  const prophecy = opts.isProphecyZone ? (opts.prophecyBonus ?? 0) + perks.prophecyBaseBonus : (opts.prophecyBonus ?? 0);
+  return { reward, extraReward, event, rewardMultiplier: 1 + prophecy, injured };
 }
 
 /** Early recall: fighters walk back as long as they have been out; no reward. */

@@ -31,7 +31,7 @@ describe('skill points', () => {
   });
 
   it('enforces class, tier lock, rank cap and budget', () => {
-    const f = fighter({ level: 3 });
+    const f = fighter({ level: 4 });
     expect(rankUp(f, 'heavy_blow')).toEqual({ ok: false, error: 'wrong_class' });
     expect(rankUp(f, 'trap_sense')).toEqual({ ok: false, error: 'tier_locked' });
     let skills = f.skills;
@@ -145,10 +145,40 @@ describe('pvp rules', () => {
   });
 });
 
-describe('balance report (design doc §2 check)', () => {
-  it('prints the cost to fill each branch', () => {
-    const rows = Object.values(CLASSES).flatMap((c) => BRANCH_IDS[c.id].map((b) => `${b}=${branchFullCost(b)}`));
-    console.log(`YP at level 100: ${totalSkillPoints(100)} | full branch cost: ${rows.join(', ')}`);
-    expect(rows).toHaveLength(9);
+describe('balance (design doc §2)', () => {
+  const points = totalSkillPoints(100);
+  it('every mastery is reachable by investing in its own branch', () => {
+    for (const s of game.SKILLS.filter((x) => x.tier === 4)) {
+      const before = game.SKILLS.filter((x) => x.branch === s.branch && x.tier < 4).reduce((sum, x) => sum + game.costToRank(x.max_rank), 0);
+      expect(before, s.branch).toBeGreaterThanOrEqual(GAME_CONFIG.skill.tier_unlock_points[3]!);
+    }
+  });
+  it('at level 100 two branches fit, three never do', () => {
+    for (const c of Object.values(CLASSES)) {
+      const costs = BRANCH_IDS[c.id].map((b) => branchFullCost(b)).sort((a, b) => b - a);
+      expect(costs[0]! + costs[1]!, c.id).toBeLessThanOrEqual(points);
+      expect(costs[0]! + costs[1]! + costs[2]!, c.id).toBeGreaterThan(points);
+    }
+  });
+});
+
+describe('main-class perks', () => {
+  const { MAIN_CLASS_PERKS, accountPerks, attackPlunder } = game;
+  it('scout main class speeds up and enriches every expedition of the account', () => {
+    const swordsman = fighter({ id: 'x', class: 'swordmaster', level: 10 });
+    const plan = (mainClass: game.ClassId | null) => {
+      const r = planExpedition({ zoneId: 'dark_forest', party: [swordsman], allFighters: [swordsman], activeExpeditions: 0, researchLevel: 0, now: 0, mainClass });
+      if (!r.ok) throw new Error(r.error);
+      return r.value.durationMs;
+    };
+    expect(plan('scout')).toBe(Math.round(plan(null) * 0.8));
+    expect(accountPerks('scout').expeditionRareChanceRelative).toBe(0.3);
+  });
+  it('swordmaster plunders more and loses less; seer gets prophecy and faster research', () => {
+    expect(attackPlunder({ defenderGold: 1000, attackerMainClass: 'swordmaster' })).toBe(375);
+    expect(attackPlunder({ defenderGold: 1000, defenderMainClass: 'swordmaster' })).toBe(225);
+    const o = resolveExpedition(ZONES.dark_forest!, [{ id: 'a', level: 10, skills: {} }], createRng(1), { mainClass: 'seer', isProphecyZone: true });
+    expect(o.rewardMultiplier).toBeCloseTo(1.1);
+    expect(MAIN_CLASS_PERKS.seer.perks.researchDurationReduction).toBe(0.2);
   });
 });

@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { PvpSnapshot } from '@arena/core';
@@ -6,6 +7,14 @@ import {
   displayNameFromId, eloDelta, generateOpponent, isValidLadderToken, ladderIdFromToken,
   simulateBattle, snapshotToCombatant, validateSnapshot,
 } from '@arena/core';
+import { accountRoutes } from './accounts/routes';
+import { addNotification } from './accounts/repo';
+import { adminPanelHtml } from './admin/panel';
+import { adminRoutes } from './admin/routes';
+import type { Db } from './db/database';
+import { openDatabase } from './db/database';
+import type { Mailer } from './lib/mailer';
+import { MemoryMailer } from './lib/mailer';
 import { rateLimit } from './lib/rateLimit';
 import { TtlStore } from './lib/ttlStore';
 
@@ -26,6 +35,12 @@ export interface AppDeps {
   /** Returns a transient per-connection key used only for rate limiting (see rateLimit.ts). */
   clientKey?: Parameters<typeof rateLimit>[0]['clientKey'];
   rateLimitPerMinute?: number;
+  db?: Db;
+  mailer?: Mailer;
+  /** Owner's address for "new member / new fighter" mails. Mails never contain the player's email. */
+  adminNotifyEmail?: string;
+  /** Extra gate for /admin (e.g. an IP allowlist). Return false to answer 404. */
+  adminAllowed?: (c: Context) => boolean;
 }
 
 export function createApp(deps: AppDeps = {}) {
@@ -34,20 +49,57 @@ export function createApp(deps: AppDeps = {}) {
   const pool = new TtlStore<{ ladderId: string; snapshot: PvpSnapshot; rating: number }>(now);
   const transfers = new TtlStore<string>(now);
 
+  const db = deps.db ?? openDatabase(':memory:');
+  const mailer = deps.mailer ?? new MemoryMailer();
+  const clientKey = deps.clientKey ?? (() => 'global');
+  const notifyAdmin = async (kind: string, accountId: string, text: string) => {
+    addNotification(db, kind, accountId, text, now());
+    if (deps.adminNotifyEmail) {
+      await mailer.send({ to: deps.adminNotifyEmail, subject: `[Toz ve Demir] ${text}`, text: `${text}\nAyrıntılar yönetim panelinde.` }).catch(() => undefined);
+    }
+  };
+
   const app = new Hono();
 
+  app.use('*', async (c, next) => {
+    await next();
+    c.header('X-Content-Type-Options', 'nosniff');
+    c.header('Referrer-Policy', 'no-referrer');
+  });
+
   // Deliberately NO logger middleware: no access logs, no IPs, no user agents on disk.
-  app.use('/v1/*', bodyLimit({ maxSize: TRANSFER_MAX_BYTES + 1024, onError: (c) => c.json({ error: 'too_large' }, 413) }));
-  app.use(
-    '/v1/*',
-    rateLimit({ windowMs: 60_000, max: deps.rateLimitPerMinute ?? 30, clientKey: deps.clientKey ?? (() => 'global'), now }),
-  );
+  for (const path of ['/v1/*', '/admin/*']) {
+    app.use(path, bodyLimit({ maxSize: TRANSFER_MAX_BYTES + 1024, onError: (c) => c.json({ error: 'too_large' }, 413) }));
+  }
+  app.use('/v1/*', rateLimit({ windowMs: 60_000, max: deps.rateLimitPerMinute ?? 30, clientKey, now }));
+  // Credential endpoints get a much tighter budget against password guessing.
+  for (const path of ['/v1/auth/*', '/admin/api/login']) {
+    app.use(path, rateLimit({ windowMs: 60_000, max: 10, clientKey, now }));
+  }
   app.use('*', async (c, next) => {
     await next();
     c.header('Cache-Control', 'no-store');
   });
 
   app.get('/health', (c) => c.json({ ok: true }));
+
+  // ---- Accounts (email sign-up) ----
+  app.route('/v1', accountRoutes({ db, mailer, now, notifyAdmin }));
+
+  // ---- Owner-only admin panel ----
+  app.use('/admin', async (c, next) => ((deps.adminAllowed?.(c) ?? true) ? next() : c.notFound()));
+  app.use('/admin/*', async (c, next) => ((deps.adminAllowed?.(c) ?? true) ? next() : c.notFound()));
+  app.get('/admin', (c) => {
+    const nonce = randomBytes(16).toString('base64');
+    c.header(
+      'Content-Security-Policy',
+      `default-src 'none'; script-src 'nonce-${nonce}'; style-src 'nonce-${nonce}'; connect-src 'self'; img-src 'self' data:; form-action 'none'; frame-ancestors 'none'; base-uri 'none'`,
+    );
+    c.header('X-Frame-Options', 'DENY');
+    c.header('X-Robots-Tag', 'noindex, nofollow');
+    return c.html(adminPanelHtml(nonce));
+  });
+  app.route('/admin/api', adminRoutes({ db, now }));
 
   // ---- PvP: client sends {token, snapshot}; server validates & simulates. ----
   app.post('/v1/pvp/fight', async (c) => {

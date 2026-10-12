@@ -1,5 +1,7 @@
 # Gizlilik Bildirimi ve Aydınlatma Metni (Şablon)
 
+> ⚠️ **Bu metin v1 (hesapsız) model içindir; e-posta ile üyelikte YANLIŞ olur, bu haliyle yayınlamayın.** v2 aydınlatma metni, kayıt akışı canlıya alınmadan önce [`DESIGN_V2.md`](DESIGN_V2.md) §4'e göre yeniden yazılacak.
+
 > **Şablondur, hukuki tavsiye değildir.** `[KÖŞELİ PARANTEZ]` alanlarını doldurun ve yayından önce bir avukata kontrol ettirin. Reklam veya analitik eklerseniz bu metin artık doğru olmaz; mutlaka güncelleyin.
 
 **Son güncelleme:** [GG.AA.YYYY]

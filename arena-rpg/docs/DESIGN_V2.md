@@ -16,33 +16,35 @@ Bu not, `gld.docx` tasarım belgesinin koda nasıl döküldüğünü, yapılan v
 
 Rastgelelik her zaman dışarıdan verilir (`rng`). Sunucu her sefer için bir `seed` üretip kayda yazar; aynı seed ile sonuç birebir yeniden üretilebilir. Belgedeki "loglanabilir RNG" şartı böyle karşılanıyor.
 
-## 2. Denge kontrolünün bulduğu iki sorun
+## 2. Denge (çözüldü)
 
-`npm test` çıktısındaki denge raporuna göre (`rank_costs = [1,1,2,2,3]`):
+İlk değerlerle (`rank_costs = [1,1,2,2,3]`) 100. seviyede üç dal birden doluyordu ve Gölge, Kalkan ve Yıldızlar dallarının ustalıkları hiç açılamıyordu. `rank_costs = [1,2,2,3,4]` ile:
 
-| Sınıf | Dal | Dalı doldurma maliyeti | Ustalık öncesi harcanabilen | Ustalık (30 YP) açılır mı? |
-|---|---|---|---|---|
-| Gözcü | Keşif | 36 | 35 | Evet |
-| Gözcü | Gölge | 28 | 27 | **Hayır** |
-| Gözcü | Avcı | 41 | 40 | Evet |
-| Kılıç Ustası | Kılıç | 36 | 35 | Evet |
-| Kılıç Ustası | Kalkan | 28 | 27 | **Hayır** |
-| Kılıç Ustası | Savaş Ağası | 36 | 35 | Evet |
-| Müneccim | Yıldızlar | 26 | 25 | **Hayır** |
-| Müneccim | Lanet | 36 | 35 | Evet |
-| Müneccim | Simya | 31 | 30 | Evet |
+| Sınıf | Dal maliyetleri | En pahalı iki dal | Üç dal |
+|---|---|---|---|
+| Gözcü | Keşif 47, Gölge 36, Avcı 54 | 101 ≤ 109 | 137 > 109 |
+| Kılıç Ustası | Kılıç 47, Kalkan 36, Savaş Ağası 47 | 94 ≤ 109 | 130 > 109 |
+| Müneccim | Yıldızlar 33, Lanet 47, Simya 40 | 87 ≤ 109 | 120 > 109 |
 
-1. **Üç dal birden doluyor.** Seviye 100'de 109 YP var. Bir sınıfın üç dalının toplamı 93–105 YP. Yani "en fazla 2 dal dolar" hedefi tutmuyor; 100. seviyede herkes her şeyi alıyor.
-2. **Üç ustalık hiç açılmıyor.** Gölge, Kalkan ve Yıldızlar dallarında ustalık öncesine harcanabilecek puan 30'dan az. Bu yüzden Gölge Saldırısı, Sarsılmaz ve Tutulma hiçbir zaman alınamıyor.
+Her ustalık kendi dalına yatırımla açılıyor. Bu iki kural testlerde sabitlendi; ileride bir yetenek eklenip denge bozulursa test kırılır.
 
-**Önerim:** `rank_costs = [1,2,2,3,4]`. Bu değerle dallar 33–54 YP tutar, her ustalık açılabilir ve sınıf toplamı 120–137 olur (109 YP'yi aşar, yani seçim zorunlu hale gelir). Tek satırlık bir config değişikliği; onayınızla uygularım. Daha dengeli dallar için Gölge, Kalkan ve Yıldızlar'a birer yetenek eklenmesi ya da maks. rütbelerin artırılması da düşünülebilir.
+### 2.1 Ana sınıf avantajları (hesap geneli)
+
+Hesabın **ilk dövüşçüsünün sınıfı** "ana sınıf" olur ve hesaptaki bütün dövüşçülere kalıcı avantaj sağlar. Bu avantajlar araştırmayla ya da yetenek puanıyla açılmaz; ilk karakter oluşturulduğu anda gelir ve sonradan değişmez (`classPerks.ts`).
+
+| Ana sınıf | Avantaj adı | Etki |
+|---|---|---|
+| Gözcü | Kâşifler Yolu | Tüm seferler %20 daha kısa; nadir ve üstü ödül şansı %30 daha yüksek (göreli) |
+| Kılıç Ustası | Kılıç Hakkı | Kazanılan saldırılarda %25 daha fazla altın; saldırıya uğrayınca %25 daha az altın kaybı; demircide %15 indirim |
+| Müneccim | Yıldız Okuru | Kafa Kazanı araştırmaları %20 daha kısa; günün kehanet bölgesi her zaman görünür ve oraya giden seferlere +%10 ödül; yaralanma süresi %20 daha kısa |
+
+Gözcü dövüşçüsünün "her 25 seviyede +1 sefer slotu" pasifi ayrıca geçerli. Bu, dövüşçünün kendisine bağlıdır, ana sınıftan bağımsızdır. Yetenek ve ana sınıf bonusları toplanır, ama süre için %40 tabanı ve olasılıklar için üst sınır her zaman korunur.
 
 ## 3. Varsayımlar (onayınızı bekleyenler)
 
 - **Hesap seviyesi**, hesaptaki en yüksek dövüşçünün seviyesidir. Belge bunu ayrıca tanımlamıyor.
 - **Yetişme deneyimi**, dövüşçü en yüksek dövüşçüden 5 seviyeden fazla gerideyken uygulanır. Belgede "yaklaşana kadar" yazıyor.
 - **Sefer slotları** §6.1'e göre hesaplanır: araştırma + her 25 Gözcü seviyesi için +1. Belgenin başındaki "10. seviyede 2 slot" ifadesi bununla çelişiyor; §6.1 esas alındı.
-- **Gözcü'nün "daha hızlı / %30 daha iyi ödül" avantajı**, sınıf pasifi değil, Keşif dalı yetenekleriyle geliyor (§3.1). Tam doldurulmuş Keşif dalı: süre −%20, nadir şansı +%15 (göreli).
 - **Bölgeler:** Karanlık Orman (Sv 1), Sisli Bataklık (Sv 20), Terk Edilmiş Madenler (Sv 45) ve yalnızca Kayıp Diyarlar ustalığıyla açılan Kayıp Diyarlar (Sv 60). Süreler ve ödül ağırlıkları başlangıç değerleridir.
 - **Seviye farkı koruması:** 5 seviyeye kadar tam ödül; 5–20 arası ödül doğrusal azalır; 20+ farkta saldırı engellenir.
 - **Arena:** Yenilgide can %15 düşer; yaralanma ve altın kaybı yoktur.
@@ -73,7 +75,41 @@ Rastgelelik her zaman dışarıdan verilir (`rng`). Sunucu her sefer için bir `
 
 ## 6. Sıradaki adımlar
 
-1. Rütbe maliyeti kararı (§2) ve §3 varsayımlarının onayı.
+1. §3 varsayımlarının onayı.
 2. Savaş motorunu sınıf, yetenek ve takım savaşına göre genişletmek (Yarma, Koruyucu, Şifacı, İlk Vuruş, Gölgeye Karış…).
-3. Sunucu: PostgreSQL şeması, e-posta ile kayıt ve giriş, seferler ve Raporlar kutusu, yönetici paneli.
+3. Sunucu: seferler ve Raporlar kutusu, v2 aydınlatma metni, gerçek e-posta sağlayıcısı. (Kayıt, giriş ve yönetici paneli hazır, bkz. §7.)
 4. Arayüz: ana menü sekmeleri (Kafa Kazanı, Salı Pazarı, Envanter + karakter giydirme), yükleme ekranları.
+
+## 7. Yönetici paneli
+
+Oyun sunucusu paneli `/admin` adresinde sunar. API `/admin/api` altındadır.
+
+**Güvenlik**
+- Yönetici hesapları oyuncu hesaplarından tamamen ayrıdır. Bir oyuncu oturumu panel uçlarını açamaz.
+- Her girişte şifre ve kimlik doğrulama uygulamasındaki 6 haneli kod (TOTP) istenir. Aynı kod iki kez kullanılamaz.
+- Oturum 30 dakika işlem yapılmazsa, her durumda en geç 8 saat sonra kapanır. Oturum anahtarı yalnızca sayfanın belleğinde tutulur; sekme kapanınca çıkış yapılmış olur.
+- Giriş denemeleri dakikada 10 ile sınırlı.
+- Sıkı CSP (dış kaynak yok, nonce'lu tek betik) ve `X-Frame-Options: DENY` kullanılıyor. Oyuncu verisi sayfaya yalnızca düz metin olarak basılıyor, yani XSS'e karşı korumalı.
+- `ADMIN_ALLOWED_IPS` ayarlanırsa `/admin` başka adreslerden 404 döner.
+
+**Özellikler**
+- Genel bakış: hesap ve dövüşçü sayıları, bugünkü kayıtlar, ana sınıf dağılımı, bildirimler.
+- Oyuncu arama: takma ad, dövüşçü adı, hesap ID veya tam e-posta. E-posta ile arama kayda geçer.
+- Oyuncu detayı: e-posta maskeli gösterilir (`k***@g****.com`). Tam adres yalnızca gerekçe yazılarak açılır ve bu kayda geçer.
+- Yasaklama (1/7/30 gün veya kalıcı, gerekçe zorunlu). Oyuncunun açık oturumları anında kapanır ve oyuncu girişte gerekçeyi görür. Yasağı kaldırma da var.
+- Dövüşçü adı değiştirme: oyuncuların yazdığı tek metin olduğu için moderasyon buradan yapılır.
+- Hesap silme (gerekçe ve takma adı yazarak onay).
+- İşlem kaydı: paneldeki her işlem silinemez şekilde tutulur.
+
+**Bildirimler.** Yeni üye doğrulandığında ve yeni dövüşçü oluşturulduğunda panele bildirim düşer. `ADMIN_NOTIFY_EMAIL` ayarlıysa e-posta da gönderilir. Bildirimlerde oyuncunun e-postası yer almaz.
+
+**Kurulum**
+```bash
+ADMIN_PASSWORD="en-az-14-karakter" npm run admin:create -w @arena/server -- siz@ornek.com
+npm run dev -w @arena/server        # http://localhost:8787/admin
+```
+Betik, kimlik doğrulama uygulamanıza ekleyeceğiniz anahtarı bir kez gösterir.
+
+**"Oyun içinde" panel.** Panel tarayıcıda çalışır ve telefon ekranına da uyumludur. Mobil uygulamaya ayrı bir sekme olarak eklemek mümkün: sekme yalnızca yönetici girişi yapıldığında görünür, aynı API'yi ve aynı TOTP korumasını kullanır. Güvenliği istemci değil sunucu sağlar.
+
+**Henüz eksik:** Gerçek e-posta gönderimi (şu an geliştirme modunda kodlar terminale yazılıyor; sunucu üretim modunda bu yüzden başlamayı reddediyor). Ayrıca PostgreSQL'e geçiş, v2 aydınlatma metni ve kullanım koşulları metinleri.

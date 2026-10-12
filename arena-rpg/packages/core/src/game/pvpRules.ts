@@ -1,3 +1,5 @@
+import type { ClassId } from './classes';
+import { accountPerks } from './classPerks';
 import { GAME_CONFIG } from './config';
 
 /** Design doc §4 "Dikkat": a protected share of gold can never be plundered. */
@@ -31,4 +33,17 @@ export function isNight(now: number, timeZone: string = GAME_CONFIG.seer.timezon
   const hour = Number(new Intl.DateTimeFormat('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone }).format(now));
   const { from, to } = GAME_CONFIG.seer.night_hours;
   return hour >= from || hour < to;
+}
+
+/** Gold moved by a won attack, including both sides' main-class perks. */
+export function attackPlunder(input: {
+  defenderGold: number;
+  attackerMainClass?: ClassId | null;
+  defenderMainClass?: ClassId | null;
+  skillPlunderBonus?: number;
+  skillLossReduction?: number;
+}): number {
+  const bonus = (input.skillPlunderBonus ?? 0) + accountPerks(input.attackerMainClass).plunderBonus;
+  const reduction = 1 - (1 - (input.skillLossReduction ?? 0)) * (1 - accountPerks(input.defenderMainClass).defenseGoldLossReduction);
+  return plunderAmount(input.defenderGold, bonus, reduction);
 }
