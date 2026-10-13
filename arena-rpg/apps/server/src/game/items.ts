@@ -30,6 +30,12 @@ export function fighterGear(db: Db, fighterId: string): game.GearStats {
   return game.gearTotal(equippedOf(db, fighterId).map(toInstance));
 }
 
+/** 48 slots + Büyük Heybe research. */
+export function bagCapacity(db: Db, accountId: string): number {
+  const row = db.prepare('SELECT research_json FROM accounts WHERE id = ?').get(accountId) as { research_json: string } | undefined;
+  return game.INVENTORY_SLOTS + (row ? game.researchEffects(JSON.parse(row.research_json) as Record<string, number>).bagSlots : 0);
+}
+
 /**
  * Puts an item into the gang bag. Stackables merge into an existing stack.
  * Returns the item id, or null if the bag is full.
@@ -43,7 +49,7 @@ export function addItem(db: Db, accountId: string, item: Omit<game.ItemInstance,
       return stack.id;
     }
   }
-  if (bagCount(db, accountId) >= game.INVENTORY_SLOTS) return null;
+  if (bagCount(db, accountId) >= bagCapacity(db, accountId)) return null;
   const id = randomId();
   db.prepare('INSERT INTO items (id, account_id, template_id, item_level, rarity, upgrade, qty, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
     id, accountId, item.templateId, item.itemLevel, item.rarity, item.upgrade, item.qty, now,
@@ -84,7 +90,7 @@ export function giveStarterKit(db: Db, accountId: string, fighterId: string, cls
 }
 
 /** Client-facing view of an item with everything the UI needs. */
-export function itemView(r: ItemRow, smithReduction = 0) {
+export function itemView(r: ItemRow, smithReduction = 0, sellBonus = 0) {
   const inst = toInstance(r);
   const t = game.template(r.template_id);
   return {
@@ -102,7 +108,7 @@ export function itemView(r: ItemRow, smithReduction = 0) {
     stats: t?.kind === 'equipment' ? game.itemStats(inst) : null,
     heal: t?.heal ?? null,
     description: t?.description ?? null,
-    sellPrice: game.sellPrice(inst),
+    sellPrice: Math.max(1, Math.round(game.sellPrice(inst) * (1 + sellBonus))),
     upgradeCost: t?.kind === 'equipment' && r.upgrade < game.MAX_ITEM_UPGRADE ? game.upgradeCost(inst, smithReduction) : null,
     fighterId: r.fighter_id,
     equippedSlot: r.slot,

@@ -9,22 +9,27 @@ import { addItem } from '../src/game/items';
 const read = (res: Response): Promise<any> => res.json();
 const legal = { acceptTerms: true, privacyNoticeAck: true, ageConfirmed: true, termsVersion: LEGAL_VERSIONS.terms, privacyVersion: LEGAL_VERSIONS.privacy };
 
-async function gang(cls = 'swordmaster') {
+interface World { db: ReturnType<typeof openDatabase>; clock: { now: () => number; advance: (ms: number) => number }; app: ReturnType<typeof createApp>; mailer: MemoryMailer }
+
+async function gang(cls = 'swordmaster', email = 'g@example.com', shared?: { world: World }) {
   let t = Date.UTC(2026, 9, 13, 10);
-  const clock = { now: () => t, advance: (ms: number) => (t += ms) };
-  const db = openDatabase(':memory:');
-  const mailer = new MemoryMailer();
-  const app = createApp({ db, mailer, now: clock.now, rateLimitPerMinute: 100_000 });
+  const world: World = shared?.world ?? (() => {
+    const clock = { now: () => t, advance: (ms: number) => (t += ms) };
+    const db = openDatabase(':memory:');
+    const mailer = new MemoryMailer();
+    return { db, clock, mailer, app: createApp({ db, mailer, now: clock.now, rateLimitPerMinute: 100_000 }) };
+  })();
+  const { db, clock, mailer, app } = world;
   const req = (path: string, method = 'GET', body?: unknown, token?: string) =>
     app.request(path, { method, headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
-  await req('/v1/auth/register', 'POST', { email: 'g@example.com', password: 'cok-gizli-sifre', ...legal });
+  await req('/v1/auth/register', 'POST', { email, password: 'cok-gizli-sifre', ...legal });
   const code = /(\d{6})/.exec(mailer.sent.at(-1)!.text)![1];
-  const token = (await read(await req('/v1/auth/verify', 'POST', { email: 'g@example.com', code }))).token as string;
-  const f = await read(await req('/v1/fighters', 'POST', { name: 'Kara Demir', class: cls }, token));
-  const accountId = (db.prepare('SELECT id FROM accounts').get() as { id: string }).id;
+  const token = (await read(await req('/v1/auth/verify', 'POST', { email, code }))).token as string;
+  const f = await read(await req('/v1/fighters', 'POST', { name: email.startsWith('b') ? 'Gece Okçu' : 'Kara Demir', class: cls }, token));
+  const accountId = (db.prepare('SELECT id FROM accounts WHERE email = ?').get(email) as { id: string }).id;
   const get = async (p: string) => read(await req(p, 'GET', undefined, token));
   const post = async (p: string, b: unknown = {}) => read(await req(p, 'POST', b, token));
-  return { db, clock, get, post, fighterId: f.id as string, accountId };
+  return { db, clock, get, post, fighterId: f.id as string, accountId, world };
 }
 
 describe('inventory & paper doll', () => {
@@ -84,15 +89,16 @@ describe('Salı Pazarı', () => {
 });
 
 describe('arena', () => {
-  it('fights NPCs, pays rewards, drains HP on loss and enforces cooldown', async () => {
+  it('fights NPCs for 1 energy each, pays rewards and drains HP on loss', async () => {
     const g = await gang();
     const a = await g.get(`/v1/game/arena?fighterId=${g.fighterId}`);
     expect(a.npcs).toHaveLength(3);
     const r = await g.post('/v1/game/arena/fight', { fighterId: g.fighterId, opponent: { type: 'npc', id: 'npc0' } });
     expect(r.outcome.log.length).toBeGreaterThan(0);
     expect(r.hpRatio).toBe(r.won ? 1 : 0.85);
-    expect((await g.post('/v1/game/arena/fight', { fighterId: g.fighterId, opponent: { type: 'npc', id: 'npc0' } })).error).toBe('arena_cooldown');
-    g.clock.advance(11 * 60_000);
+    expect(r.energy.value).toBe(19);
+    const again = await g.post('/v1/game/arena/fight', { fighterId: g.fighterId, opponent: { type: 'npc', id: 'npc0' } });
+    expect(again.energy.value).toBe(18); // no cooldown any more, energy is the limit
     g.db.prepare('UPDATE fighters SET hp_ratio = 0.1').run();
     expect((await g.post('/v1/game/arena/fight', { fighterId: g.fighterId, opponent: { type: 'npc', id: 'npc0' } })).error).toBe('too_weak');
   });
@@ -124,37 +130,50 @@ describe('hunting, alchemy and potions', () => {
     expect(state.fighters.find((f: { id: string }) => f.id === g.fighterId).status).toBe('idle');
   });
 
-  it('expeditions can drop items and luck potions are consumed at send', async () => {
+  it('luck potions are consumed when sending a keşif; haste potions shorten a running one', async () => {
     const g = await gang('scout');
     addItem(g.db, g.accountId, { templateId: 'potion_luck', itemLevel: 1, rarity: 'common', upgrade: 0, qty: 1 }, 0);
-    const start = await g.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [g.fighterId], useLuck: true });
+    addItem(g.db, g.accountId, { templateId: 'potion_haste', itemLevel: 1, rarity: 'common', upgrade: 0, qty: 1 }, 0);
+    const start = await g.post('/v1/game/explorations', { fighterIds: [g.fighterId], travelMs: 3_600_000, exploreMs: 0, useLuck: true });
     expect(start.id).toBeTruthy();
     expect((await g.get('/v1/game/state')).luckPotions).toBe(0);
-    g.clock.advance(3_600_000);
-    await g.get('/v1/game/state');
-    const report = (await g.get('/v1/game/reports')).reports[0];
-    expect(Array.isArray(report.body.items)).toBe(true);
+    const haste = (await g.get('/v1/game/inventory')).items.find((i: { templateId: string }) => i.templateId === 'potion_haste');
+    const r = await g.post(`/v1/game/items/${haste.id}/use`, { explorationId: start.id });
+    expect(r.endsAt - g.clock.now()).toBe(Math.round(2 * 3_600_000 * 0.9));
   });
 });
 
-describe('expedition stages', () => {
-  it('locks later stages, records progress and reports the stage result', async () => {
-    const g = await gang('scout');
-    expect((await g.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [g.fighterId], stage: 3 })).error).toBe('stage_locked');
-    g.db.prepare('UPDATE fighters SET level = 40').run(); // overwhelming power → ~97% success
-    let cleared = 0;
-    for (let i = 0; i < 4 && cleared === 0; i++) {
-      const r = await g.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [g.fighterId], stage: 1 });
-      expect(r.stage).toBe(1);
-      g.clock.advance(6 * 3_600_000);
-      const s = await g.get('/v1/game/state');
-      cleared = s.zoneProgress.dark_forest ?? 0;
-      g.db.prepare("UPDATE fighters SET status_kind = 'idle', status_until = NULL").run();
+describe('arena PvP', () => {
+  it('the winner steals ~30% of the loser\'s gold, then the loser is shielded for an hour', async () => {
+    const a = await gang('swordmaster', 'a@example.com');
+    const b = await gang('scout', 'b@example.com', a);
+    a.db.prepare('UPDATE fighters SET level = 30 WHERE id = ?').run(a.fighterId);
+    a.db.prepare('UPDATE fighters SET level = 26 WHERE id = ?').run(b.fighterId);
+    a.db.prepare('UPDATE accounts SET gold = 1000 WHERE id = ?').run(b.accountId);
+    const arena = await a.get(`/v1/game/arena?fighterId=${a.fighterId}`);
+    const foe = arena.players.find((p: { id: string }) => p.id === b.fighterId);
+    expect(foe).toBeTruthy();
+    let won: { rewards: { stolen: number } } | null = null;
+    for (let i = 0; i < 15 && !won; i++) {
+      a.db.prepare('UPDATE fighters SET hp_ratio = 1, energy = 20').run();
+      const r = await a.post('/v1/game/arena/fight', { fighterId: a.fighterId, opponent: { type: 'player', id: b.fighterId } });
+      if (r.won) won = r;
     }
-    expect(cleared).toBe(1);
-    const report = (await g.get('/v1/game/reports')).reports.find((r: { body: { stage?: number } }) => r.body.stage === 1);
-    expect(report.title).toContain('Orman Girişi');
-    const next = await g.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [g.fighterId] });
-    expect(next.stage).toBe(2);
+    expect(won).not.toBeNull();
+    // Kılıç Hakkı (swordmaster main class) plunders 25% more: 1000 × 0.3 × 1.25
+    expect(won!.rewards.stolen).toBe(375);
+    const gold = (a.db.prepare('SELECT gold FROM accounts WHERE id = ?').get(b.accountId) as { gold: number }).gold;
+    expect(gold).toBe(625);
+    const rep = (await b.get('/v1/game/reports')).reports.find((x: { kind: string }) => x.kind === 'arena_defense');
+    expect(rep.body.stolen).toBe(375);
+    // shielded now: another win steals nothing
+    for (let i = 0; i < 15; i++) {
+      a.db.prepare('UPDATE fighters SET hp_ratio = 1, energy = 20').run();
+      const r = await a.post('/v1/game/arena/fight', { fighterId: a.fighterId, opponent: { type: 'player', id: b.fighterId } });
+      if (r.won) {
+        expect(r.rewards.stolen).toBe(0);
+        break;
+      }
+    }
   });
 });

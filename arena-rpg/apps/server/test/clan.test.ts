@@ -84,15 +84,15 @@ describe('sancak', () => {
     expect((await b.post(`/v1/game/clans/${id}/join`)).joined).toBe(true);
     expect((await b.get('/v1/game/state')).clan.tag).toBe('DKR');
 
-    // help: b speeds up a's expedition by 5%, once
-    const exp = await a.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [a.fighterId] });
+    // help: b speeds up a's keşif by 5%, once
+    const exp = await a.post('/v1/game/explorations', { fighterIds: [a.fighterId], travelMs: H, exploreMs: 0 });
     const left = exp.endsAt - w.clock.now();
     const view = await b.get('/v1/game/clan');
     expect(view.helps).toHaveLength(1);
     expect((await b.post('/v1/game/clan/help', { all: true })).helped).toBe(1);
-    expect((await b.post('/v1/game/clan/help', { kind: 'expedition', id: exp.id })).error).toBe('nothing_to_help');
-    expect((await a.post('/v1/game/clan/help', { kind: 'expedition', id: exp.id })).error).toBe('nothing_to_help'); // not yourself
-    const after = (await a.get('/v1/game/state')).expeditions[0].endsAt - w.clock.now();
+    expect((await b.post('/v1/game/clan/help', { kind: 'exploration', id: exp.id })).error).toBe('nothing_to_help');
+    expect((await a.post('/v1/game/clan/help', { kind: 'exploration', id: exp.id })).error).toBe('nothing_to_help'); // not yourself
+    const after = (await a.get('/v1/game/state')).explorations[0].endsAt - w.clock.now();
     expect(after).toBe(Math.round(left * 0.95));
     w.clock.advance(left);
 
@@ -103,7 +103,7 @@ describe('sancak', () => {
     w.db.prepare('UPDATE clan_raids SET hp = 300').run();
     let won = false;
     for (let i = 0; i < 20 && !won; i++) {
-      w.db.prepare('UPDATE fighters SET hp_ratio = 1, raid_ready_at = NULL, status_kind = \'idle\'').run();
+      w.db.prepare('UPDATE fighters SET hp_ratio = 1, raid_ready_at = NULL, energy = 20, status_kind = \'idle\'').run();
       const hitA = await a.post('/v1/game/clan/raid/attack', { fighterId: a.fighterId });
       expect(hitA.damage).toBeGreaterThan(0);
       if (hitA.won) won = true;

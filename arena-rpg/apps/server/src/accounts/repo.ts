@@ -24,6 +24,7 @@ export interface AccountRow {
   inactivity_warned_at: number | null;
   pending_email: string | null;
   clan_left_at: number | null;
+  arena_shield_until: number | null;
 }
 
 export interface FighterRow {
@@ -36,7 +37,7 @@ export interface FighterRow {
   created_at: number;
   skills_json: string;
   hp_ratio: number;
-  status_kind: 'idle' | 'expedition' | 'exploration' | 'injured' | 'arena';
+  status_kind: 'idle' | 'expedition' | 'exploration' | 'resting' | 'injured' | 'arena';
   status_until: number | null;
   respec_count: number;
   respec_at: number | null;
@@ -48,6 +49,8 @@ export interface FighterRow {
   arena_ready_at: number | null;
   arena_roll: number;
   raid_ready_at: number | null;
+  energy: number;
+  energy_at: number | null;
 }
 
 export const accountById = (db: Db, id: string) =>

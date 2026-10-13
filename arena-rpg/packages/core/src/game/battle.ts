@@ -15,6 +15,8 @@ export interface BattlerInput {
   gear: GearStats;
   /** 0..1 – fighters enter with their current health. */
   hpRatio?: number;
+  /** Account-wide relative bonuses (Rasathane research), e.g. { damage: 0.06, armor: 0.08 }. */
+  bonus?: { damage?: number; armor?: number };
 }
 
 export interface BattleProfile {
@@ -42,7 +44,7 @@ export function battleProfile(b: BattlerInput): BattleProfile {
   const s = b.skills;
   const g = b.gear;
   const magical = b.class === 'seer';
-  const baseDamage = (6 + b.level * 2.2 + g.damage + (magical ? g.magic * 0.8 : 0)) * m.damage * (1 + sv(s, 'heavy_blow')) * (magical ? m.magic * (1 + sv(s, 'fireball')) : 1);
+  const baseDamage = (6 + b.level * 2.2 + g.damage + (magical ? g.magic * 0.8 : 0)) * m.damage * (1 + sv(s, 'heavy_blow')) * (magical ? m.magic * (1 + sv(s, 'fireball')) : 1) * (1 + (b.bonus?.damage ?? 0));
   const maxHp = Math.round((80 + b.level * 14 + g.hp) * m.hp);
   const { evasion_cap, crit_chance_cap } = GAME_CONFIG.combat;
   return {
@@ -51,7 +53,7 @@ export function battleProfile(b: BattlerInput): BattleProfile {
     damageMin: Math.max(1, Math.round(baseDamage * 0.8)),
     damageMax: Math.max(2, Math.round(baseDamage * 1.2)),
     magical,
-    armor: Math.round((b.level * 1.2 + g.armor) * m.armor * (1 + sv(s, 'iron_skin'))),
+    armor: Math.round((b.level * 1.2 + g.armor) * m.armor * (1 + sv(s, 'iron_skin')) * (1 + (b.bonus?.armor ?? 0))),
     crit: Math.min(crit_chance_cap, m.crit + g.crit + sv(s, 'keen_eye')),
     critMult: 1.6 + sv(s, 'deadly_aim'),
     evasion: Math.min(evasion_cap, m.evasion + g.evasion + sv(s, 'agility')),

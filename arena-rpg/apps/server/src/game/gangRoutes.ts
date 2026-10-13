@@ -1,12 +1,13 @@
 import { randomBytes } from 'node:crypto';
 import type { Hono } from 'hono';
-import { game } from '@arena/core';
+import { createRng, game } from '@arena/core';
 import type { AccountRow, FighterRow } from '../accounts/repo';
 import { accountById, fightersOf } from '../accounts/repo';
 import type { Db } from '../db/database';
 import type { ItemRow } from './items';
-import { addItem, bagCount, consume, countOf, equippedOf, fighterGear, itemView, itemsOf, takeResources, toInstance } from './items';
-import type { ExpeditionRow, GameClock } from './settle';
+import { addItem, bagCapacity, bagCount, consume, countOf, equippedOf, fighterGear, itemView, itemsOf, takeResources, toInstance } from './items';
+import { energyView, fxOf, spendEnergy } from './energy';
+import type { ExplorationRow, GameClock } from './settle';
 import { addReport, bestSkill, skillsOf } from './settle';
 
 type App = Hono<{ Variables: { subjectId: string; tokenHash: string } }>;
@@ -15,7 +16,12 @@ const smithReduction = (acc: AccountRow, fighters: FighterRow[]) =>
   bestSkill(fighters, 'smiths_friend') + game.accountPerks(acc.main_class as game.ClassId | null).smithCostReduction;
 
 export function battlerOf(db: Db, f: FighterRow): game.BattlerInput {
-  return { name: f.name, class: f.class as game.ClassId, level: f.level, skills: skillsOf(f), gear: fighterGear(db, f.id), hpRatio: f.hp_ratio };
+  const owner = db.prepare('SELECT research_json FROM accounts WHERE id = ?').get(f.account_id) as { research_json: string } | undefined;
+  const fx = owner ? fxOf(owner) : game.NO_RESEARCH;
+  return {
+    name: f.name, class: f.class as game.ClassId, level: f.level, skills: skillsOf(f), gear: fighterGear(db, f.id), hpRatio: f.hp_ratio,
+    bonus: { damage: fx.damage, armor: fx.armor },
+  };
 }
 
 /** Inventory & paper doll, blacksmith, consumables, Salı Pazarı, arena and alchemy. */
@@ -30,7 +36,8 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
   app.get('/inventory', (c) => {
     const acc = own(c);
     const red = smithReduction(acc, fightersOf(db, acc.id));
-    return c.json({ capacity: game.INVENTORY_SLOTS, used: bagCount(db, acc.id), smithReduction: red, items: itemsOf(db, acc.id).map((r) => itemView(r, red)) });
+    const sell = fxOf(acc).sellBonus;
+    return c.json({ capacity: bagCapacity(db, acc.id), used: bagCount(db, acc.id), smithReduction: red, items: itemsOf(db, acc.id).map((r) => itemView(r, red, sell)) });
   });
 
   app.post('/items/:id/equip', async (c) => {
@@ -64,7 +71,7 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
     const acc = own(c);
     const item = ownItem(acc.id, c.req.param('id'));
     if (!item || !item.fighter_id) return c.json({ error: 'not_found' }, 404);
-    if (bagCount(db, acc.id) >= game.INVENTORY_SLOTS) return c.json({ error: 'inventory_full' }, 400);
+    if (bagCount(db, acc.id) >= bagCapacity(db, acc.id)) return c.json({ error: 'inventory_full' }, 400);
     db.prepare('UPDATE items SET fighter_id = NULL, slot = NULL WHERE id = ?').run(item.id);
     return c.json({ ok: true });
   });
@@ -76,7 +83,7 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
     if (!item) return c.json({ error: 'not_found' }, 404);
     if (item.fighter_id) return c.json({ error: 'equipped' }, 400);
     const qty = Math.max(1, Math.min(item.qty, Number(b?.qty) || item.qty));
-    const gold = game.sellPrice(toInstance(item)) * qty;
+    const gold = Math.max(1, Math.round(game.sellPrice(toInstance(item)) * (1 + fxOf(acc).sellBonus))) * qty;
     consume(db, item, qty);
     db.prepare('UPDATE accounts SET gold = gold + ? WHERE id = ?').run(gold, acc.id);
     return c.json({ gold });
@@ -134,12 +141,12 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
       return c.json({ ok: true });
     }
     if (item.template_id === 'potion_haste') {
-      const exp = db.prepare("SELECT * FROM expeditions WHERE id = ? AND account_id = ? AND state = 'active'").get(String(b?.expeditionId ?? ''), acc.id) as ExpeditionRow | undefined;
-      if (!exp) return c.json({ error: 'no_active_expedition' }, 400);
-      const remaining = Math.max(0, exp.ends_at - now);
-      const endsAt = Math.max(now + Math.round(remaining * 0.9), exp.started_at + Math.round(exp.base_duration_ms * game.GAME_CONFIG.expedition.min_duration_ratio));
-      db.prepare('UPDATE expeditions SET ends_at = ? WHERE id = ?').run(endsAt, exp.id);
-      for (const id of JSON.parse(exp.fighter_ids) as string[]) db.prepare('UPDATE fighters SET status_until = ? WHERE id = ?').run(endsAt, id);
+      // Hız İksiri: the party of a running keşif comes back 10% sooner.
+      const t = db.prepare("SELECT * FROM explorations WHERE id = ? AND account_id = ? AND state = 'active'").get(String(b?.explorationId ?? ''), acc.id) as ExplorationRow | undefined;
+      if (!t) return c.json({ error: 'no_active_exploration' }, 400);
+      const endsAt = now + Math.round(Math.max(0, t.ends_at - now) * 0.9);
+      db.prepare('UPDATE explorations SET ends_at = ? WHERE id = ?').run(endsAt, t.id);
+      for (const id of JSON.parse(t.fighter_ids) as string[]) db.prepare('UPDATE fighters SET status_until = ? WHERE id = ?').run(endsAt, id);
       consume(db, item);
       return c.json({ endsAt });
     }
@@ -160,7 +167,10 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
   const stockFor = (acc: AccountRow) => {
     const level = game.accountLevel(fightersOf(db, acc.id));
     const hourKey = game.marketHourKey(clock.now(), clock.speed);
-    return { hourKey, offers: game.marketStock(acc.id, hourKey, level, acc.main_class as game.ClassId | null, clock.prophecySecret) };
+    const discount = Math.min(0.5, fxOf(acc).marketDiscount);
+    const offers = game.marketStock(acc.id, hourKey, level, acc.main_class as game.ClassId | null, clock.prophecySecret)
+      .map((o) => ({ ...o, price: Math.max(1, Math.round(o.price * (1 - discount))) }));
+    return { hourKey, offers };
   };
 
   app.get('/market', (c) => {
@@ -254,16 +264,17 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
     if (!f) return c.json({ error: 'not_found' }, 404);
     const now = clock.now();
     if (f.status_kind !== 'idle') return c.json({ error: 'fighter_busy' }, 400);
-    if (f.arena_ready_at && f.arena_ready_at > now) return c.json({ error: 'arena_cooldown', readyAt: f.arena_ready_at }, 400);
     if (f.hp_ratio < game.ARENA_MIN_HP) return c.json({ error: 'too_weak' }, 400);
 
     let foe: game.BattlerInput;
     let vsPlayer = false;
+    let defender: (FighterRow & { display_name: string }) | null = null;
     let foeInfo: { name: string; class: string; level: number; owner?: string };
     if (b?.opponent?.type === 'player') {
       const { players } = opponentsFor(acc, f);
       const p = players.find((x) => x.id === b.opponent.id);
       if (!p) return c.json({ error: 'not_found' }, 404);
+      defender = p;
       foe = { ...battlerOf(db, p), hpRatio: 1 }; // defenders always fight fresh and lose nothing
       vsPlayer = true;
       foeInfo = { name: p.name, class: p.class, level: p.level, owner: p.clan_tag ? `[${p.clan_tag}] ${p.display_name}` : p.display_name };
@@ -273,6 +284,8 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
       foe = npc.battler;
       foeInfo = { name: npc.battler.name, class: npc.battler.class, level: npc.battler.level };
     }
+    const fx = fxOf(acc);
+    if (!spendEnergy(db, f, fx, clock, game.ENERGY.fightCost)) return c.json({ error: 'no_energy' }, 400);
     const me = battlerOf(db, f);
     const seed = randomBytes(4).readUInt32LE(0);
     const outcome = game.fight(me, foe, seed, { night: game.isNight(now) });
@@ -280,19 +293,45 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
     const all = fightersOf(db, acc.id);
     const highest = Math.max(...all.map((x) => x.level));
     const fame = game.skillValue(game.SKILLS_BY_ID.get('arena_fame')!, skillsOf(f).arena_fame ?? 0);
-    const r = game.arenaRewards(won, f.level, vsPlayer, fame);
+    const base = game.arenaRewards(won, f.level, vsPlayer, fame);
+    const r = { ...base, gold: Math.round(base.gold * (1 + fx.arenaGold)) };
     const xp = Math.round(r.xp * game.xpMultiplier(f.level, highest));
     const next = game.addXp(f, xp);
     const hp = won ? f.hp_ratio : Math.max(0, f.hp_ratio - game.ARENA_HP_LOSS);
     db.prepare(
       `UPDATE fighters SET level = ?, xp = ?, hp_ratio = ?, hp_at = ?, arena_points = MAX(0, arena_points + ?), arena_wins = arena_wins + ?, arena_losses = arena_losses + ?,
-       arena_ready_at = ?, arena_roll = arena_roll + 1 WHERE id = ?`,
-    ).run(next.level, next.xp, hp, now, r.points, won ? 1 : 0, won ? 0 : 1, now + Math.round(game.ARENA_COOLDOWN_MS / clock.speed), f.id);
+       arena_roll = arena_roll + 1 WHERE id = ?`,
+    ).run(next.level, next.xp, hp, now, r.points, won ? 1 : 0, won ? 0 : 1, f.id);
     db.prepare('UPDATE accounts SET gold = gold + ? WHERE id = ?').run(r.gold, acc.id);
+
+    // PvP: the winner steals ~30% of the loser's gold (an hour of protection after a robbery) and may find an item.
+    let stolen = 0;
+    let loot: { name: string; rarity: game.Rarity; icon: string; qty: number; kept: boolean } | null = null;
+    if (defender) {
+      const victim = accountById(db, defender.account_id)!;
+      if (won) {
+        const shielded = victim.arena_shield_until !== null && victim.arena_shield_until > now;
+        const reduction = 1 - (1 - fxOf(victim).plunderProtection) * (1 - game.accountPerks(victim.main_class as game.ClassId | null).defenseGoldLossReduction);
+        stolen = game.arenaPlunder({ defenderGold: victim.gold, attackerBonus: game.accountPerks(acc.main_class as game.ClassId | null).plunderBonus, defenderReduction: reduction, shielded });
+        if (stolen > 0) {
+          db.prepare('UPDATE accounts SET gold = gold - ?, arena_shield_until = ? WHERE id = ?').run(stolen, now + Math.round(game.ARENA_PLUNDER.shieldMs / clock.speed), victim.id);
+          db.prepare('UPDATE accounts SET gold = gold + ? WHERE id = ?').run(stolen, acc.id);
+        }
+        const item = game.arenaLoot(createRng(seed ^ 0x9e3779b9), f.level);
+        if (item) loot = { name: game.itemName(item), rarity: item.rarity, icon: game.template(item.templateId)?.icon ?? 'unknown', qty: 1, kept: addItem(db, acc.id, item, now) !== null };
+        addReport(db, victim.id, 'arena_defense', `Arenada ${defender.name} yenildi${stolen > 0 ? `: ${stolen} altın çalındı` : ''}`, {
+          won: false, attacker: acc.display_name, attackerFighter: f.name, defenderFighter: defender.name, stolen, shielded,
+        }, now);
+      } else {
+        addReport(db, victim.id, 'arena_defense', `Arenada ${defender.name} saldırıyı püskürttü`, { won: true, attacker: acc.display_name, attackerFighter: f.name, defenderFighter: defender.name, stolen: 0 }, now);
+      }
+    }
+    const fresh = db.prepare('SELECT * FROM fighters WHERE id = ?').get(f.id) as unknown as FighterRow;
     return c.json({
       won, seed, outcome,
       me: { name: f.name, class: f.class, level: f.level }, foe: foeInfo,
-      rewards: { gold: r.gold, xp, points: r.points, levelsGained: next.levelsGained }, hpRatio: hp,
+      rewards: { gold: r.gold, xp, points: r.points, levelsGained: next.levelsGained, stolen, loot }, hpRatio: hp,
+      energy: energyView(fresh, fx, clock),
     });
   });
 
@@ -303,7 +342,7 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
     return c.json({
       seers: seers.map((s) => ({ id: s.id, name: s.name, rank: skillsOf(s).potion_making ?? 0 })),
       resources: Object.fromEntries(game.RESOURCE_IDS.map((id) => [id, countOf(db, acc.id, id)])),
-      recipes: game.RECIPES.map((r) => ({ ...r, outputName: game.template(r.output)!.name, icon: game.template(r.output)!.icon })),
+      recipes: game.RECIPES.map((r) => ({ ...r, gold: Math.round(r.gold * (1 - Math.min(0.6, fxOf(acc).alchemyDiscount))), outputName: game.template(r.output)!.name, icon: game.template(r.output)!.icon })),
     });
   });
 
@@ -316,7 +355,8 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
     if (f.class !== 'seer') return c.json({ error: 'wrong_class' }, 400);
     const skills = skillsOf(f);
     if ((skills.potion_making ?? 0) < recipe.minRank) return c.json({ error: 'rank_too_low' }, 400);
-    if (acc.gold < recipe.gold) return c.json({ error: 'not_enough_gold' }, 400);
+    const price = Math.round(recipe.gold * (1 - Math.min(0.6, fxOf(acc).alchemyDiscount)));
+    if (acc.gold < price) return c.json({ error: 'not_enough_gold' }, 400);
     for (const [id, qty] of Object.entries(recipe.inputs)) if (countOf(db, acc.id, id) < qty) return c.json({ error: 'missing_resources' }, 400);
     const double = Math.random() < game.skillValue(game.SKILLS_BY_ID.get('master_alchemist')!, skills.master_alchemist ?? 0);
     db.exec('BEGIN');
@@ -326,7 +366,7 @@ export function registerGangRoutes(app: App, db: Db, clock: GameClock) {
         db.exec('ROLLBACK');
         return c.json({ error: 'inventory_full' }, 400);
       }
-      db.prepare('UPDATE accounts SET gold = gold - ? WHERE id = ?').run(recipe.gold, acc.id);
+      db.prepare('UPDATE accounts SET gold = gold - ? WHERE id = ?').run(price, acc.id);
       db.exec('COMMIT');
     } catch (e) {
       db.exec('ROLLBACK');

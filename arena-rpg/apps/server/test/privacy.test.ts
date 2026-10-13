@@ -126,7 +126,7 @@ describe('storage & destruction (retention job)', () => {
     const ctx = setup();
     const token = await ctx.signUp();
     const f = await read(await ctx.req('/v1/fighters', 'POST', { name: 'Kara Demir', class: 'scout' }, token));
-    await ctx.req('/v1/game/expeditions', 'POST', { zoneId: 'dark_forest', fighterIds: [f.id] }, token);
+    await ctx.req('/v1/game/explorations', 'POST', { fighterIds: [f.id], travelMs: 1_800_000, exploreMs: 0 }, token);
     ctx.clock.advance(DAY);
     await ctx.req('/v1/game/state', 'GET', undefined, token);
     ctx.clock.advance(91 * DAY);

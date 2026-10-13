@@ -7,7 +7,8 @@ import type { Db } from '../db/database';
 import { randomId } from '../lib/security';
 import { battlerOf } from '../game/gangRoutes';
 import { addItem } from '../game/items';
-import type { ExpeditionRow, ExplorationRow, GameClock } from '../game/settle';
+import type { ExplorationRow, GameClock } from '../game/settle';
+import { fxOf, spendEnergy } from '../game/energy';
 import { addReport } from '../game/settle';
 import type { ClanRow, MemberRow } from './membership';
 import { clanById, clanLog, leaveClanRecord, membershipOf, nameOf } from './membership';
@@ -75,7 +76,7 @@ function winRaid(db: Db, r: RaidRow, now: number) {
 /** Things a banner mate is waiting for that I can speed up. */
 function helpTargets(db: Db, clanId: string, me: string, now: number) {
   const mates = db.prepare('SELECT account_id FROM clan_members WHERE clan_id = ? AND account_id != ?').all(clanId, me) as { account_id: string }[];
-  const out: { kind: 'research' | 'expedition' | 'exploration'; id: string; owner: string; label: string; endsAt: number; helps: number; helped: boolean }[] = [];
+  const out: { kind: 'research' | 'exploration'; id: string; owner: string; label: string; endsAt: number; helps: number; helped: boolean }[] = [];
   const helpInfo = (kind: string, id: string) => {
     const n = (db.prepare('SELECT COUNT(*) n FROM clan_helps WHERE target_kind = ? AND target_id = ?').get(kind, id) as { n: number }).n;
     const mine = !!db.prepare('SELECT 1 FROM clan_helps WHERE target_kind = ? AND target_id = ? AND helper_id = ?').get(kind, id, me);
@@ -88,9 +89,6 @@ function helpTargets(db: Db, clanId: string, me: string, now: number) {
     if (acc.active_research) {
       const r = JSON.parse(acc.active_research) as { id: string; level: number; until: number };
       if (r.until > now) out.push({ kind: 'research', id: researchKey(account_id, r), owner, label: `${game.RESEARCH[r.id]?.name ?? 'Araştırma'} Sv ${r.level}`, endsAt: r.until, ...helpInfo('research', researchKey(account_id, r)) });
-    }
-    for (const e of db.prepare("SELECT * FROM expeditions WHERE account_id = ? AND state = 'active' AND ends_at > ?").all(account_id, now) as unknown as ExpeditionRow[]) {
-      out.push({ kind: 'expedition', id: e.id, owner, label: `${game.ZONES[e.zone_id]?.name ?? 'Sefer'} · ${e.stage}. bölüm`, endsAt: e.ends_at, ...helpInfo('expedition', e.id) });
     }
     for (const t of db.prepare("SELECT * FROM explorations WHERE account_id = ? AND state = 'active' AND ends_at > ?").all(account_id, now) as unknown as ExplorationRow[]) {
       out.push({ kind: 'exploration', id: t.id, owner, label: 'Keşif', endsAt: t.ends_at, ...helpInfo('exploration', t.id) });
@@ -115,7 +113,7 @@ function applyHelp(db: Db, clanId: string, helperId: string, kind: string, id: s
     db.prepare('UPDATE accounts SET active_research = ? WHERE id = ?').run(JSON.stringify({ ...r, until: cut(r.until) }), accountId);
     return true;
   }
-  const table = kind === 'expedition' ? 'expeditions' : kind === 'exploration' ? 'explorations' : null;
+  const table = kind === 'exploration' ? 'explorations' : null;
   if (!table) return false;
   const row = db.prepare(`SELECT * FROM ${table} WHERE id = ? AND state = 'active' AND ends_at > ?`).get(id, now) as { account_id: string; ends_at: number; fighter_ids: string } | undefined;
   if (!row || !inClan(row.account_id)) return false;
@@ -371,6 +369,7 @@ export function registerClanRoutes(app: App, db: Db, clock: GameClock) {
     if (f.status_kind !== 'idle') return c.json({ error: 'fighter_busy' }, 400);
     if (f.raid_ready_at && f.raid_ready_at > now) return c.json({ error: 'raid_cooldown', readyAt: f.raid_ready_at }, 400);
     if (f.hp_ratio < game.CLAN.raidMinHp) return c.json({ error: 'too_weak' }, 400);
+    if (!spendEnergy(db, f, fxOf(accountById(db, m.account_id)!), clock, game.ENERGY.fightCost)) return c.json({ error: 'no_energy' }, 400);
     const boss = game.RAID_BOSSES_BY_ID.get(raid.boss_id)!;
     const hit = game.raidHit(battlerOf(db, f), boss, randomBytes(4).readUInt32LE(0));
     const damage = Math.min(raid.hp, hit.damage);

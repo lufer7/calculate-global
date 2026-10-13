@@ -111,6 +111,8 @@ export function resolveExploration(input: {
   exploreMs: number;
   party: Pick<Fighter, 'id' | 'level' | 'skills'>[];
   mainClass?: ClassId | null;
+  /** Şans İksiri used when sending (+15% relative). */
+  extraRareRelative?: number;
 }): ExplorationOutcome {
   const rng = createRng(input.seed);
   const b = explorationBonuses(input.party, input.mainClass);
@@ -121,7 +123,7 @@ export function resolveExploration(input: {
   const gold = Math.round((goldRate * totalH * 0.5 + goldRate * exploreH) * (0.85 + rng() * 0.3));
   const xp = Math.round((10 + level * 2) * (totalH * 0.5 + exploreH));
 
-  const rarity = explorationRarityWeights(b, input.travelMs);
+  const rarity = explorationRarityWeights({ ...b, rareRelative: b.rareRelative + (input.extraRareRelative ?? 0) }, input.travelMs);
   let count = findCount(input.exploreMs, b.pace);
   if (rng() < Math.min(0.75, b.extraFindChance)) count += 1;
   const finds: ExplorationFind[] = [];

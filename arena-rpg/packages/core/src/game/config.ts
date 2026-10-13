@@ -24,14 +24,6 @@ export const GAME_CONFIG = {
     respec_cooldown_hours: 24,
     first_respec_free: true,
   },
-  expedition: {
-    research_max_level: 5,
-    slots_by_research: [1, 1, 2, 2, 2, 3],
-    scout_slot_per_levels: 25,
-    min_duration_ratio: 0.4,
-    /** Upper bound for any boosted probability (rare reward, extra reward…). */
-    chance_cap: 0.75,
-  },
   combat: {
     flee_hp_threshold: 0.3,
     evasion_cap: 0.4,

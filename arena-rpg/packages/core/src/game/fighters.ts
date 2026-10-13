@@ -7,6 +7,7 @@ export type FighterStatus =
   | { kind: 'idle' } // hazır, çeteyle birlikte
   | { kind: 'expedition'; expeditionId: string; until: number }
   | { kind: 'exploration'; until: number } // keşif
+  | { kind: 'resting'; until: number } // camide dinleniyor
   | { kind: 'arena'; until: number }
   | { kind: 'injured'; until: number };
 

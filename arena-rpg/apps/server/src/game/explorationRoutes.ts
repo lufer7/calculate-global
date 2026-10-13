@@ -5,6 +5,9 @@ import { accountById, fightersOf } from '../accounts/repo';
 import type { Db } from '../db/database';
 import { randomId } from '../lib/security';
 import type { ExplorationRow, GameClock } from './settle';
+import { energyOf, fxOf } from './energy';
+import { consume } from './items';
+import type { ItemRow } from './items';
 
 type App = Hono<{ Variables: { subjectId: string; tokenHash: string } }>;
 
@@ -32,17 +35,28 @@ export function registerExplorationRoutes(app: App, db: Db, clock: GameClock) {
     const exploreMs = Number(b?.exploreMs);
     if (!game.validTimes(travelMs, exploreMs)) return c.json({ error: 'invalid_time' }, 400);
     if (party.some((f) => f.status_kind !== 'idle')) return c.json({ error: 'fighter_busy' }, 400);
-    const highestScout = all.filter((f) => f.class === 'scout').reduce((m, f) => Math.max(m, f.level), 0);
-    if (activeExplorations(db, acc.id).length >= game.explorationSlots(highestScout)) return c.json({ error: 'no_free_slot' }, 400);
+    const fx = fxOf(acc);
+    if (activeExplorations(db, acc.id).length >= game.explorationSlots(game.highestScoutLevel(all)) + fx.explorationSlots) return c.json({ error: 'no_free_slot' }, 400);
     const now = clock.now();
+    // Energy grows with the time away; every member pays.
+    const cost = game.explorationEnergyCost(game.explorationTotalMs(travelMs, exploreMs));
+    if (party.some((f) => energyOf(f, fx, clock, now) < cost)) return c.json({ error: 'no_energy', cost }, 400);
+    let luck = 0;
+    if (b?.useLuck === true) {
+      const potion = db.prepare("SELECT * FROM items WHERE account_id = ? AND template_id = 'potion_luck' AND fighter_id IS NULL").get(acc.id) as ItemRow | undefined;
+      if (!potion) return c.json({ error: 'no_luck_potion' }, 400);
+      consume(db, potion);
+      luck = 1;
+    }
+    for (const f of party) db.prepare('UPDATE fighters SET energy = ?, energy_at = ? WHERE id = ?').run(energyOf(f, fx, clock, now) - cost, now, f.id);
     const travel = Math.max(500, Math.round(travelMs / clock.speed));
     const explore = Math.round(exploreMs / clock.speed);
     const endsAt = now + travel * 2 + explore;
     const id = randomId();
-    db.prepare('INSERT INTO explorations (id, account_id, fighter_ids, started_at, travel_ms, explore_ms, base_travel_ms, base_explore_ms, ends_at, seed, state) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(id, acc.id, JSON.stringify(ids), now, travel, explore, travelMs, exploreMs, endsAt, randomBytes(4).readUInt32LE(0), 'active');
+    db.prepare('INSERT INTO explorations (id, account_id, fighter_ids, started_at, travel_ms, explore_ms, base_travel_ms, base_explore_ms, ends_at, seed, state, luck) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(id, acc.id, JSON.stringify(ids), now, travel, explore, travelMs, exploreMs, endsAt, randomBytes(4).readUInt32LE(0), 'active', luck);
     for (const f of party) db.prepare("UPDATE fighters SET status_kind = 'exploration', status_until = ? WHERE id = ?").run(endsAt, f.id);
-    return c.json({ id, endsAt }, 201);
+    return c.json({ id, endsAt, energyCost: cost }, 201);
   });
 
   app.post('/explorations/:id/recall', (c) => {

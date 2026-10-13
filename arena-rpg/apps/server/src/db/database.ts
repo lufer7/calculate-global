@@ -260,6 +260,15 @@ const MIGRATIONS: string[] = [
   ALTER TABLE accounts ADD COLUMN clan_left_at INTEGER;
   ALTER TABLE fighters ADD COLUMN raid_ready_at INTEGER;
   `,
+  `
+  -- Rev4: per-fighter energy, Cami rest, arena plunder shield; timed expeditions replaced by creature fights.
+  ALTER TABLE fighters ADD COLUMN energy REAL NOT NULL DEFAULT 20;
+  ALTER TABLE fighters ADD COLUMN energy_at INTEGER;
+  ALTER TABLE accounts ADD COLUMN arena_shield_until INTEGER;
+  ALTER TABLE explorations ADD COLUMN luck INTEGER NOT NULL DEFAULT 0;
+  UPDATE fighters SET status_kind = 'idle', status_until = NULL WHERE status_kind = 'expedition';
+  UPDATE expeditions SET state = 'done' WHERE state != 'done';
+  `,
 ];
 
 export function openDatabase(path = ':memory:'): Db {

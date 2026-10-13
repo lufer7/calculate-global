@@ -24,41 +24,49 @@ async function player() {
 }
 
 describe('game API', () => {
-  it('sends an expedition, settles it lazily and writes a report', async () => {
-    const p = await player();
-    const f = await read(await p.post('/v1/fighters', { name: 'Kara Demir', class: 'scout' }));
-    const start = await p.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [f.id] });
-    expect(start.status).toBe(201);
-    const { endsAt } = await read(start);
-
-    let state = await read(await p.get('/v1/game/state'));
-    expect(state.fighters[0].status).toBe('expedition');
-    expect(state.expeditions).toHaveLength(1);
-    // Rev3: Scout perks work on Keşif, expeditions take their base time (30 min) for everyone.
-    expect(endsAt - p.clock.now()).toBe(30 * 60_000);
-    expect((await read(await p.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [f.id] }))).error).toBe('fighter_busy');
-
-    p.clock.advance(30 * 60_000);
-    state = await read(await p.get('/v1/game/state'));
-    expect(state.expeditions).toHaveLength(0);
-    expect(state.unreadReports).toBe(1);
-    expect(state.fighters[0].xp + state.fighters[0].level).toBeGreaterThan(1);
-    const reports = await read(await p.get('/v1/game/reports'));
-    expect(reports.reports[0].body.zoneId).toBe('dark_forest');
-    expect(reports.reports[0].body.seed).toEqual(expect.any(Number));
-  });
-
-  it('recall brings fighters back after the elapsed time with no reward', async () => {
+  it('sefer: attacks a creature at once, spends energy and pays gold/xp', async () => {
     const p = await player();
     const f = await read(await p.post('/v1/fighters', { name: 'Kara Demir', class: 'swordmaster' }));
-    const { id } = await read(await p.post('/v1/game/expeditions', { zoneId: 'dark_forest', fighterIds: [f.id] }));
-    p.clock.advance(5 * 60_000);
-    const { returnsAt } = await read(await p.post(`/v1/game/expeditions/${id}/recall`, {}));
-    expect(returnsAt - p.clock.now()).toBe(5 * 60_000);
-    p.clock.advance(5 * 60_000);
-    const state = await read(await p.get('/v1/game/state'));
-    expect(state.fighters[0].status).toBe('idle');
-    expect(state.account.gold).toBe(200);
+    p.db.prepare('UPDATE fighters SET level = 8').run();
+    const r = await read(await p.post('/v1/game/hunt', { fighterId: f.id, creatureId: 'red_fox' }));
+    expect(r.won).toBe(true);
+    expect(r.gold).toBeGreaterThan(0);
+    expect(r.outcome.log.length).toBeGreaterThan(0);
+    expect(r.energy.value).toBe(19);
+    let state = await read(await p.get('/v1/game/state'));
+    expect(state.account.gold).toBe(200 + r.gold);
+    expect(state.fighters[0].energy).toMatchObject({ value: 19, max: 20 });
+    expect((await read(await p.post('/v1/game/hunt', { fighterId: f.id, creatureId: 'frogman' }))).error).toBe('zone_locked');
+    // energy runs out, then refills 1 point per 7 minutes
+    p.db.prepare('UPDATE fighters SET energy = 0, energy_at = ?, hp_ratio = 1').run(p.clock.now());
+    expect((await read(await p.post('/v1/game/hunt', { fighterId: f.id, creatureId: 'red_fox' }))).error).toBe('no_energy');
+    p.clock.advance(7 * 60_000);
+    state = await read(await p.get('/v1/game/state'));
+    expect(state.fighters[0].energy.value).toBe(1);
+    p.db.prepare('UPDATE fighters SET hp_ratio = 0.1').run();
+    expect((await read(await p.post('/v1/game/hunt', { fighterId: f.id, creatureId: 'red_fox' }))).error).toBe('too_weak');
+  });
+
+  it('cami heals for free and much faster than idling; waking up early keeps what was healed', async () => {
+    const p = await player();
+    const f = await read(await p.post('/v1/fighters', { name: 'Kara Demir', class: 'swordmaster' }));
+    p.db.prepare('UPDATE fighters SET hp_ratio = 0.2, hp_at = ?').run(p.clock.now());
+    const { until } = await read(await p.post('/v1/game/cami/rest', { fighterId: f.id }));
+    expect(until - p.clock.now()).toBe(4 * 3_600_000);
+    let s = await read(await p.get('/v1/game/state'));
+    expect(s.fighters[0].status).toBe('resting');
+    expect((await read(await p.post('/v1/game/hunt', { fighterId: f.id, creatureId: 'red_fox' }))).error).toBe('fighter_busy');
+    p.clock.advance(3_600_000);
+    await read(await p.post('/v1/game/cami/wake', { fighterId: f.id }));
+    s = await read(await p.get('/v1/game/state'));
+    expect(s.fighters[0].status).toBe('idle');
+    expect(s.fighters[0].hpRatio).toBeCloseTo(0.4);
+    await p.post('/v1/game/cami/rest', { fighterId: f.id });
+    p.clock.advance(5 * 3_600_000);
+    s = await read(await p.get('/v1/game/state'));
+    expect(s.fighters[0].status).toBe('idle');
+    expect(s.fighters[0].hpRatio).toBe(1);
+    expect((await read(await p.post('/v1/game/cami/rest', { fighterId: f.id }))).error).toBe('hp_full');
   });
 
   it('spends skill points server-side with all rules', async () => {
@@ -75,13 +83,19 @@ describe('game API', () => {
   it('runs Rasathane research with seer perk and gold cost', async () => {
     const p = await player();
     await p.post('/v1/fighters', { name: 'Yel', class: 'seer' });
-    const r = await read(await p.post('/v1/game/research', { id: 'expedition_logistics' }));
+    expect((await read(await p.post('/v1/game/research', { id: 'stamina' }))).error).toBe('research_locked');
+    const r = await read(await p.post('/v1/game/research', { id: 'hunters_eye' }));
     expect(r.cost).toBe(100);
-    expect((await read(await p.post('/v1/game/research', { id: 'expedition_logistics' }))).error).toBe('busy');
+    expect((await read(await p.post('/v1/game/research', { id: 'haggling' }))).error).toBe('busy');
     p.clock.advance(r.until - p.clock.now());
-    const state = await read(await p.get('/v1/game/state'));
-    expect(state.account.research.expedition_logistics).toBe(1);
+    let state = await read(await p.get('/v1/game/state'));
+    expect(state.account.research.hunters_eye).toBe(1);
     expect(state.account.activeResearch).toBeNull();
     expect(state.account.gold).toBe(100);
+    // Dayanıklılık raises the energy cap once researched
+    p.db.prepare(`UPDATE accounts SET research_json = '{"iron_drill":2,"stamina":2,"big_bags":1}'`).run();
+    state = await read(await p.get('/v1/game/state'));
+    expect(state.fighters[0].energy.max).toBe(24);
+    expect(state.bagCapacity).toBe(54);
   });
 });

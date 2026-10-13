@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRng, game } from '../src/index';
 
-const { CLASS_IDS, fight, battleProfile, gearTotal, itemStats, itemName, canEquip, upgradeCost, marketStock, arenaNpcs, expeditionItems, huntingYield, regenHp, powerScore } = game;
+const { CLASS_IDS, fight, battleProfile, gearTotal, itemStats, itemName, canEquip, upgradeCost, marketStock, arenaNpcs, huntingYield, regenHp, powerScore } = game;
 
 const kit = (cls: game.ClassId, level: number) => {
   const weapon = { scout: 'bow', swordmaster: 'sword', seer: 'staff' }[cls];
@@ -75,34 +75,84 @@ describe('economy', () => {
   });
   it('arena NPCs, loot, hunting and regen', () => {
     expect(arenaNpcs('f', 10, 1, 's')).toHaveLength(3);
-    expect(expeditionItems(1, 'legendary', null, 20).some((i) => i.rarity === 'epic' || i.rarity === 'legendary')).toBe(true);
-    expect(expeditionItems(1, 'nothing', null, 20)).toEqual([]);
     const y = huntingYield(3, 2 * 3_600_000, 9);
     expect(Object.values(y).reduce((a, b) => a + b, 0)).toBe(6);
-    expect(regenHp(0.5, 3_600_000)).toBeCloseTo(0.6);
+    expect(regenHp(0.5, 3_600_000)).toBeCloseTo(0.54);
+    expect(regenHp(0.5, 3_600_000, game.CAMI_HEAL_PER_HOUR)).toBeCloseTo(0.7);
+    expect(game.restTimeToFull(0.6)).toBe(2 * 3_600_000);
     expect(createRng(1)()).toBeGreaterThan(0);
   });
 });
 
-describe('expedition stages', () => {
-  const z = game.ZONES.dark_forest!;
-  it('gets harder and longer stage by stage', () => {
-    expect(game.stageLevel(z, 1)).toBe(1);
-    expect(game.stageLevel(z, 10)).toBe(19);
-    expect(game.stageDurationMs(z, 10)).toBeGreaterThan(game.stageDurationMs(z, 1));
-    const p = game.referencePower(5);
-    expect(game.successChance(p, 5, 1)).toBeGreaterThan(game.successChance(p, 5, 10));
-    expect(game.successChance(p * 3, 5, 10)).toBe(0.97);
-    expect(game.successChance(1, 50, 10)).toBe(0.1);
+describe('sefer creatures', () => {
+  it('five creatures per zone, getting stronger', () => {
+    for (const z of Object.keys(game.ZONES)) {
+      const list = game.creaturesOf(z);
+      expect(list).toHaveLength(5);
+      expect([...list].sort((a, b) => a.level - b.level)).toEqual(list);
+    }
   });
-  it('party power favours the strongest member', () => {
-    expect(game.partyPower([100, 100])).toBe(135);
+  it('an even fighter usually beats the creatures of its level, a weak one does not', () => {
+    const wins = (lvl: number, cr: game.Creature) => {
+      let w = 0;
+      for (let seed = 1; seed <= 200; seed++) if (game.huntCreature({ fighter: { name: 'f', class: 'swordmaster', level: lvl, skills: {}, gear: kit('swordmaster', lvl) }, creature: cr, seed }).won) w++;
+      return w / 200;
+    };
+    const wolf = game.CREATURES_BY_ID.get('grey_wolf')!;
+    expect(wins(6, wolf)).toBeGreaterThan(0.6);
+    expect(wins(1, game.CREATURES_BY_ID.get('old_bear')!)).toBeLessThan(0.2);
   });
-  it('zones have their own loot and the boss pays a relic once', () => {
-    const forest = game.zoneExtraItems('dark_forest', 1, 3, 5, false);
-    expect(forest.some((i) => game.RESOURCE_IDS.includes(i.templateId))).toBe(true);
-    const boss = game.zoneExtraItems('dark_forest', 1, 10, 19, true);
-    expect(boss.some((i) => ['rare', 'epic', 'legendary'].includes(i.rarity))).toBe(true);
-    expect(game.zoneGoldMultiplier('abandoned_mines')).toBe(1.5);
+  it('pays gold and xp on a win, xp only on a loss, deterministic per seed', () => {
+    const f = { name: 'f', class: 'swordmaster' as const, level: 10, skills: {}, gear: kit('swordmaster', 10) };
+    const fox = game.CREATURES_BY_ID.get('red_fox')!;
+    const r = game.huntCreature({ fighter: f, creature: fox, seed: 5 });
+    expect(r).toEqual(game.huntCreature({ fighter: f, creature: fox, seed: 5 }));
+    expect(r.won).toBe(true);
+    expect(r.gold).toBeGreaterThan(0);
+    const lost = game.huntCreature({ fighter: { ...f, level: 1, gear: game.ZERO_STATS }, creature: game.CREATURES_BY_ID.get('realm_drake')!, seed: 5 });
+    expect(lost.won).toBe(false);
+    expect(lost.gold).toBe(0);
+    expect(lost.hpRatio).toBeGreaterThanOrEqual(0.02);
+  });
+});
+
+describe('energy', () => {
+  it('regenerates 1 point per 7 minutes up to 20', () => {
+    const e = { energy: 0, at: 0 };
+    expect(game.currentEnergy(e, 7 * 60_000)).toBeCloseTo(1);
+    expect(game.currentEnergy(e, 1e9)).toBe(20);
+    expect(game.currentEnergy(e, 7 * 60_000, 20, 7 * 60_000, 20)).toBe(20);
+    expect(game.nextEnergyIn({ energy: 3.5, at: 0 }, 0)).toBe(210_000);
+    expect(game.explorationEnergyCost(3_600_000)).toBe(1);
+    expect(game.explorationEnergyCost(8 * 3_600_000)).toBe(6);
+  });
+});
+
+describe('rasathane tree', () => {
+  it('needs prerequisites and sums effects', () => {
+    expect(game.canResearch({}, 'stamina')).toBe('research_locked');
+    expect(game.canResearch({ iron_drill: 2 }, 'stamina')).toBeNull();
+    expect(game.canResearch({ cartography: 2 }, 'cartography')).toBe('max_level');
+    const fx = game.researchEffects({ iron_drill: 2, stamina: 3, old_research: 4 });
+    expect(fx.damage).toBeCloseTo(0.06);
+    expect(fx.energyMax).toBe(6);
+    expect(Object.keys(game.RESEARCH).length).toBeGreaterThanOrEqual(16);
+    for (const d of Object.values(game.RESEARCH)) if (d.requires) expect(game.RESEARCH[d.requires.id], d.id).toBeTruthy();
+  });
+  it('research bonuses make fighters hit harder', () => {
+    const base = { name: 'f', class: 'swordmaster' as const, level: 10, skills: {}, gear: kit('swordmaster', 10) };
+    expect(battleProfile({ ...base, bonus: { damage: 0.15, armor: 0.2 } }).damageMax).toBeGreaterThan(battleProfile(base).damageMax);
+  });
+});
+
+describe('arena plunder', () => {
+  it('steals ~30%, less with Gizli Kasa, nothing while shielded', () => {
+    expect(game.arenaPlunder({ defenderGold: 1000 })).toBe(300);
+    expect(game.arenaPlunder({ defenderGold: 1000, defenderReduction: 0.4 })).toBe(180);
+    expect(game.arenaPlunder({ defenderGold: 1000, shielded: true })).toBe(0);
+    let drops = 0;
+    for (let i = 0; i < 1000; i++) if (game.arenaLoot(createRng(i), 10)) drops++;
+    expect(drops).toBeGreaterThan(130);
+    expect(drops).toBeLessThan(270);
   });
 });

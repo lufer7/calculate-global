@@ -6,7 +6,6 @@ import { CLASS_IDS } from './classes';
 import type { ItemInstance, Rarity } from './gear';
 import type { BattlerInput } from './battle';
 import { FOOD_IDS, RESOURCE_IDS, gearTotal, itemPrice, rollEquipment, rollRarity, template } from './gear';
-import type { RewardTier } from './expedition';
 
 const HOUR = 3_600_000;
 
@@ -55,30 +54,6 @@ export function marketStock(accountId: string, hourKey: number, accountLevel: nu
   return offers;
 }
 
-// ---------------------------------------------------------------------------
-// Expedition loot items
-// ---------------------------------------------------------------------------
-
-const TIER_ITEM: Record<RewardTier, { chance: number; weights: Record<Rarity, number> } | null> = {
-  nothing: null,
-  common: { chance: 0.35, weights: { common: 70, uncommon: 30, rare: 0, epic: 0, legendary: 0 } },
-  rare: { chance: 0.9, weights: { common: 0, uncommon: 55, rare: 45, epic: 0, legendary: 0 } },
-  epic: { chance: 1, weights: { common: 0, uncommon: 0, rare: 60, epic: 40, legendary: 0 } },
-  legendary: { chance: 1, weights: { common: 0, uncommon: 0, rare: 0, epic: 55, legendary: 45 } },
-};
-
-/** Items found on an expedition: equipment by tier, sometimes food. */
-export function expeditionItems(seed: number, tier: RewardTier, extraTier: RewardTier | null, level: number): Omit<ItemInstance, 'id'>[] {
-  const rng = createRng(seed ^ 0x5bd1e995);
-  const out: Omit<ItemInstance, 'id'>[] = [];
-  for (const t of [tier, extraTier]) {
-    if (!t) continue;
-    const spec = TIER_ITEM[t];
-    if (spec && rng() < spec.chance) out.push(rollEquipment(rng, level, rollRarity(rng, spec.weights)));
-    if (t !== 'nothing' && rng() < 0.4) out.push({ templateId: FOOD_IDS[Math.floor(rng() * 3)]!, itemLevel: 1, rarity: 'common', upgrade: 0, qty: 1 + Math.floor(rng() * 2) });
-  }
-  return out;
-}
 
 // ---------------------------------------------------------------------------
 // Arena
@@ -124,10 +99,37 @@ export const ARENA_HP_LOSS = 0.15;
 // HP regeneration, hunting, alchemy
 // ---------------------------------------------------------------------------
 
-/** Fighters recover 10% health per hour while not injured. */
-export const HP_REGEN_PER_HOUR = 0.1;
-export function regenHp(hpRatio: number, elapsedMs: number): number {
-  return Math.min(1, hpRatio + (Math.max(0, elapsedMs) / HOUR) * HP_REGEN_PER_HOUR);
+/** Idle fighters recover slowly by themselves (4%/h); resting in the Cami is 5× faster and free. */
+export const HP_REGEN_PER_HOUR = 0.04;
+export const CAMI_HEAL_PER_HOUR = 0.2;
+export function regenHp(hpRatio: number, elapsedMs: number, perHour: number = HP_REGEN_PER_HOUR): number {
+  return Math.min(1, hpRatio + (Math.max(0, elapsedMs) / HOUR) * perHour);
+}
+/** Game time until a resting fighter is fully healed. */
+export function restTimeToFull(hpRatio: number, perHour: number = CAMI_HEAL_PER_HOUR): number {
+  return Math.ceil((Math.max(0, 1 - hpRatio) / perHour) * HOUR);
+}
+
+// ---------------------------------------------------------------------------
+// Arena PvP plunder (rev4)
+// ---------------------------------------------------------------------------
+
+/** Winning against a player steals ~30% of their gold; a robbed player is protected for an hour. */
+export const ARENA_PLUNDER = { rate: 0.3, shieldMs: 60 * 60_000, itemDropChance: 0.2 } as const;
+
+export function arenaPlunder(input: { defenderGold: number; attackerBonus?: number; defenderReduction?: number; shielded?: boolean }): number {
+  if (input.shielded) return 0;
+  const rate = ARENA_PLUNDER.rate * (1 + (input.attackerBonus ?? 0)) * (1 - Math.min(0.8, input.defenderReduction ?? 0));
+  return Math.max(0, Math.floor(input.defenderGold * Math.min(0.5, rate)));
+}
+
+/** Random item for a PvP win: random quality and a random small "+". */
+export function arenaLoot(rng: () => number, level: number): Omit<ItemInstance, 'id'> | null {
+  if (rng() >= ARENA_PLUNDER.itemDropChance) return null;
+  const item = rollEquipment(rng, level, rollRarity(rng, { common: 30, uncommon: 40, rare: 22, epic: 7, legendary: 1 }));
+  const r = rng();
+  item.upgrade = r < 0.6 ? 0 : r < 0.85 ? 1 : r < 0.95 ? 2 : 3;
+  return item;
 }
 
 /** Scout "Avcılık": rank N yields N resources per hour, picked deterministically. */

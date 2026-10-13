@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { createRng, game } from '../src/index';
 
 const {
-  BRANCH_IDS, CLASSES, GAME_CONFIG, ZONES, accountLevel, applyTimeWarp, boostedRewardWeights, branchFullCost, canRespec,
-  expeditionDuration, expeditionSlots, fighterSlots, partyBonuses, planExpedition, plunderAmount, prophecyZone,
-  rankUp, recallReturnTime, resolveExpedition, totalSkillPoints, validateAllocation, validateSkillCatalog, xpMultiplier,
+  BRANCH_IDS, CLASSES, GAME_CONFIG, ZONES, accountLevel, branchFullCost, canRespec,
+  fighterSlots, plunderAmount, prophecyZone,
+  rankUp, totalSkillPoints, validateAllocation, validateSkillCatalog, xpMultiplier,
 } = game;
 
 type Fighter = game.Fighter;
@@ -65,54 +65,15 @@ describe('fighters', () => {
   });
 });
 
-describe('expeditions', () => {
-  it('computes slots like the doc examples', () => {
-    expect(expeditionSlots(5, 0)).toBe(3);
-    expect(expeditionSlots(5, 50)).toBe(3); // rev3: the scout slot bonus moved to Keşif
-    expect(expeditionSlots(0, 24)).toBe(1);
+describe('keşif slots and scout skills', () => {
+  it('gives one slot plus one per 25 scout levels', () => {
     expect(game.explorationSlots(0)).toBe(1);
     expect(game.explorationSlots(50)).toBe(3);
   });
 
-  it('never goes below 40% duration', () => {
-    const zone = ZONES.dark_forest!;
-    const none = partyBonuses([{ skills: { swift_steps: 5 } }]);
-    expect(expeditionDuration(zone, none)).toBe(zone.baseDurationMs); // scout skills no longer affect expeditions
-    expect(expeditionDuration(zone, none, [0.5, 0.5])).toBe(Math.round(zone.baseDurationMs * 0.4));
-  });
-
-  it('takes the max of a skill across scouts instead of summing (keşif)', () => {
+  it('takes the max of a skill across scouts instead of summing', () => {
     const b = game.explorationBonuses([{ skills: { treasure_hunter: 2 } }, { skills: { treasure_hunter: 4 } }]);
     expect(b.rareRelative).toBeCloseTo(0.12);
-  });
-
-  it('applies relative rare boost with cap', () => {
-    const base = ZONES.dark_forest!.rewardWeights;
-    const boosted = boostedRewardWeights(base, 0.15);
-    const share = (w: typeof base) => (w.rare + w.epic + w.legendary) / Object.values(w).reduce((a, b) => a + b, 0);
-    expect(share(boosted)).toBeCloseTo(share(base) * 1.15);
-    expect(share(boostedRewardWeights(base, 100))).toBeCloseTo(GAME_CONFIG.expedition.chance_cap);
-  });
-
-  it('plans with slot, busy and hidden-zone checks', () => {
-    const scout = fighter({ id: 's', level: 30 });
-    const other = fighter({ id: 'o', class: 'swordmaster', level: 30 });
-    const all = [scout, other];
-    const base = { party: [scout], allFighters: all, researchLevel: 0, now: 0 };
-    const r = planExpedition({ ...base, zoneId: 'dark_forest', activeExpeditions: 0 });
-    expect(r.ok).toBe(true);
-    expect(planExpedition({ ...base, zoneId: 'dark_forest', activeExpeditions: 2 })).toEqual({ ok: false, error: 'no_free_slot' });
-    expect(planExpedition({ ...base, zoneId: 'lost_lands', activeExpeditions: 0 }).ok).toBe(true); // open to every class now
-    const busy = fighter({ id: 's', status: { kind: 'injured', until: 10 } });
-    expect(planExpedition({ ...base, party: [busy], zoneId: 'dark_forest', activeExpeditions: 0 })).toEqual({ ok: false, error: 'fighter_busy' });
-  });
-
-  it('resolves deterministically from the server seed', () => {
-    const party = [{ id: 'a', level: 10, skills: { trap_sense: 5 } }];
-    const a = resolveExpedition(ZONES.dark_forest!, party, createRng(99), { prophecyBonus: 0.2 });
-    const b = resolveExpedition(ZONES.dark_forest!, party, createRng(99), { prophecyBonus: 0.2 });
-    expect(a).toEqual(b);
-    expect(a.rewardMultiplier).toBe(1.2);
   });
 
   it('trap sense lowers keşif injuries over many runs', () => {
@@ -124,16 +85,9 @@ describe('expeditions', () => {
     expect(count({ trap_sense: 5 })).toBeLessThan(count({}) * 0.85);
   });
 
-  it('recall and time warp', () => {
-    expect(recallReturnTime(1000, 4000)).toBe(7000);
-    const exp = { startedAt: 0, endsAt: 1000, baseDurationMs: 1000 };
-    expect(applyTimeWarp(exp, 0)).toBe(750);
-    expect(applyTimeWarp({ ...exp, endsAt: 450 }, 0)).toBe(400);
-  });
-
   it('prophecy is stable per day', () => {
     expect(prophecyZone('2026-10-12', 's')).toBe(prophecyZone('2026-10-12', 's'));
-    expect(ZONES[prophecyZone('2026-10-12', 's')]!.hidden).toBeFalsy();
+    expect(ZONES[prophecyZone('2026-10-12', 's')]).toBeTruthy();
   });
 });
 
@@ -163,14 +117,7 @@ describe('balance (design doc §2)', () => {
 
 describe('main-class perks', () => {
   const { MAIN_CLASS_PERKS, accountPerks, attackPlunder } = game;
-  it('scout main class speeds up and enriches every keşif (not expeditions)', () => {
-    const swordsman = fighter({ id: 'x', class: 'swordmaster', level: 10 });
-    const plan = (mainClass: game.ClassId | null) => {
-      const r = planExpedition({ zoneId: 'dark_forest', party: [swordsman], allFighters: [swordsman], activeExpeditions: 0, researchLevel: 0, now: 0, mainClass });
-      if (!r.ok) throw new Error(r.error);
-      return r.value.durationMs;
-    };
-    expect(plan('scout')).toBe(plan(null));
+  it('scout main class speeds up and enriches every keşif', () => {
     expect(accountPerks('scout').explorationRareRelative).toBe(0.3);
     const run = (mainClass: game.ClassId | null) => game.resolveExploration({ seed: 7, travelMs: 3_600_000, exploreMs: 6 * 3_600_000, party: [{ id: 'x', level: 10, skills: {} }], mainClass });
     expect(run('scout').gold).toBeGreaterThan(run(null).gold);
@@ -178,25 +125,14 @@ describe('main-class perks', () => {
   it('swordmaster plunders more and loses less; seer gets prophecy and faster research', () => {
     expect(attackPlunder({ defenderGold: 1000, attackerMainClass: 'swordmaster' })).toBe(375);
     expect(attackPlunder({ defenderGold: 1000, defenderMainClass: 'swordmaster' })).toBe(225);
-    const o = resolveExpedition(ZONES.dark_forest!, [{ id: 'a', level: 10, skills: {} }], createRng(1), { mainClass: 'seer', isProphecyZone: true });
-    expect(o.rewardMultiplier).toBeCloseTo(1.1);
+    expect(MAIN_CLASS_PERKS.seer.perks.prophecyBaseBonus).toBe(0.1);
     expect(MAIN_CLASS_PERKS.seer.perks.researchDurationReduction).toBe(0.2);
   });
 });
 
 describe('loot, injuries and research', () => {
-  it('pays nothing-tier trips only XP and scales with tier', () => {
-    const base = { extraReward: null, event: 'none' as const, rewardMultiplier: 1, injured: [] };
-    const none = game.expeditionLoot('dark_forest', { ...base, reward: 'nothing' }, () => 0.5);
-    const epic = game.expeditionLoot('dark_forest', { ...base, reward: 'epic' }, () => 0.5);
-    expect(none.gold).toBe(0);
-    expect(none.xp).toBe(10);
-    expect(epic.gold).toBe(180);
-  });
   it('injury and research durations respect their floors', () => {
-    const zone = ZONES.dark_forest!;
-    expect(game.injuryDurationMs(zone, [0.9, 0.9])).toBe(Math.round(zone.baseDurationMs * 0.25));
-    const def = game.RESEARCH.expedition_logistics!;
+    const def = game.RESEARCH.iron_drill!;
     expect(game.researchDuration(def, 1, [0.2])).toBe(Math.round(def.durationMs(1) * 0.8));
   });
 });
