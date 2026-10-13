@@ -4,7 +4,9 @@ import { Banner } from '../../art/Banner';
 import { NavIcon } from '../../art/NavIcon';
 import { Portrait } from '../../art/Portrait';
 import { Scene } from '../../art/Scene';
+import { Bar } from '../../components/ui';
 import { formatDuration, tr } from '../../i18n/tr';
+import { clockText } from './ExplorationTab';
 import type { FighterView, GameState } from '../../lib/api';
 import { classColor, colors, ui } from '../theme';
 
@@ -17,20 +19,12 @@ const SPOTS: [number, number][] = [[0.5, 0.5], [0.17, 0.25], [0.83, 0.25], [0.17
  * an empty slot to recruit; locked slots show the account level that opens them.
  */
 export function HomeTab({ state, now, onOpen, onNew, onGo }: {
-  state: GameState; now: number; onOpen: (f: FighterView) => void; onNew: () => void; onGo: (tab: 'expeditions' | 'exploration' | 'research' | 'clan' | 'reports') => void;
+  state: GameState; now: number; onOpen: (f: FighterView) => void; onNew: () => void; onGo: (tab: 'expeditions' | 'exploration' | 'research' | 'clan' | 'reports' | 'cami') => void;
 }) {
   const { width } = useWindowDimensions();
   const { account, fighters } = state;
   const stageW = Math.min(width, 520) - 28;
   const stageH = Math.max(380, stageW * 1.05);
-
-  const chips: { key: string; icon: string; text: string; go: Parameters<typeof onGo>[0] }[] = [];
-  const nextExp = [...state.expeditions].sort((a, b) => a.endsAt - b.endsAt)[0];
-  if (nextExp) chips.push({ key: 'exp', icon: 'map', text: `${state.expeditions.length} sefer · ${formatDuration(nextExp.endsAt - now)}`, go: 'expeditions' });
-  const nextX = [...state.explorations].sort((a, b) => a.endsAt - b.endsAt)[0];
-  if (nextX) chips.push({ key: 'x', icon: 'compass', text: `${state.explorations.length} keşif · ${formatDuration(nextX.endsAt - now)}`, go: 'exploration' });
-  if (account.activeResearch) chips.push({ key: 'r', icon: 'telescope', text: `${game.RESEARCH[account.activeResearch.id]?.name ?? 'Araştırma'} · ${formatDuration(account.activeResearch.until - now)}`, go: 'research' });
-  if (state.unreadReports > 0) chips.push({ key: 'rep', icon: 'scroll', text: `${state.unreadReports} yeni rapor`, go: 'reports' });
 
   return (
     <View style={{ gap: 12 }}>
@@ -67,16 +61,83 @@ export function HomeTab({ state, now, onOpen, onNew, onGo }: {
         })}
       </View>
 
-      {chips.length > 0 && (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {chips.map((c) => (
-            <Pressable key={c.key} onPress={() => onGo(c.go)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 99, borderWidth: 1, borderColor: colors.trimDim, backgroundColor: colors.panel }}>
-              <NavIcon name={c.icon} color={colors.trim} size={16} />
-              <Text style={{ color: colors.text, fontSize: 12, fontWeight: '700' }}>{c.text}</Text>
-            </Pressable>
-          ))}
-        </View>
+      <Activities state={state} now={now} onGo={onGo} onOpen={onOpen} />
+    </View>
+  );
+}
+
+/** "Aktiviteler": what every fighter is doing right now, where, and how long is left. */
+function Activities({ state, now, onGo, onOpen }: { state: GameState; now: number; onGo: Parameters<typeof HomeTab>[0]['onGo']; onOpen: (f: FighterView) => void }) {
+  const research = state.account.activeResearch;
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={[ui.between, { marginTop: 2 }]}>
+        <Text style={[ui.label, { fontSize: 12 }]}>Aktiviteler</Text>
+        {state.unreadReports > 0 && (
+          <Pressable onPress={() => onGo('reports')} style={[ui.row, { gap: 4 }]} hitSlop={8}>
+            <NavIcon name="scroll" color={colors.warn} size={16} />
+            <Text style={{ color: colors.warn, fontWeight: '800', fontSize: 12 }}>{state.unreadReports} yeni rapor ›</Text>
+          </Pressable>
+        )}
+      </View>
+      {state.fighters.map((f) => {
+        const trip = state.explorations.find((x) => x.fighterIds.includes(f.id));
+        let icon = 'home';
+        let title = 'Hazır';
+        let detail = '';
+        let ratio: number | null = null;
+        let color = colors.good;
+        let go: Parameters<typeof onGo>[0] | null = null;
+        if (trip) {
+          const phase = trip.recalled ? 'geri dönüyor' : now < trip.arriveAt ? 'yolda (gidiş)' : now < trip.leaveAt ? 'keşfediyor' : 'dönüş yolunda';
+          icon = 'compass'; title = `Keşifte · ${phase}`; color = colors.trim; go = 'exploration';
+          detail = `Dönüş ${clockText(trip.endsAt, now)} · ${formatDuration(trip.endsAt - now)} kaldı`;
+          ratio = (now - trip.startedAt) / Math.max(1, trip.endsAt - trip.startedAt);
+        } else if (f.status === 'resting') {
+          icon = 'cami'; title = `Camide dinleniyor · can %${Math.round(f.hpRatio * 100)}`; color = colors.good; go = 'cami';
+          detail = f.statusUntil ? `Can ${formatDuration(f.statusUntil - now)} sonra dolar` : '';
+          ratio = f.hpRatio;
+        } else if (f.status === 'injured') {
+          icon = 'heart'; title = 'Yaralı'; color = colors.danger; go = 'cami';
+          detail = f.statusUntil ? `${formatDuration(f.statusUntil - now)} sonra iyileşir` : '';
+        } else {
+          const low = f.hpRatio < 0.35;
+          title = low ? 'Hazır ama yorgun' : 'Hazır';
+          color = low ? colors.warn : colors.good;
+          detail = `Can %${Math.round(f.hpRatio * 100)} · ⚡ ${f.energy.value}/${f.energy.max}${low ? ' · Camiye yatırabilirsin' : f.energy.value > 0 ? ' · Sefere ya da arenaya hazır' : ' · enerji doluyor'}`;
+          go = low ? 'cami' : f.energy.value > 0 ? 'expeditions' : null;
+        }
+        return (
+          <Pressable key={f.id} onPress={() => (go ? onGo(go) : onOpen(f))} accessibilityRole="button" accessibilityLabel={`${f.name}: ${title}`}>
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: colors.panel, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 8 }}>
+              <Portrait cls={f.class} size={36} hpRatio={f.hpRatio} injured={f.status === 'injured'} />
+              <View style={{ flex: 1, gap: 3 }}>
+                <Text style={{ color: colors.text, fontWeight: '800', fontSize: 13 }} numberOfLines={1}>{f.name} <Text style={{ color: colors.faint, fontWeight: '600', fontSize: 11 }}>Sv {f.level}</Text></Text>
+                <View style={[ui.row, { gap: 5 }]}>
+                  <NavIcon name={icon} color={color} size={14} />
+                  <Text style={{ color, fontSize: 12, fontWeight: '700', flexShrink: 1 }}>{title}</Text>
+                </View>
+                {!!detail && <Text style={{ color: colors.muted, fontSize: 11 }} numberOfLines={2}>{detail}</Text>}
+                {ratio !== null && <Bar ratio={ratio} color={color} height={4} />}
+              </View>
+              {go && <Text style={{ color: colors.trim, fontSize: 18 }}>›</Text>}
+            </View>
+          </Pressable>
+        );
+      })}
+      {research && (
+        <Pressable onPress={() => onGo('research')}>
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: colors.panel, borderRadius: 8, borderWidth: 1, borderColor: colors.border, padding: 8 }}>
+            <NavIcon name="telescope" color={colors.seer} size={22} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.text, fontWeight: '800', fontSize: 13 }}>Rasathane · {game.RESEARCH[research.id]?.name ?? 'Araştırma'} Sv {research.level}</Text>
+              <Text style={{ color: colors.muted, fontSize: 11 }}>Bitmesine {formatDuration(research.until - now)} · {clockText(research.until, now)}</Text>
+            </View>
+            <Text style={{ color: colors.trim, fontSize: 18 }}>›</Text>
+          </View>
+        </Pressable>
       )}
+      {!research && <Pressable onPress={() => onGo('research')}><Text style={{ color: colors.muted, fontSize: 12 }}>Rasathane boşta — yeni bir araştırma başlat ›</Text></Pressable>}
     </View>
   );
 }
@@ -103,7 +164,7 @@ function FighterNode({ f, now, size, left, top, leader, onPress }: { f: FighterV
       <Text style={{ color: '#f2e6cc', fontSize: 10, textShadowColor: '#000', textShadowRadius: 3 }}>Sv {f.level}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2, paddingHorizontal: 6, paddingVertical: 1, borderRadius: 99, backgroundColor: '#000000a0', borderWidth: 1, borderColor: statusColor }}>
         <Text style={{ color: statusColor, fontSize: 9, fontWeight: '800' }}>
-          {tr.status[f.status] ?? f.status}{busy && f.statusUntil ? ` · ${formatDuration(f.statusUntil - now)}` : ''}
+          {tr.status[f.status] ?? f.status}{busy && f.statusUntil ? ` · ${formatDuration(f.statusUntil - now)}` : ` · ⚡${f.energy.value}`}
         </Text>
       </View>
     </Pressable>

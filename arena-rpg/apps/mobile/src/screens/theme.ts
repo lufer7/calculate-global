@@ -23,6 +23,7 @@ export const colors = {
   danger: '#d9625a',
   hp: '#b8433a',
   xp: '#4f9fbf',
+  energy: '#d9b84a',
   scout: '#8fbf6a',
   swordmaster: '#d4774f',
   seer: '#9a92e6',

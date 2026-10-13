@@ -16,7 +16,7 @@ export interface BattlerInput {
   /** 0..1 – fighters enter with their current health. */
   hpRatio?: number;
   /** Account-wide relative bonuses (Rasathane research), e.g. { damage: 0.06, armor: 0.08 }. */
-  bonus?: { damage?: number; armor?: number };
+  bonus?: { damage?: number; armor?: number; hp?: number };
 }
 
 export interface BattleProfile {
@@ -45,7 +45,7 @@ export function battleProfile(b: BattlerInput): BattleProfile {
   const g = b.gear;
   const magical = b.class === 'seer';
   const baseDamage = (6 + b.level * 2.2 + g.damage + (magical ? g.magic * 0.8 : 0)) * m.damage * (1 + sv(s, 'heavy_blow')) * (magical ? m.magic * (1 + sv(s, 'fireball')) : 1) * (1 + (b.bonus?.damage ?? 0));
-  const maxHp = Math.round((80 + b.level * 14 + g.hp) * m.hp);
+  const maxHp = Math.max(1, Math.round((80 + b.level * 14 + g.hp) * m.hp * (1 + (b.bonus?.hp ?? 0))));
   const { evasion_cap, crit_chance_cap } = GAME_CONFIG.combat;
   return {
     maxHp,

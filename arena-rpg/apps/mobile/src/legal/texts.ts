@@ -92,6 +92,7 @@ Kurallar
 
 Oyun içi değerler
 • Altın, eşya ve dövüşçüler oyunun lisanslı içeriğidir; gerçek para değeri taşımaz, hesap dışına aktarılamaz veya satılamaz.
+• Arenada başka bir oyuncuya yenilen hesabın oyun içi altınının bir kısmı (yaklaşık %30) oyun kuralı gereği kazanana geçer; ardından bir saat koruma uygulanır. Bu bir oyun mekaniğidir, gerçek bir kayıp ya da alacak doğurmaz.
 • Oyun dengesi, sezonlar ve içerik zaman içinde değişebilir.
 • Uygulama içi satın almalar Apple App Store veya Google Play üzerinden yapılır; iade ve cayma hakkı bu mağazaların koşullarına ve Mesafeli Sözleşmeler Yönetmeliği'ne tabidir.
 

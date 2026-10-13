@@ -3,7 +3,7 @@
 > Şablondur, hukuki tavsiye değildir. [Köşeli parantez] alanlarını doldurup bir avukata kontrol ettirin.
 > Bu dosya `apps/mobile/src/legal/texts.ts` dosyasından üretilir (`npm run legal:docs`); doğrudan düzenlemeyin.
 
-**Sürüm:** 2026-10-14
+**Sürüm:** 2026-10-15
 
 
 ## Taraflar
@@ -26,6 +26,7 @@
 ## Oyun içi değerler
 
 - Altın, eşya ve dövüşçüler oyunun lisanslı içeriğidir; gerçek para değeri taşımaz, hesap dışına aktarılamaz veya satılamaz.
+- Arenada başka bir oyuncuya yenilen hesabın oyun içi altınının bir kısmı (yaklaşık %30) oyun kuralı gereği kazanana geçer; ardından bir saat koruma uygulanır. Bu bir oyun mekaniğidir, gerçek bir kayıp ya da alacak doğurmaz.
 - Oyun dengesi, sezonlar ve içerik zaman içinde değişebilir.
 - Uygulama içi satın almalar Apple App Store veya Google Play üzerinden yapılır; iade ve cayma hakkı bu mağazaların koşullarına ve Mesafeli Sözleşmeler Yönetmeliği'ne tabidir.
 

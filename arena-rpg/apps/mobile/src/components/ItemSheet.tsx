@@ -67,8 +67,8 @@ export const mergeCandidates = (item: ItemView, items: ItemView[]) =>
   items.filter((x) => x.id !== item.id && !x.fighterId && x.kind === 'equipment' && x.templateId === item.templateId && x.rarity === item.rarity);
 
 /** Item actions: equip/unequip for the selected fighter, use, "+ basma" (merge), sell. */
-export function ItemSheet({ item, items = [], fighter, gold, onClose, onChanged, expeditionId }: {
-  item: ItemView | null; items?: ItemView[]; fighter?: FighterView; gold: number; onClose: () => void; onChanged: () => Promise<void>; expeditionId?: string;
+export function ItemSheet({ item, items = [], fighter, gold, onClose, onChanged, explorationId }: {
+  item: ItemView | null; items?: ItemView[]; fighter?: FighterView; gold: number; onClose: () => void; onChanged: () => Promise<void>; explorationId?: string;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -108,7 +108,7 @@ export function ItemSheet({ item, items = [], fighter, gold, onClose, onChanged,
         <Button title={`${fighter.name} üzerinde kullan`} busy={busy === 'use'} onPress={() => act('use', () => api.use(item.id, { fighterId: fighter.id }))} />
       )}
       {item.templateId === 'potion_haste' && (
-        <Button title={expeditionId ? 'Yoldaki sefere kullan' : 'Yolda sefer yok'} disabled={!expeditionId} busy={busy === 'use'} onPress={() => act('use', () => api.use(item.id, { expeditionId }))} />
+        <Button title={explorationId ? 'Yoldaki keşfe kullan (%10 erken döner)' : 'Yolda keşif yok'} disabled={!explorationId} busy={busy === 'use'} onPress={() => act('use', () => api.use(item.id, { explorationId }))} />
       )}
       {item.upgradeCost !== null && (() => {
         const dupes = mergeCandidates(item, items);

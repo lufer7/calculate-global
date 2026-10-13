@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { game } from '@arena/core';
 import { ItemIcon } from '../art/ItemIcon';
 import { Portrait } from '../art/Portrait';
-import { Bar, Button, Card, ErrorText, Pill, SectionTitle } from '../components/ui';
+import { Bar, Button, Card, EnergyBar, ErrorText, Pill, SectionTitle } from '../components/ui';
 import { tr } from '../i18n/tr';
 import type { FighterView } from '../lib/api';
 import { ApiError, api } from '../lib/api';
@@ -47,6 +47,7 @@ export function FighterScreen({ fighter, onBack, onChanged, onInventory }: { fig
           </View>
           <Text style={ui.muted}>Seviye {fighter.level} · Güç {fighter.power}</Text>
           <Bar ratio={fighter.hpRatio} color={colors.hp} label={`Can ${Math.round(fighter.profile.maxHp * fighter.hpRatio)}/${fighter.profile.maxHp}`} />
+          <EnergyBar energy={fighter.energy} />
           <Bar ratio={fighter.xp / fighter.xpToNext} color={colors.xp} label={`Deneyim ${fighter.xp}/${fighter.xpToNext}`} />
         </View>
       </Card>

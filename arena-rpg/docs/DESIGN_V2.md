@@ -309,3 +309,37 @@ Oyuncunun bir kalesi, köyü veya şehri yok. Ana karakter (reis) ve sonradan ka
   - **Ayrılma:** Sancaktan ayrılan oyuncu 1 saat başka sancağa katılamaz.
   - **Denetim:** Yönetici panelindeki "Sancaklar" sekmesinden uygunsuz ad sıfırlanır ya da sancak dağıtılır.
 
+## 13. Revizyon 4: Sefer savaşları, enerji, Cami, araştırma ağacı, arena soygunu (v6)
+
+- **Sefer** (`monsters.ts`, Gladiatus usulü):
+  - Bölgeler kaldı. Her bölgeye girince 5 yaratık çıkar (toplam 20), her birinin altında kısa bir açıklama ve "Saldır" düğmesi var.
+  - Yaratık dövüşçünün seviyesinden 5'ten fazla yüksekse adı yerine kırmızı "Sv ???" ve uyarı görünür.
+  - **Saldırı:** 1 enerji harcar, sonuç anında açılır pencerede gelir: zafer ya da yenilgi, altın, deneyim, şansa bağlı eşya ve malzeme, kalan can ve enerji, katlanabilir savaş detayları.
+  - Can ve enerji yetiyorsa aynı pencereden "Tekrar saldır" denebilir.
+  - **Denge:** Eşit seviyede bir savaş canın yaklaşık %20'sini götürür. Yenilgide yalnızca deneyimin dörtte biri gelir.
+  - **Bonuslar:** Kehanet bölgesi altını artırır. Av Bilgisi ve Ganimet Bilgisi araştırmaları ile sancak avantajı da etkilidir.
+  - **Bölge kilitleri:** Karanlık Orman 1, Sisli Bataklık 13, Terk Edilmiş Madenler 33, Kayıp Diyarlar 58. hesap seviyesinde açılır.
+  - **Kaldırılanlar:** Zamanlı seferler, bölüm haritası, sefer yuvaları ve Sefer Lojistiği. Şans İksiri artık keşfe gönderirken, Hız İksiri yoldaki keşfe kullanılır.
+- **Enerji** (`energy.ts`):
+  - Her dövüşçünün kendi enerjisi vardır: en fazla 20, her 7 dakikada 1 dolar (tam dolum 2 sa 20 dk).
+  - Sefer saldırısı, arena dövüşü ve sancak avı 1 enerji harcar. Arena bekleme süresi kaldırıldı; sınırı enerji koyar.
+  - Keşif süreye göre enerji ister: başlayan her 1,5 saat için 1 (1 sa → 1, 8 sa → 6, 24 sa → 16). Ekipteki herkes öder.
+- **Cami:**
+  - Hasan Hoca karşılar: kaşları çatık, kısa ve düz saçlı, nefes alan bir portre; dokundukça başka bir söz söyler.
+  - Canı azalan dövüşçüler buraya yatırılır. İyileşme ücretsizdir, saatte %20 (dövüşçünün kendi halinde iyileşmesi %4'e indi).
+  - Can dolunca dövüşçü kendiliğinden kalkar; erken kaldırılırsa o ana kadar iyileştiği kalır. Dinlenen dövüşçü savaşamaz.
+- **Rasathane** (`research.ts`): 4 dal, 17 araştırma, ön koşullu ağaç.
+  - **Savaş:** Demir Talimi (hasar), Kalkan Duvarı (zırh), Dayanıklılık (en yüksek enerji), İkinci Nefes (enerji dolum hızı), Arena Şanı (arena altını).
+  - **Av ve Keşif:** Av Bilgisi, Ganimet Bilgisi, Haritacılık (keşif yuvası), Uzak Yollar.
+  - **Ticaret:** Pazarlık (pazar indirimi), Tüccar Ağı (satış fiyatı), Büyük Heybe (çanta yuvası), Gizli Kasa (soygun koruması).
+  - **Şifa:** Şifalı Otlar (cami hızı), Sargı Bezi (yaralanma süresi), Aktar Ustalığı (iksir maliyeti), Derin Uyku (camide enerji).
+  - Hepsinin etkisi sunucuda gerçekten uygulanır.
+- **Arena PvP:**
+  - Bir oyuncuyu yenen, onun altınının yaklaşık %30'unu alır. Kılıç Hakkı soyulan altını artırır, kaybı azaltır; Gizli Kasa araştırması kaybı azaltır.
+  - Soyulan oyuncu 1 saat korunur ve bir "Arena savunması" raporu alır.
+  - Kazanana %20 şansla rastgele nadirlikte ve +0…+3 bir eşya düşer. Saldıran kaybederse altın kaybetmez.
+- **Ana Sayfa:** Altta yeni "Aktiviteler" bölümü her dövüşçünün ne yaptığını gösterir: keşfin hangi aşamasında olduğunu, dönüş saatini ve kalan süreyi, camide canın ne zaman dolacağını, yaralanma süresini ya da hazır olduğunu (can ve enerjisiyle). Rasathane durumu da burada; her satır ilgili ekrana götürür.
+- **Android geri tuşu:**
+  - Açık pencereyi, dövüşçü sayfasını ya da bölgeyi kapatır, ardından bir önceki sekmeye döner.
+  - Ana sayfada "Çıkmak için tekrar bas" der; oyundan ancak iki saniye içinde ikinci basışla çıkılır.
+

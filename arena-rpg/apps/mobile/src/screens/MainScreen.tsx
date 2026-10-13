@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { BackHandler, Platform, Pressable, RefreshControl, ScrollView, Text, ToastAndroid, View } from 'react-native';
 import { NavIcon } from '../art/NavIcon';
 import { ErrorText, Gold, useNow } from '../components/ui';
 import { tr } from '../i18n/tr';
@@ -11,6 +11,7 @@ import { LegalScreen } from './LegalScreen';
 import { AccountTab } from './tabs/AccountTab';
 import { AlchemyTab } from './tabs/AlchemyTab';
 import { ArenaTab } from './tabs/ArenaTab';
+import { CamiTab } from './tabs/CamiTab';
 import { ClanTab } from './tabs/ClanTab';
 import { ExpeditionsTab } from './tabs/ExpeditionsTab';
 import { ExplorationTab } from './tabs/ExplorationTab';
@@ -34,6 +35,7 @@ const ROW2 = [
   { id: 'clan', title: 'Sancak', icon: 'banner' },
   { id: 'research', title: 'Rasathane', icon: 'telescope' },
   { id: 'alchemy', title: 'Aktar', icon: 'mortar' },
+  { id: 'cami', title: 'Cami', icon: 'cami' },
   { id: 'reports', title: 'Raporlar', icon: 'scroll' },
   { id: 'account', title: 'Hesap', icon: 'user' },
 ] as const;
@@ -42,7 +44,16 @@ const TITLES: Record<TabId, string> = Object.fromEntries([...ROW1, ...ROW2].map(
 
 export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSignedOut: () => void }) {
   const [state, setState] = useState(initial);
-  const [tab, setTab] = useState<TabId>('home');
+  const [tab, setTabState] = useState<TabId>('home');
+  // Android back walks back through the screens instead of closing the game.
+  const history = useRef<TabId[]>([]);
+  const lastBack = useRef(0);
+  const setTab = useCallback((next: TabId) => {
+    setTabState((cur) => {
+      if (cur !== next) history.current = [...history.current.filter((t) => t !== next), cur].slice(-10);
+      return next;
+    });
+  }, []);
   const [dragLock, setDragLock] = useState(false);
   const [fighterId, setFighterId] = useState<string>(initial.fighters[0]?.id ?? '');
   const [openFighter, setOpenFighter] = useState<string | null>(null);
@@ -72,7 +83,6 @@ export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSig
     return () => clearInterval(t);
   }, [refresh]);
   const nextDue = Math.min(
-    ...state.expeditions.map((e) => e.endsAt),
     ...state.explorations.map((e) => e.endsAt),
     state.account.activeResearch?.until ?? Infinity,
     ...state.fighters.map((f) => f.statusUntil ?? Infinity),
@@ -80,6 +90,25 @@ export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSig
   useEffect(() => {
     if (Number.isFinite(nextDue) && now >= nextDue) void refresh();
   }, [now >= nextDue]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (legal) return setLegal(null), true;
+      if (creating) return setCreating(false), true;
+      if (openFighter) return setOpenFighter(null), true;
+      const prev = history.current.pop();
+      if (prev) return setTabState(prev), true;
+      if (tab !== 'home') return setTabState('home'), true;
+      // On the home screen: a second press within 2 s leaves the game.
+      const t = Date.now();
+      if (t - lastBack.current < 2000) return false;
+      lastBack.current = t;
+      if (Platform.OS === 'android') ToastAndroid.show('Çıkmak için tekrar bas', ToastAndroid.SHORT);
+      return true;
+    });
+    return () => sub.remove();
+  }, [legal, creating, openFighter, tab]);
 
   if (legal) return <LegalScreen which={legal} onClose={() => setLegal(null)} />;
   if (creating) return <CreateFighterScreen isFirst={false} onCreated={async () => { setCreating(false); await refresh(); }} onCancel={() => setCreating(false)} />;
@@ -126,13 +155,14 @@ export function MainScreen({ initial, onSignedOut }: { initial: GameState; onSig
         <ErrorText message={error} />
         {tab === 'home' && <HomeTab state={state} now={now} onOpen={(f) => setOpenFighter(f.id)} onNew={() => setCreating(true)} onGo={setTab} />}
         {tab === 'inventory' && <InventoryTab state={state} fighterId={fighterId} setFighterId={selectFighter} refresh={refresh} lockScroll={setDragLock} />}
-        {tab === 'expeditions' && <ExpeditionsTab state={state} now={now} refresh={refresh} />}
+        {tab === 'expeditions' && <ExpeditionsTab state={state} fighterId={fighterId} setFighterId={selectFighter} refresh={refresh} />}
         {tab === 'exploration' && <ExplorationTab state={state} now={now} refresh={refresh} />}
         {tab === 'arena' && <ArenaTab state={state} fighterId={fighterId} setFighterId={selectFighter} now={now} refresh={refresh} />}
         {tab === 'market' && <MarketTab state={state} fighterId={fighterId} setFighterId={selectFighter} now={now} refresh={refresh} />}
         {tab === 'clan' && <ClanTab state={state} now={now} refresh={refresh} />}
         {tab === 'research' && <ResearchTab state={state} now={now} refresh={refresh} />}
         {tab === 'alchemy' && <AlchemyTab state={state} refresh={refresh} />}
+        {tab === 'cami' && <CamiTab state={state} now={now} refresh={refresh} />}
         {tab === 'reports' && <ReportsTab refresh={refresh} />}
         {tab === 'account' && <AccountTab state={state} onLegal={setLegal} onSignedOut={onSignedOut} />}
       </ScrollView>

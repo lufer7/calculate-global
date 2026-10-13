@@ -75,16 +75,21 @@ export const CREATURES: Creature[] = [
 export const CREATURES_BY_ID = new Map(CREATURES.map((x) => [x.id, x]));
 export const creaturesOf = (zoneId: string) => CREATURES.filter((x) => x.zoneId === zoneId);
 
+/** Creature strength vs. a fighter of the same level (multiplied by `might`). */
+export const CREATURE_TUNING = { damage: 0.5, hp: 0.5, armor: 0.8 };
+
 /** Above this gap the creature's details read "???" in red. */
 export const UNKNOWN_LEVEL_GAP = 5;
 
 export function creatureBattler(cr: Creature): BattlerInput {
   // Equipped like a fighter of its level wearing common gear, scaled by its might.
   const gear = gearTotal(['sword', 'plate', 'helm', 'boots'].map((templateId) => ({ templateId, itemLevel: cr.level, rarity: 'common' as const, upgrade: 0 })));
+  // Creatures are glass cannons compared to fighters: short fights, a fair one costs ~20-35% health.
   const m = cr.might;
   return {
     name: cr.name, class: cr.style, level: cr.level, skills: {},
-    gear: { ...gear, damage: gear.damage * m, armor: gear.armor * m, hp: gear.hp * m, magic: cr.style === 'seer' ? 10 + cr.level * 1.5 * m : 0 },
+    gear: { ...gear, magic: cr.style === 'seer' ? 10 + cr.level * 1.5 : 0 },
+    bonus: { damage: CREATURE_TUNING.damage * m - 1, hp: CREATURE_TUNING.hp * m - 1, armor: CREATURE_TUNING.armor * m - 1 },
   };
 }
 

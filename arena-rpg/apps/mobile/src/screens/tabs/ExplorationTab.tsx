@@ -4,7 +4,7 @@ import { game } from '@arena/core';
 import { Portrait } from '../../art/Portrait';
 import { Scene } from '../../art/Scene';
 import { Slider } from '../../components/Slider';
-import { Bar, Button, Card, ErrorText, Gold, Pill, SectionTitle } from '../../components/ui';
+import { Bar, Button, Card, Checkbox, ErrorText, Gold, Pill, SectionTitle } from '../../components/ui';
 import { formatDuration, tr } from '../../i18n/tr';
 import type { GameState } from '../../lib/api';
 import { ApiError, api } from '../../lib/api';
@@ -41,12 +41,15 @@ export function ExplorationTab({ state, now, refresh }: { state: GameState; now:
   const [explore, setExplore] = useState(2 * HOUR);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [luck, setLuck] = useState(false);
 
   const idle = state.fighters.filter((f) => f.status === 'idle');
   const used = state.explorations.length;
   const party = state.fighters.filter((f) => picked.includes(f.id));
   const total = game.explorationTotalMs(travel, explore);
   const realTotal = Math.round(total / state.gameSpeed);
+  const energyCost = game.explorationEnergyCost(total);
+  const tired = party.filter((f) => f.energy.value < energyCost);
   const returnAt = now + realTotal;
   const bonus = game.explorationBonuses(party.length ? party : [{ skills: {} }], state.account.mainClass);
   const level = Math.max(1, ...party.map((f) => f.level));
@@ -93,7 +96,7 @@ export function ExplorationTab({ state, now, refresh }: { state: GameState; now:
           <Text style={ui.text}>Keşif yuvası</Text>
           <Text style={[ui.h2, ui.num, { color: used >= state.explorationSlots ? colors.warn : colors.text }]}>{used} / {state.explorationSlots}</Text>
         </View>
-        <Text style={ui.muted}>Her 25 seviyede bir, en yüksek Gözcün bir keşif yuvası daha açar. Yatmadan önce gönder, uyandığında ganimet hazır olsun.</Text>
+        <Text style={ui.muted}>Her 25 seviyede bir, en yüksek Gözcün bir keşif yuvası daha açar (Rasathane'deki Haritacılık da). Keşif, süresine göre enerji harcar. Yatmadan önce gönder, uyandığında ganimet hazır olsun.</Text>
         {state.gameSpeed > 1 && <Text style={{ color: colors.warn, fontSize: 12 }}>Test modu: süreler {state.gameSpeed} kat hızlı.</Text>}
       </Card>
 
@@ -127,6 +130,7 @@ export function ExplorationTab({ state, now, refresh }: { state: GameState; now:
                 <Portrait cls={f.class} size={48} hpRatio={f.hpRatio} />
                 <Text style={{ color: on ? colors.trim : colors.muted, fontSize: 11, fontWeight: '800' }}>{on ? '✓ ' : ''}{f.name}</Text>
                 <Text style={{ color: colors.faint, fontSize: 10 }}>{tr.classes[f.class].name} · Sv {f.level}</Text>
+                <Text style={{ color: f.energy.value >= energyCost ? colors.energy : colors.danger, fontSize: 10, fontWeight: '800' }}>⚡{f.energy.value}/{f.energy.max}</Text>
               </Pressable>
             );
           })}
@@ -174,12 +178,22 @@ export function ExplorationTab({ state, now, refresh }: { state: GameState; now:
           )}
         </View>
 
+        <View style={[ui.between, { backgroundColor: colors.inset, borderRadius: 6, padding: 8 }]}>
+          <Text style={ui.text}>Enerji (kişi başı)</Text>
+          <Text style={{ color: tired.length ? colors.danger : colors.energy, fontWeight: '900' }}>⚡ {energyCost}</Text>
+        </View>
+        {tired.length > 0 && <Text style={{ color: colors.danger, fontSize: 12 }}>{tired.map((f) => f.name).join(', ')} için enerji yetmiyor. Süreyi kısalt ya da enerjinin dolmasını bekle.</Text>}
+        {state.luckPotions > 0 && (
+          <Checkbox checked={luck} onChange={setLuck}>
+            <Text style={ui.text}>Şans İksiri kullan (nadir buluntu +%15) · {state.luckPotions} adet</Text>
+          </Checkbox>
+        )}
         <ErrorText message={error} />
         <Button
-          title={used >= state.explorationSlots ? 'Boş keşif yuvası yok' : picked.length === 0 ? 'Önce ekip seç' : 'Keşfe gönder'}
+          title={used >= state.explorationSlots ? 'Boş keşif yuvası yok' : picked.length === 0 ? 'Önce ekip seç' : `Keşfe gönder (⚡${energyCost})`}
           busy={busy === 'send'}
-          disabled={picked.length === 0 || used >= state.explorationSlots}
-          onPress={() => act('send', async () => { await api.startExploration(picked, travel, explore); setPicked([]); })}
+          disabled={picked.length === 0 || used >= state.explorationSlots || tired.length > 0}
+          onPress={() => act('send', async () => { await api.startExploration(picked, travel, explore, luck); setPicked([]); setLuck(false); })}
         />
       </Card>
     </View>

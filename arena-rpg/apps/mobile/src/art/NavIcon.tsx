@@ -14,6 +14,7 @@ export function NavIcon({ name, color, size = 24 }: { name: string; color: strin
       {name === 'banner' && <><Path {...p} d="M5 21V3" /><Path {...p} d="M5 4h13l-3 4 3 4H5" /><Path {...p} d="M10 7l1 1.5L10 10" /></>}
       {name === 'telescope' && <><Path {...p} d="M3 13l12-6 2 4-12 6-2-4z" /><Path {...p} d="M15 7l3-1.5 2 4-3 1.5M10 15l-3 6M10 15l3 6" /></>}
       {name === 'mortar' && <><Path {...p} d="M4 11h16a8 7 0 0 1-16 0z" /><Path {...p} d="M8 21h8M10 18l-1 3M14 18l1 3M13 11l6-8" /></>}
+      {name === 'cami' && <><Path {...p} d="M5 20V12a7 6 0 0 1 14 0v8" /><Path {...p} d="M3 20h18M12 6V3M10 20v-4a2 2 0 0 1 4 0v4" /><Path {...p} d="M20.5 20V9M20.5 9l-.9-2h1.8z" /></>}
       {name === 'bag' && <><Path {...p} d="M5 8h14l-1 12H6L5 8z" /><Path {...p} d="M9 8V6a3 3 0 0 1 6 0v2" /><Path {...p} d="M9 12h6" /></>}
       {name === 'map' && <><Path {...p} d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2V6z" /><Path {...p} d="M9 4v14M15 6v14" /></>}
       {name === 'swords' && <><Path {...p} d="M4 4l10 10M14 14l2 4 2-2-4-2M4 4h3l9 9" /><Path {...p} d="M20 4L10 14M10 14l-2 4-2-2 4-2M20 4h-3l-9 9" /></>}

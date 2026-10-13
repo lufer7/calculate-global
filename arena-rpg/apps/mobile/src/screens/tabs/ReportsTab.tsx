@@ -12,8 +12,8 @@ import { colors, ui } from '../theme';
 interface FighterResult { id: string; name: string; xp: number; levelsGained: number; newLevel: number; injuredUntil: number | null }
 interface LootItem { name: string; rarity: game.Rarity; icon: string; qty: number; kept: boolean }
 
-const ICON: Record<string, string> = { expedition: 'map', expedition_recalled: 'map', exploration: 'compass', exploration_recalled: 'compass', raid: 'banner', research: 'telescope', alchemy: 'mortar' };
-const KIND_NAME: Record<string, string> = { expedition: 'Sefer', expedition_recalled: 'Sefer', exploration: 'Keşif', exploration_recalled: 'Keşif', raid: 'Sancak avı', research: 'Rasathane', alchemy: 'Aktar' };
+const ICON: Record<string, string> = { arena_defense: 'swords', expedition: 'map', expedition_recalled: 'map', exploration: 'compass', exploration_recalled: 'compass', raid: 'banner', research: 'telescope', alchemy: 'mortar' };
+const KIND_NAME: Record<string, string> = { arena_defense: 'Arena savunması', expedition: 'Sefer', expedition_recalled: 'Sefer', exploration: 'Keşif', exploration_recalled: 'Keşif', raid: 'Sancak avı', research: 'Rasathane', alchemy: 'Aktar' };
 
 /** Inbox: compact rows; tapping one opens the full report (loot, gold, XP, injuries). */
 export function ReportsTab({ refresh }: { refresh: () => Promise<void> }) {
@@ -90,6 +90,15 @@ export function ReportDetail({ r }: { r: Report }) {
       {r.kind === 'expedition' && <ExpeditionBody body={r.body} at={r.at} />}
       {r.kind === 'exploration' && <ExplorationBody body={r.body} at={r.at} />}
       {r.kind === 'raid' && <RaidBody body={r.body} />}
+      {r.kind === 'arena_defense' && (
+        <View style={{ gap: 8 }}>
+          <Text style={ui.text}>{String(r.body.attacker)} adlı oyuncunun {String(r.body.attackerFighter)} adlı dövüşçüsü, {String(r.body.defenderFighter)} adlı dövüşçüne arenada saldırdı.</Text>
+          {r.body.won === true
+            ? <Text style={{ color: colors.good, fontWeight: '800' }}>Saldırı püskürtüldü; hiçbir şey kaybetmedin.</Text>
+            : <Row label="Çalınan altın"><Gold amount={Number(r.body.stolen)} size={14} /></Row>}
+          {r.body.won !== true && <Text style={ui.muted}>{r.body.shielded ? 'Korumadaydın, altın alınamadı.' : 'Bir saat boyunca altının yeniden çalınamaz. Altınını harcamak ya da Rasathane\'de Gizli Kasa araştırmak kaybı azaltır.'}</Text>}
+        </View>
+      )}
       {r.kind === 'research' && <Text style={ui.text}>{game.RESEARCH[String(r.body.researchId)]?.name ?? 'Araştırma'} artık seviye {Number(r.body.level)}. {game.RESEARCH[String(r.body.researchId)]?.description ?? ''}</Text>}
       {r.kind === 'expedition_recalled' && <Text style={ui.text}>Sefer geri çağrıldı; dövüşçüler eli boş döndü ama yaralanmadılar.</Text>}
       {r.kind === 'exploration_recalled' && <Text style={ui.text}>Keşif yarıda bırakıldı; dövüşçüler eli boş döndü.</Text>}

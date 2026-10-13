@@ -179,7 +179,7 @@ export function InventoryTab({ state, fighterId, setFighterId, refresh, lockScro
         items={items}
         fighter={fighter}
         gold={state.account.gold}
-        expeditionId={state.expeditions.find((e) => !e.recalled)?.id}
+        explorationId={state.explorations.find((e) => !e.recalled)?.id}
         onClose={() => setSelected(null)}
         onChanged={async () => {
           const fresh = await reload();

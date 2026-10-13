@@ -90,7 +90,7 @@ function NoClan({ state, now, onJoined }: { state: GameState; now: number; onJoi
       </Scene>
       <Card trim>
         <Text style={ui.text}>Bir sancak altında:</Text>
-        {['Birlikte dev canavarlara saldırır, ganimeti hasara göre paylaşırsınız.', 'Birbirinizin araştırma, sefer ve keşiflerini hızlandırırsınız (her yardım kalan sürenin %5\'i).', 'Hazineye bağışla sancak seviye atlar: daha çok üye, seferlerde ve keşiflerde daha çok altın.', 'Aynı sancaktakiler arenada birbirine saldırmaz.'].map((l) => <Text key={l} style={ui.muted}>• {l}</Text>)}
+        {['Birlikte dev canavarlara saldırır, ganimeti hasara göre paylaşırsınız.', 'Birbirinizin araştırma ve keşiflerini hızlandırırsınız (her yardım kalan sürenin %5\'i).', 'Hazineye bağışla sancak seviye atlar: daha çok üye, seferlerde ve keşiflerde daha çok altın.', 'Aynı sancaktakiler arenada birbirine saldırmaz.'].map((l) => <Text key={l} style={ui.muted}>• {l}</Text>)}
         <Text style={[ui.muted, { fontSize: 12 }]}>Oyunda sohbet yoktur; sancak üyeleri oyun içi eylemlerle birlikte oynar.</Text>
       </Card>
       {blocked && blocked > now && <Text style={{ color: colors.warn }}>Sancaktan yeni ayrıldın. Yeni bir sancağa {formatDuration(blocked - now)} sonra katılabilirsin.</Text>}
@@ -247,7 +247,7 @@ function MyClan({ state, now, d, reload }: { state: GameState; now: number; d: C
             <Card key={`${h.kind}:${h.id}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, opacity: h.helped ? 0.6 : 1 }}>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={[ui.text, { fontWeight: '700' }]}>{h.owner}</Text>
-                <Text style={ui.muted}>{h.kind === 'research' ? 'Rasathane' : h.kind === 'expedition' ? 'Sefer' : 'Keşif'} · {h.label} · {formatDuration(h.endsAt - now)}</Text>
+                <Text style={ui.muted}>{h.kind === 'research' ? 'Rasathane' : 'Keşif'} · {h.label} · {formatDuration(h.endsAt - now)}</Text>
                 <Text style={{ color: colors.faint, fontSize: 11 }}>{h.helps} / {d.rules?.maxHelps ?? 10} yardım</Text>
               </View>
               <Button title={h.helped ? 'Yardım edildi' : 'Yardım et'} small disabled={h.helped || h.helps >= (d.rules?.maxHelps ?? 10)} busy={busy === h.id}
@@ -379,11 +379,12 @@ function RaidSection({ state, now, d, manage, busy, act }: {
               <Text style={{ color: '#f2e6cc', fontSize: 12, textShadowColor: '#000', textShadowRadius: 4 }}>Kaçmasına {formatDuration(raid.endsAt - now)} · Sv {boss.level}</Text>
             </View>
           </Scene>
-          <Text style={ui.muted}>Her dövüşçün saatte bir saldırabilir (canı en az %{Math.round((d.rules?.raidMinHp ?? 0.15) * 100)} olmalı). Canavar düşünce ganimet, verilen hasara göre herkese paylaşılır.</Text>
+          <Text style={ui.muted}>Her dövüşçün saatte bir saldırabilir; her saldırı 1 enerji ister (canı en az %{Math.round((d.rules?.raidMinHp ?? 0.15) * 100)} olmalı). Canavar düşünce ganimet, verilen hasara göre herkese paylaşılır.</Text>
           {state.fighters.map((f) => {
             const until = ready.get(f.id) ?? null;
             const cooling = until !== null && until > now;
             const weak = f.hpRatio < (d.rules?.raidMinHp ?? 0.15);
+            const tired = f.energy.value < 1;
             return (
               <Card key={f.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Portrait cls={f.class} size={40} hpRatio={f.hpRatio} />
@@ -391,8 +392,8 @@ function RaidSection({ state, now, d, manage, busy, act }: {
                   <Text style={[ui.text, { fontWeight: '700' }]}>{f.name} <Text style={ui.muted}>Sv {f.level}</Text></Text>
                   <Bar ratio={f.hpRatio} color={colors.hp} height={5} />
                 </View>
-                <Button title={f.status !== 'idle' ? tr.status[f.status] ?? 'Meşgul' : cooling ? formatDuration(until! - now) : weak ? 'Canı az' : 'Saldır'} small
-                  disabled={f.status !== 'idle' || cooling || weak} busy={busy === `hit${f.id}`}
+                <Button title={f.status !== 'idle' ? tr.status[f.status] ?? 'Meşgul' : cooling ? formatDuration(until! - now) : weak ? 'Canı az' : tired ? 'Enerji yok' : 'Saldır ⚡1'} small
+                  disabled={f.status !== 'idle' || cooling || weak || tired} busy={busy === `hit${f.id}`}
                   onPress={() => act(`hit${f.id}`, () => api.raidAttack(f.id), (r) => {
                     const x = r as { damage: number; won: boolean };
                     return x.won ? `${f.name} son darbeyi vurdu: ${boss.name} yenildi! Ganimet raporlarda.` : `${f.name} ${x.damage.toLocaleString('tr-TR')} hasar verdi.`;

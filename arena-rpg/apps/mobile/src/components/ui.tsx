@@ -152,3 +152,14 @@ export function StatRow({ label, value, delta }: { label: string; value: string;
 }
 
 export const titleFont = { fontFamily: fonts.display };
+
+/** Per-fighter energy (rev4): blue bar with "14/20" and the time to the next point. */
+export function EnergyBar({ energy, compact }: { energy: { value: number; max: number; nextIn: number | null }; compact?: boolean }) {
+  const mins = energy.nextIn !== null ? Math.ceil(energy.nextIn / 60_000) : null;
+  return (
+    <View style={{ gap: 2 }}>
+      <Bar ratio={energy.value / Math.max(1, energy.max)} color={colors.energy} label={`⚡ ${energy.value}/${energy.max}`} height={compact ? 6 : undefined} />
+      {!compact && mins !== null && <Text style={{ color: colors.faint, fontSize: 10 }}>+1 enerji: {mins} dk</Text>}
+    </View>
+  );
+}

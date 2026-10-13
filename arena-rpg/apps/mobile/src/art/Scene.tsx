@@ -7,7 +7,7 @@ import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Re
  * Painterly placeholder scenes drawn in SVG (layered silhouettes, soft light, fog).
  * Swap for illustrated art later – keep the same keys.
  */
-export type SceneKey = 'harbor' | 'dark_forest' | 'misty_marsh' | 'abandoned_mines' | 'lost_lands' | 'market' | 'arena' | 'study' | 'camp';
+export type SceneKey = 'harbor' | 'dark_forest' | 'misty_marsh' | 'abandoned_mines' | 'lost_lands' | 'market' | 'arena' | 'study' | 'camp' | 'cami';
 
 const W = 400;
 const H = 220;
@@ -226,6 +226,31 @@ const scenes: Record<SceneKey, () => ReactNode> = {
       <Path d="M186 186 L214 186 M190 190 L210 182" stroke="#3a2a1a" strokeWidth={5} />
       <Path d="M200 186 Q186 168 196 150 Q200 164 206 156 Q214 170 200 186 Z" fill="#ffc35a" />
       <Path d="M200 186 Q193 174 199 164 Q202 172 205 168 Q208 176 200 186 Z" fill="#fff0b8" />
+    </>
+  ),
+  cami: () => (
+    <>
+      <Defs>
+        {sky('ms', [['0', '#2a3550'], ['0.55', '#7a6a7c'], ['1', '#d9a46a']])}
+        {glow('mg', '#ffe0a8', 0.7)}
+      </Defs>
+      <Rect width={W} height={H} fill="url(#ms)" />
+      <Circle cx={320} cy={70} r={60} fill="url(#mg)" />
+      {/* courtyard wall and the building: dome, half domes, a slender minaret */}
+      <Rect x={70} y={120} width={260} height={70} fill="#3a3640" />
+      <Path d="M130 120 Q200 40 270 120 Z" fill="#4a4652" />
+      <Path d="M90 128 Q120 96 150 128 Z M250 128 Q280 96 310 128 Z" fill="#45414d" />
+      <Path d="M198 46 L202 46 L202 30 L198 30 Z" fill="#c9a55c" />
+      <Circle cx={200} cy={28} r={3} fill="#c9a55c" />
+      <Rect x={340} y={44} width={12} height={146} fill="#45414d" />
+      <Path d="M336 70 L356 70 L356 76 L336 76 Z M336 110 L356 110 L356 116 L336 116 Z" fill="#5a5664" />
+      <Path d="M340 44 L346 18 L352 44 Z" fill="#4a4652" />
+      {[110, 150, 190, 230, 270].map((x) => <Path key={x} d={`M${x} 190 L${x} 156 Q${x + 10} 142 ${x + 20} 156 L${x + 20} 190 Z`} fill="#ffcf8a" opacity={0.55} />)}
+      <Rect y={190} width={W} height={30} fill="#2a2630" />
+      {/* plane tree */}
+      <Rect x={28} y={120} width={8} height={70} fill="#2a2018" />
+      <Circle cx={32} cy={108} r={30} fill="#26382c" />
+      <Circle cx={52} cy={122} r={20} fill="#2c4232" />
     </>
   ),
 };

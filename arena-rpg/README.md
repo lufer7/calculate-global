@@ -16,7 +16,7 @@ Metin ve menü tabanlı, sıra tabanlı savaşlı bir mobil arena RPG iskeleti. 
 |---|---|
 | `packages/core` | Ortak oyun çekirdeği: statlar, karakter, eşyalar, ekonomi, enerji, görevler, deterministik savaş, kayıt şeması, transfer kodu kriptosu, PvP doğrulama |
 | `apps/server` | Hono API: e-posta ile üyelik, dövüşçüler, yönetici paneli (`/admin`), PvP, sıralama, transfer rölesi |
-| `apps/mobile` | Expo uygulaması: kayıt/giriş, ana sayfa (çete görseli), yetenek ağacı, giyim ekranı + çanta (sürükle-bırak, + basma), Salı Pazarı, arena, seferler (mini haritalar), Keşif, Sancak (klan), Rasathane, Aktar, raporlar, hesap. Görseller SVG ile çizilir (`src/art`) |
+| `apps/mobile` | Expo uygulaması: kayıt/giriş, ana sayfa (çete görseli + aktiviteler), yetenek ağacı, giyim ekranı + çanta (sürükle-bırak, + basma), Salı Pazarı, arena (PvP soygunu), sefer (bölge yaratıkları), Keşif, Sancak (klan), Rasathane (araştırma ağacı), Aktar, Cami, raporlar, hesap. Her dövüşçünün enerjisi var. Görseller SVG ile çizilir (`src/art`) |
 
 ## Komutlar
 

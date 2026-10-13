@@ -4,7 +4,7 @@ import { Banner } from '../../art/Banner';
 import { Portrait } from '../../art/Portrait';
 import { Scene } from '../../art/Scene';
 import { FighterPicker } from '../../components/FighterPicker';
-import { Bar, Button, Card, ErrorText, Pill, SectionTitle } from '../../components/ui';
+import { Bar, Button, Card, EnergyBar, ErrorText, Pill, SectionTitle } from '../../components/ui';
 import { formatDuration, tr } from '../../i18n/tr';
 import type { ArenaInfo, ArenaOpponent, FightResult, GameState } from '../../lib/api';
 import { ApiError, api } from '../../lib/api';
@@ -30,8 +30,7 @@ export function ArenaTab({ state, fighterId, setFighterId, now, refresh }: { sta
     void load();
   }, [load]);
 
-  const cooldown = fighter.arena.readyAt && fighter.arena.readyAt > now ? fighter.arena.readyAt - now : 0;
-  const blocked = fighter.status !== 'idle' ? tr.status[fighter.status] : cooldown > 0 ? `Dinleniyor ${formatDuration(cooldown)}` : fighter.hpRatio < (info?.minHp ?? 0.15) ? 'Canı çok düşük' : null;
+  const blocked = fighter.status !== 'idle' ? tr.status[fighter.status] : fighter.energy.value < 1 ? 'Enerjisi bitti (7 dakikada 1 dolar)' : fighter.hpRatio < (info?.minHp ?? 0.15) ? 'Canı çok düşük' : null;
 
   const challenge = async (type: 'npc' | 'player', o: ArenaOpponent) => {
     setBusy(`${type}${o.id}`);
@@ -66,7 +65,7 @@ export function ArenaTab({ state, fighterId, setFighterId, now, refresh }: { sta
       <Scene name="arena" height={120}>
         <View style={{ flex: 1, justifyContent: 'flex-end', padding: 10 }}>
           <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900', textShadowColor: '#000', textShadowRadius: 6 }}>ARENA</Text>
-          <Text style={{ color: '#fff', textShadowColor: '#000', textShadowRadius: 4 }}>Yaralanma yok, altın kaybı yok. Kaybeden yalnızca can kaybeder.</Text>
+          <Text style={{ color: '#fff', textShadowColor: '#000', textShadowRadius: 4 }}>Her dövüş 1 enerji. Bir oyuncuyu yenersen altınının ~%30'unu alırsın.</Text>
         </View>
       </Scene>
       <FighterPicker fighters={state.fighters} selectedId={fighter.id} onSelect={setFighterId} />
@@ -76,6 +75,8 @@ export function ArenaTab({ state, fighterId, setFighterId, now, refresh }: { sta
           <Pill text={`Güç ${fighter.power}`} color={colors.trim} />
         </View>
         <Bar ratio={fighter.hpRatio} color={colors.hp} label={`Can %${Math.round(fighter.hpRatio * 100)}`} />
+        <EnergyBar energy={fighter.energy} />
+        {state.arenaShieldUntil && <Text style={{ color: colors.good, fontSize: 12 }}>🛡 Yakın zamanda soyuldun: {formatDuration(state.arenaShieldUntil - now)} boyunca altının çalınamaz.</Text>}
         <Text style={ui.muted}>Şöhret {fighter.arena.points} · {fighter.arena.wins} galibiyet · {fighter.arena.losses} yenilgi</Text>
         {blocked && <Text style={{ color: colors.warn }}>{blocked}{fighter.hpRatio < 0.15 ? ' · Envanterden yiyecek yedir.' : ''}</Text>}
       </Card>

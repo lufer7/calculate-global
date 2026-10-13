@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { game } from '@arena/core';
+import { game } from '@arena/core';
+import { ItemIcon } from '../art/ItemIcon';
 import { NavIcon } from '../art/NavIcon';
 import { Portrait } from '../art/Portrait';
 import { Scene } from '../art/Scene';
@@ -85,7 +86,17 @@ export function BattleReplay({ result, onClose }: { result: FightResult; onClose
                   <Text style={[ui.text, { color: result.rewards.points >= 0 ? colors.good : colors.danger, fontWeight: '700' }]}>{result.rewards.points >= 0 ? '+' : ''}{result.rewards.points} şöhret</Text>
                 </View>
                 {result.rewards.levelsGained > 0 && <Text style={[ui.h2, { color: colors.good }]}>Seviye atladın!</Text>}
-                {!won && <Text style={[ui.muted, { textAlign: 'center' }]}>Canın %{Math.round(result.hpRatio * 100)}'e düştü. Arenada yaralanma ya da altın kaybı yok.</Text>}
+                {!!result.rewards.stolen && result.rewards.stolen > 0 && (
+                  <View style={ui.row}><Text style={[ui.text, { color: colors.trim, fontWeight: '800' }]}>Rakibin kesesinden:</Text><Gold amount={result.rewards.stolen} /></View>
+                )}
+                {won && result.foe.owner && result.rewards.stolen === 0 && <Text style={ui.muted}>Rakip yakın zamanda soyulduğu için korumada; altın alınamadı.</Text>}
+                {result.rewards.loot && (
+                  <View style={[ui.row, { marginTop: 4 }]}>
+                    <ItemIcon icon={result.rewards.loot.icon} rarity={result.rewards.loot.rarity} size={44} upgrade={0} dim={!result.rewards.loot.kept} />
+                    <Text style={{ color: game.RARITY_INFO[result.rewards.loot.rarity].color, fontWeight: '700', flexShrink: 1 }}>{result.rewards.loot.kept ? `Ganimet: ${result.rewards.loot.name}` : 'Çanta dolu olduğu için ganimet alınamadı'}</Text>
+                  </View>
+                )}
+                {!won && <Text style={[ui.muted, { textAlign: 'center' }]}>Canın %{Math.round(result.hpRatio * 100)}'e düştü. Saldıran olarak altın kaybetmezsin.</Text>}
               </View>
 
               <View style={{ flexDirection: 'row', gap: 8 }}>
