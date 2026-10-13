@@ -35,7 +35,12 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "name": "Aegis",
+      "shortName": "Aegis",
+      "themeColor": "#0d1215",
+      "backgroundColor": "#0d1215",
+      "display": "standalone"
     }
   }
 }

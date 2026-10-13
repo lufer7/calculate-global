@@ -44,6 +44,9 @@ const app = createApp({
   gameSpeed: production ? 1 : Number(process.env.GAME_SPEED ?? 1),
   prophecySecret: process.env.PROPHECY_SECRET ?? 'dev-prophecy',
   corsOrigin: production ? undefined : '*',
+  // Private friend tests only (npm run test-server): codes shown in the app instead of e-mail.
+  testCodes: !production && process.env.TEST_CODES === '1',
+  staticDir: process.env.STATIC_DIR || undefined,
 });
 
 // Storage & destruction policy: at start-up and every 6 hours.

@@ -21,9 +21,11 @@ export interface AccountDeps {
   now: () => number;
   /** Called on events the owner wants to hear about. Never receives the player's email. */
   notifyAdmin: (kind: string, accountId: string, text: string) => Promise<void>;
+  /** Private test servers without e-mail: the verification code is returned to the app. Never in production. */
+  testCodes?: boolean;
 }
 
-export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
+export function accountRoutes({ db, mailer, now, notifyAdmin, testCodes }: AccountDeps) {
   const app = new Hono<{ Variables: { subjectId: string; tokenHash: string } }>();
 
   async function sendCode(accountId: string, email: string) {
@@ -33,7 +35,9 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
         'ON CONFLICT(account_id) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at, attempts = 0',
     ).run(accountId, sha256(`${accountId}:${code}`), now() + CODE_TTL_MS);
     await mailer.send({ to: email, subject: 'Doğrulama kodun', text: `Aegis doğrulama kodun: ${code}\nKod 15 dakika geçerlidir.` });
+    return code;
   }
+  const sent = (code: string | null) => ({ status: 'verification_sent', ...(testCodes && code ? { testCode: code } : {}) });
 
   /**
    * Registration. Both legal checkboxes are mandatory; marketing is a separate, optional opt-in.
@@ -53,9 +57,10 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
 
     const existing = accountByEmail(db, email);
     if (existing) {
-      if (existing.status === 'pending') await sendCode(existing.id, email);
+      let code: string | null = null;
+      if (existing.status === 'pending') code = await sendCode(existing.id, email);
       else await mailer.send({ to: email, subject: 'Kayıt denemesi', text: 'Bu e-posta ile zaten bir hesabın var. Sen değilsen bu mesajı yok sayabilirsin.' });
-      return c.json({ status: 'verification_sent' }, 202);
+      return c.json(sent(code), 202);
     }
 
     const id = randomId();
@@ -69,8 +74,7 @@ export function accountRoutes({ db, mailer, now, notifyAdmin }: AccountDeps) {
     logConsent(db, id, 'privacy', LEGAL_VERSIONS.privacy, t);
     logConsent(db, id, 'age', `${game.MIN_AGE}+`, t);
     if (marketing) logConsent(db, id, 'marketing', 'granted', t);
-    await sendCode(id, email);
-    return c.json({ status: 'verification_sent' }, 202);
+    return c.json(sent(await sendCode(id, email)), 202);
   });
 
   app.post('/auth/verify', async (c) => {

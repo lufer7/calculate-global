@@ -1,0 +1,83 @@
+# Builds the friend-test APK of Aegis on GitHub's machines (full Android SDK, no Expo account needed).
+# Runs on every push that touches the app, or by hand from the Actions tab ("Run workflow").
+# The APK is attached to a GitHub release named "Aegis test APK #N" and kept as a run artifact.
+name: Android test APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/gladiatus-anonymous-rpg-architecture-sogth1]
+    paths:
+      - 'arena-rpg/apps/mobile/**'
+      - 'arena-rpg/packages/core/**'
+      - '.github/workflows/android-test-apk.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-test-apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: arena-rpg/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        working-directory: arena-rpg
+        run: npm ci
+
+      - name: Generate the native Android project
+        working-directory: arena-rpg/apps/mobile
+        run: CI=1 npx expo prebuild -p android --no-install
+
+      - name: Test build settings
+        working-directory: arena-rpg/apps/mobile/android
+        run: |
+          # phones only (arm), more memory for the build, and allow plain http for LAN test servers
+          sed -i 's/^reactNativeArchitectures=.*/reactNativeArchitectures=armeabi-v7a,arm64-v8a/' gradle.properties
+          sed -i 's/^org.gradle.jvmargs=.*/org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g/' gradle.properties
+          sed -i 's/<application /<application android:usesCleartextTraffic="true" /' app/src/main/AndroidManifest.xml
+
+      - name: Build the APK
+        working-directory: arena-rpg/apps/mobile/android
+        env:
+          EXPO_PUBLIC_TEST_BUILD: '1'
+          NODE_ENV: production
+        run: ./gradlew assembleRelease --no-daemon -x lint
+
+      - name: Name the APK
+        run: cp arena-rpg/apps/mobile/android/app/build/outputs/apk/release/app-release.apk "Aegis-test-${GITHUB_RUN_NUMBER}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Aegis-test-apk
+          path: Aegis-test-*.apk
+          retention-days: 30
+
+      - name: Publish as a release (easy download link)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: test-apk-${{ github.run_number }}
+          name: Aegis test APK #${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          prerelease: true
+          files: Aegis-test-*.apk
+          body: |
+            Arkadaş testi için Android APK'sı (imzası test imzasıdır, mağaza sürümü değildir).
+            Kurulum: dosyayı telefona indir → aç → "Bilinmeyen kaynaklara izin ver" → Yükle.
+            Giriş ekranında "Sunucu adresini değiştir"e dokunup test sunucusunun adresini gir.

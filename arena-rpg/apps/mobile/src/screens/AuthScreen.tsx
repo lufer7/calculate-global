@@ -5,7 +5,7 @@ import { tr } from '../i18n/tr';
 import { game } from '@arena/core';
 import { LEGAL } from '../legal/texts';
 import { ApiError, api, pingServer } from '../lib/api';
-import { APP_BUILD, apiBaseUrl, normalizeServerUrl, setServerOverride } from '../config';
+import { APP_BUILD, TEST_BUILD, apiBaseUrl, normalizeServerUrl, setServerOverride } from '../config';
 import { LegalScreen } from './LegalScreen';
 import { Scene } from '../art/Scene';
 import { colors, ui } from './theme';
@@ -32,6 +32,7 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string, remembe
   };
   useEffect(checkServer, []);
   const [editingServer, setEditingServer] = useState(false);
+  const [testCode, setTestCode] = useState<string | null>(null);
   const [serverInput, setServerInput] = useState('');
 
   const run = async (fn: () => Promise<void>) => {
@@ -79,7 +80,7 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string, remembe
         {mode === 'verify' ? (
           <>
             <Text style={ui.h2}>E-postanı doğrula</Text>
-            <Text style={ui.muted}>{email} adresine 6 haneli bir kod gönderdik. Kod 15 dakika geçerli.</Text>
+            <Text style={ui.muted}>{testCode ? 'Test sunucusu e-posta göndermiyor; kodun aşağıya otomatik yazıldı.' : `${email} adresine 6 haneli bir kod gönderdik. Kod 15 dakika geçerli.`}</Text>
             <Field label="Doğrulama kodu" value={code} onChangeText={setCode} keyboardType="number-pad" maxLength={6} autoComplete="one-time-code" />
             <ErrorText message={error} />
             <Button title="Doğrula ve başla" busy={busy} onPress={() => run(async () => {
@@ -126,7 +127,12 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string, remembe
                 if (password.length < 10) throw new ApiError('weak_password', 0, null);
                 if (!terms || !privacy) throw new ApiError('legal_acceptance_required', 0, null);
                 if (!age) throw new ApiError('age_confirmation_required', 0, null);
-                await api.register({ email, password, acceptTerms: terms, privacyNoticeAck: privacy, ageConfirmed: age, marketingConsent: marketing, termsVersion: LEGAL.versions.terms, privacyVersion: LEGAL.versions.privacy });
+                const r = await api.register({ email, password, acceptTerms: terms, privacyNoticeAck: privacy, ageConfirmed: age, marketingConsent: marketing, termsVersion: LEGAL.versions.terms, privacyVersion: LEGAL.versions.privacy });
+                // Private test servers have no e-mail: they hand the code back and we fill it in.
+                if (r.testCode) {
+                  setCode(r.testCode);
+                  setTestCode(r.testCode);
+                }
                 setMode('verify');
               })} />
             )}
@@ -134,30 +140,30 @@ export function AuthScreen({ onSignedIn }: { onSignedIn: (token: string, remembe
           </>
         )}
         {/* Players only see a friendly message; addresses and manual setup are developer tools. */}
-        {!__DEV__ && server === 'down' && (
+        {!__DEV__ && !TEST_BUILD && server === 'down' && (
           <Pressable onPress={checkServer} style={[ui.row, { marginTop: 12 }]}>
             <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: colors.danger }} />
             <Text style={[ui.muted, { flex: 1, fontSize: 12 }]}>Oyun sunucusuna bağlanılamıyor. İnternet bağlantını kontrol edip tekrar dene.</Text>
           </Pressable>
         )}
-        {__DEV__ && (
+        {(__DEV__ || TEST_BUILD) && (
           <View style={{ gap: 6, marginTop: 12, padding: 10, borderRadius: 6, borderWidth: 1, borderStyle: 'dashed', borderColor: colors.border }}>
-            <Text style={[ui.label, { fontSize: 10, color: colors.faint }]}>Geliştirici bilgisi (yayın sürümünde görünmez)</Text>
+            <Text style={[ui.label, { fontSize: 10, color: colors.faint }]}>{TEST_BUILD ? 'Test sürümü · sunucu adresini oyunu kuran kişiden al' : 'Geliştirici bilgisi (yayın sürümünde görünmez)'}</Text>
             <Pressable onPress={checkServer} style={[ui.row, { opacity: 0.85 }]}>
           <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: server === 'ok' ? colors.good : server === 'down' ? colors.danger : colors.warn }} />
           <Text style={[ui.muted, { flex: 1, fontSize: 12 }]}>
             {server === 'ok' ? 'Sunucuya bağlı' : server === 'down' ? 'Sunucuya ulaşılamıyor (dokun: tekrar dene)' : 'Sunucu kontrol ediliyor…'} · {apiBaseUrl()}
           </Text>
         </Pressable>
-        {server === 'down' && !editingServer && (
+        {(server === 'down' || TEST_BUILD) && !editingServer && (
           <View style={{ gap: 6 }}>
-            <Text style={[ui.muted, { fontSize: 12 }]}>Bilgisayardaki terminalde "Telefondan bağlanmak için" satırında yazan adresi buraya girebilirsin.</Text>
+            <Text style={[ui.muted, { fontSize: 12 }]}>{TEST_BUILD ? 'Sana gönderilen test adresini (ör. https://….trycloudflare.com) buraya gir.' : 'Bilgisayardaki terminalde "Telefondan bağlanmak için" satırında yazan adresi buraya girebilirsin.'}</Text>
             <Button title="Sunucu adresini elle gir" kind="ghost" small onPress={() => { setServerInput(''); setEditingServer(true); }} />
           </View>
         )}
         {editingServer && (
           <View style={{ gap: 8 }}>
-            <Field label="Sunucu adresi (ör. 192.168.1.20)" value={serverInput} onChangeText={setServerInput} autoCapitalize="none" keyboardType="url" />
+            <Field label={TEST_BUILD ? 'Test sunucusu adresi' : 'Sunucu adresi (ör. 192.168.1.20)'} value={serverInput} onChangeText={setServerInput} autoCapitalize="none" keyboardType="url" />
             <View style={ui.row}>
               <Button title="Vazgeç" kind="ghost" small style={{ flex: 1 }} onPress={() => setEditingServer(false)} />
               <Button title="Kaydet ve dene" small style={{ flex: 1 }} onPress={async () => {

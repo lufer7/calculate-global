@@ -4,3 +4,6 @@ dist/
 *.log
 arena.db*
 arena-dev.db*
+apps/mobile/android/
+apps/mobile/ios/
+*-test.db*

@@ -5,9 +5,15 @@ import { prefs } from './lib/prefs';
 const SERVER_PORT = 8787;
 
 /** Shown on the sign-in screen so testers can confirm they run the latest bundle. */
-export const APP_BUILD = 'v0.8 (rev4)';
+export const APP_BUILD = 'v0.8.1 (test)';
+
+/** Friend-test APK: the sign-in screen lets testers type the test server address. */
+export const TEST_BUILD = process.env.EXPO_PUBLIC_TEST_BUILD === '1';
 
 let manualOverride: string | null = null;
+
+/** Expo / local preview ports talk to the API on :8787; anywhere else the API is the same address as the page. */
+const DEV_WEB_PORTS = ['8081', '19006', '8090'];
 
 /** Normalises "192.168.1.20", "192.168.1.20:8787" or "http://…" into a base URL. */
 export function normalizeServerUrl(input: string): string | null {
@@ -56,6 +62,10 @@ export function apiBaseUrl(): string {
   if (fromEnv) return fromEnv.replace(/\/$/, '');
   const fromConfig = (Constants.expoConfig?.extra as { apiBaseUrl?: string } | undefined)?.apiBaseUrl;
   if (fromConfig) return fromConfig.replace(/\/$/, '');
-  if (Platform.OS === 'web' && typeof window !== 'undefined') return `${window.location.protocol}//${window.location.hostname}:${SERVER_PORT}`;
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return DEV_WEB_PORTS.includes(window.location.port)
+      ? `${window.location.protocol}//${window.location.hostname}:${SERVER_PORT}`
+      : window.location.origin;
+  }
   return `http://${devHost() ?? 'localhost'}:${SERVER_PORT}`;
 }

@@ -190,7 +190,7 @@ export async function pingServer(): Promise<boolean> {
 
 export const api = {
   register: (b: { email: string; password: string; acceptTerms: boolean; privacyNoticeAck: boolean; ageConfirmed: boolean; marketingConsent: boolean; termsVersion: string; privacyVersion: string }) =>
-    call<{ status: string }>('/v1/auth/register', 'POST', b),
+    call<{ status: string; testCode?: string }>('/v1/auth/register', 'POST', b),
   verify: (email: string, code: string) => call<{ token: string }>('/v1/auth/verify', 'POST', { email, code }),
   login: (email: string, password: string) => call<{ token: string; needsLegalAcceptance: boolean }>('/v1/auth/login', 'POST', { email, password }),
   logout: () => call<void>('/v1/auth/logout', 'POST'),

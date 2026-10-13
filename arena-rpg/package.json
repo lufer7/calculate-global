@@ -14,7 +14,8 @@
     "server": "node scripts/check-node.mjs && npm run dev -w @arena/server",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "legal:docs": "tsx scripts/legal-docs.ts"
+    "legal:docs": "tsx scripts/legal-docs.ts",
+    "test-server": "node scripts/check-node.mjs && node scripts/test-server.mjs"
   },
   "engines": {
     "node": "^22.13.0 || >=24.0.0"

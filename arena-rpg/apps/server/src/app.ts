@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { cors } from 'hono/cors';
 import type { PvpSnapshot } from '@arena/core';
 import {
@@ -49,6 +50,10 @@ export interface AppDeps {
   prophecySecret?: string;
   /** Development web preview runs on another port; native apps do not need CORS. */
   corsOrigin?: string;
+  /** Private test server: verification codes are shown in the app (no e-mail needed). */
+  testCodes?: boolean;
+  /** Folder with the exported web app; served at / so one address works in any browser. */
+  staticDir?: string;
 }
 
 export function createApp(deps: AppDeps = {}) {
@@ -97,7 +102,7 @@ export function createApp(deps: AppDeps = {}) {
   app.get('/health', (c) => c.json({ ok: true }));
 
   // ---- Accounts (email sign-up) ----
-  app.route('/v1', accountRoutes({ db, mailer, now, notifyAdmin }));
+  app.route('/v1', accountRoutes({ db, mailer, now, notifyAdmin, testCodes: deps.testCodes }));
   app.route('/v1/me', privacyRoutes(db, mailer, now));
   app.route('/v1/game', gameRoutes(db, { now, speed: deps.gameSpeed ?? 1, prophecySecret: deps.prophecySecret ?? 'dev-prophecy' }));
 
@@ -196,6 +201,19 @@ export function createApp(deps: AppDeps = {}) {
     const blob = transfers.take(id); // one-time read
     return blob ? c.json({ blob }) : c.json({ error: 'not_found' }, 404);
   });
+
+  // Test server: the exported web app is served from the same address as the API.
+  if (deps.staticDir) {
+    const root = deps.staticDir;
+    app.use('*', async (c, next) => {
+      if (c.req.method !== 'GET' || /^\/(v1|admin|health)(\/|$)/.test(c.req.path)) return next();
+      return serveStatic({ root })(c, next);
+    });
+    app.get('*', async (c, next) => {
+      if (/^\/(v1|admin|health)(\/|$)/.test(c.req.path)) return next();
+      return serveStatic({ root, path: 'index.html' })(c, next);
+    });
+  }
 
   return app;
 }
