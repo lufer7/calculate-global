@@ -1,3 +1,5 @@
+import { trNormalize } from "@/lib/sozluk/normalize";
+
 /** Basit, RFC 4180 uyumlu CSV okuyucu; ayraç otomatik (; , sekme). Tarayıcıda da çalışır. */
 export function detectDelimiter(firstLine: string): string {
   const counts = [";", ",", "\t"].map((d) => [d, firstLine.split(d).length - 1] as const);
@@ -41,8 +43,8 @@ export function parseCsv(text: string): string[][] {
 
 /** Başlıklardan domain kolonunu bulur. */
 export function findDomainColumn(header: string[]): number {
-  const h = header.map((x) => x.toLocaleLowerCase("tr-TR").trim());
-  const prefs = ["domain", "alan adı", "alan adi", "site", "website", "url", "host", "origin"];
+  const h = header.map((x) => trNormalize(x));
+  const prefs = ["domain", "alan adi", "site", "website", "url", "host", "origin"];
   for (const p of prefs) {
     const i = h.findIndex((x) => x === p);
     if (i !== -1) return i;

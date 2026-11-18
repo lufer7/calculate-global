@@ -28,6 +28,8 @@ describe("findDomainColumn", () => {
     expect(findDomainColumn(["Ziyaret", "Domain"])).toBe(1);
     expect(findDomainColumn(["Site Adı", "x"])).toBe(0);
     expect(findDomainColumn(["Alan Adı"])).toBe(0);
+    expect(findDomainColumn(["SİTE"])).toBe(0);
+    expect(findDomainColumn(["URL"])).toBe(0);
     expect(findDomainColumn(["a", "b"])).toBe(-1);
   });
 });

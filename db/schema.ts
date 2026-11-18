@@ -359,3 +359,18 @@ export const crawlLog = pgTable(
   },
   (t) => [index("crawl_log_host_idx").on(t.host, t.tip, t.tarih)],
 );
+
+/**
+ * Yapay zekâ uç noktaları için kullanım sayacı (kötüye kullanım / maliyet koruması).
+ * IP adresi saklanmaz; yalnızca salt'lı SHA-256 özeti. İçerik (brief, rapor satırı) ASLA yazılmaz.
+ */
+export const aiUsage = pgTable(
+  "ai_usage",
+  {
+    id: serial("id").primaryKey(),
+    ipHash: text("ip_hash").notNull(),
+    tip: text("tip").notNull(), // audience | report | classify
+    tarih: timestamp("tarih", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("ai_usage_idx").on(t.ipHash, t.tip, t.tarih)],
+);

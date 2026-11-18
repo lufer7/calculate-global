@@ -4,6 +4,7 @@ import { parse as tld } from "tldts";
 import { crawlLog, domainAdstxt } from "@/db/schema";
 import { getDb } from "@/lib/db";
 import { BOT_UA, safeFetch } from "@/lib/net/safe-fetch";
+import { extractMeta } from "@/lib/envanter/meta";
 import { parseAdsTxt, type AdsTxtRecord, type AdsTxtResult } from "./parse";
 import { isAllowed } from "./robots";
 import { indexSellers, parseSellersJson, verifyRecord, type Dogrulama, type Seller } from "./sellers";
@@ -152,4 +153,16 @@ export async function crawlAndStore(domain: string, opts: { force?: boolean; max
     });
   }
   return r;
+}
+
+/** Kategori sınıflandırması için ana sayfanın yalnızca title/meta description'ı (günde bir, robots'a uyarak). */
+export async function fetchHomepageMeta(domain: string): Promise<{ title: string | null; description: string | null } | null> {
+  if (await recentlyCrawled(domain, "homepage")) return null;
+  if ((await robotsCheck(domain, "/", domain)) !== "izin") {
+    await log(domain, "homepage", "robots_engelledi", null);
+    return null;
+  }
+  const r = await safeFetch(`https://${domain}/`, { maxBytes: 1_500_000, timeoutMs: 8000, allowRedirect: sameRoot(domain) });
+  await log(domain, "homepage", r.ok ? "ok" : "hata", r.status);
+  return r.ok ? extractMeta(r.body) : null;
 }

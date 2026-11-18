@@ -3,7 +3,7 @@ import { domains } from "@/db/schema";
 import { getDb } from "@/lib/db";
 import { ENVANTER_KATEGORILERI } from "@/lib/envanter/kategoriler";
 import { formatDate } from "@/lib/format-date";
-import { addDomains, crawlNow, setCategory } from "../actions";
+import { addDomains, classifyPending, crawlNow, setCategory } from "../actions";
 import { ActionForm, Field } from "../ui";
 
 export default async function AdminEnvanter() {
@@ -41,6 +41,11 @@ export default async function AdminEnvanter() {
             ))}
           </select>
         </Field>
+      </ActionForm>
+      <ActionForm action={classifyPending} submit="kategorisizleri LLM ile sınıflandır (10)">
+        <p className="text-xs text-muted sm:col-span-2">
+          Ana sayfanın yalnızca başlık ve meta açıklaması okunur (robots.txt'e uyularak). Eminliği düşük sonuçlar boş bırakılır; editör ataması asla ezilmez.
+        </p>
       </ActionForm>
       <div className="overflow-x-auto rounded border border-border">
         <table className="w-full min-w-[48rem] text-xs">

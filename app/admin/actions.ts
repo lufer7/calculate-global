@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { cpmAdjustments, cpmBenchmarks, cpmSeasonality, CPM_FORMATLAR, CPM_KAYNAK, PARA_BIRIMLERI, reachSettings, REACH_KANALLAR, universeRefs } from "@/db/schema";
 import { domains } from "@/db/schema";
-import { crawlAndStore } from "@/lib/adstxt/crawl";
+import { crawlAndStore, fetchHomepageMeta } from "@/lib/adstxt/crawl";
+import { classifyDomain } from "@/lib/ai/classify";
 import { normalizeHost } from "@/lib/envanter/domain";
 import { ENVANTER_KATEGORI_SLUGLARI } from "@/lib/envanter/kategoriler";
 import { requireAdmin } from "@/lib/auth";
@@ -198,4 +199,26 @@ export async function crawlNow(form: FormData): Promise<void> {
   if (!domain) return;
   await crawlAndStore(domain, { maxSsp: 30 });
   revalidatePath("/admin/envanter");
+}
+
+/** Kategorisi boş domainleri (en fazla 10) LLM ile ilk kez sınıflandırır. Admin ataması olanlara dokunmaz. */
+export async function classifyPending(_: ActionState, __: FormData): Promise<ActionState> {
+  await requireAdmin();
+  const d = db();
+  const rows = await d.select({ domain: domains.domain }).from(domains).where(sql`${domains.kategori} is null`).limit(10);
+  let n = 0;
+  for (const { domain } of rows) {
+    const meta = await fetchHomepageMeta(domain);
+    if (!meta) continue;
+    const r = await classifyDomain(domain, meta);
+    if (r.ok && r.data.kategori && r.data.eminlik !== "dusuk") {
+      await d
+        .update(domains)
+        .set({ kategori: r.data.kategori, kategoriKaynagi: "llm" })
+        .where(sql`${domains.domain} = ${domain} and (${domains.kategoriKaynagi} is null or ${domains.kategoriKaynagi} <> 'admin')`);
+      n++;
+    }
+  }
+  revalidatePath("/admin/envanter");
+  return { ok: true, mesaj: `${rows.length} domain denendi, ${n} tanesi sınıflandırıldı (eminliği düşük olanlar boş bırakıldı).` };
 }
