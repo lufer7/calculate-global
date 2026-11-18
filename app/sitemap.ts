@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { TOOLS } from "@/lib/calc/tools";
 import { getAllTerms } from "@/lib/sozluk/load";
 import { getAllMecra } from "@/lib/mecra/load";
+import { ENVANTER_KATEGORI_SLUGLARI } from "@/lib/envanter/kategoriler";
 import { SITE_URL } from "@/lib/site";
 
 // Yalnızca hazır modüller. Yapım aşamasındaki sayfalar noindex ve sitemap dışı.
@@ -12,6 +13,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/sozluk`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${SITE_URL}/hesapla`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
     { url: `${SITE_URL}/reach-tahmin`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${SITE_URL}/envanter`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    ...ENVANTER_KATEGORI_SLUGLARI.map((k) => ({ url: `${SITE_URL}/envanter/kategori/${k}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.6 })),
     { url: `${SITE_URL}/mecra`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     ...getAllMecra().map((m) => ({ url: `${SITE_URL}/mecra/${m.slug}`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 })),
     ...TOOLS.map((t) => ({ url: `${SITE_URL}/hesapla/${t.slug}`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.8 })),

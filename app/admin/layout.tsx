@@ -12,6 +12,7 @@ const LINKS = [
   ["/admin/cpm", "CPM tabloları"],
   ["/admin/sezon", "Sezon katsayıları"],
   ["/admin/reach", "Reach & universe"],
+  ["/admin/envanter", "Envanter"],
   ["/admin/sozluk", "Sözlük"],
 ] as const;
 

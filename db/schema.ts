@@ -252,6 +252,9 @@ export const domainAdstxt = pgTable(
     iliski: text("iliski").notNull(),
     tagId: text("tag_id"),
     sellersJsonDogrulandi: boolean("sellers_json_dogrulandi"),
+    dogrulama: text("dogrulama"), // dogrulandi | bulunamadi | tip_uyusmuyor | alan_adi_uyusmuyor | gizli | sellers_json_yok
+    sellerType: text("seller_type"),
+    sellerName: text("seller_name"),
     kaynak: text("kaynak").notNull().default("adstxt_crawl"),
     cekilmeTarihi: timestamp("cekilme_tarihi", { withTimezone: true }).notNull(),
   },
@@ -337,4 +340,22 @@ export const reachSettings = pgTable(
     check("reach_settings_metot_chk", sql`length(trim(${t.metotNotu})) >= 20`),
     platformCheck("reach_settings", t.platform),
   ],
+);
+
+/**
+ * Crawl günlüğü (§4.2c crawl etiği): domain başına günde birden fazla istek yapılmadığını
+ * kanıtlar ve hata/robots durumlarını şeffaf tutar. Satır verisi değil, durum kaydıdır.
+ */
+export const crawlLog = pgTable(
+  "crawl_log",
+  {
+    id: serial("id").primaryKey(),
+    host: text("host").notNull(),
+    tip: text("tip").notNull(), // adstxt | sellers | robots
+    durum: text("durum").notNull(), // ok | yok | robots_engelledi | hata | cok_buyuk
+    http: integer("http"),
+    mesaj: text("mesaj"),
+    tarih: timestamp("tarih", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("crawl_log_host_idx").on(t.host, t.tip, t.tarih)],
 );

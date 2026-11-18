@@ -13,7 +13,7 @@ describe("parseCommand", () => {
     ["/sozluk", "/sozluk"],
     ["/sözlük header bidding", "/sozluk?q=header%20bidding"],
     ["/sozluk vast", "/sozluk?q=vast"],
-    ["/envanter ornek.com", "/envanter?domain=ornek.com"],
+    ["/envanter www.ornek.com", "/envanter/ornek.com"],
     ["/envanter", "/envanter"],
     ["/mecra twitch", "/mecra?q=twitch"],
     ["/spec", "/mecra"],
@@ -28,5 +28,6 @@ describe("parseCommand", () => {
     expect(r.ok).toBe(false);
     expect(!r.ok && r.mesaj).toContain("/kahve");
   });
+  it("geçersiz domain", () => expect(parseCommand("/envanter x").ok).toBe(false));
   it("boş", () => expect(parseCommand("   ").ok).toBe(false));
 });

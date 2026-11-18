@@ -3,6 +3,7 @@
  * Saf ayrıştırıcı — hedef URL'i ya da hata mesajını döndürür.
  */
 import { TOOLS } from "./calc/tools";
+import { normalizeHost } from "./envanter/domain";
 
 export type CommandResult = { ok: true; href: string } | { ok: false; mesaj: string };
 
@@ -42,7 +43,9 @@ export function parseCommand(input: string): CommandResult {
     return { ok: true, href: arg ? `/mecra?q=${encodeURIComponent(arg)}` : "/mecra" };
   }
   if (cmd === "envanter" || cmd === "site") {
-    return { ok: true, href: arg ? `/envanter?domain=${encodeURIComponent(arg)}` : "/envanter" };
+    if (!arg) return { ok: true, href: "/envanter" };
+    const n = normalizeHost(arg);
+    return n ? { ok: true, href: `/envanter/${n.domain}` } : { ok: false, mesaj: `"${arg}" geçerli bir alan adı değil.` };
   }
   const tool = TOOLS.find((t) => t.slug === cmd);
   if (tool) return { ok: true, href: `/hesapla/${tool.slug}` };

@@ -1,9 +1,13 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { cpmAdjustments, cpmBenchmarks, cpmSeasonality, CPM_FORMATLAR, CPM_KAYNAK, PARA_BIRIMLERI, reachSettings, REACH_KANALLAR, universeRefs } from "@/db/schema";
+import { domains } from "@/db/schema";
+import { crawlAndStore } from "@/lib/adstxt/crawl";
+import { normalizeHost } from "@/lib/envanter/domain";
+import { ENVANTER_KATEGORI_SLUGLARI } from "@/lib/envanter/kategoriler";
 import { requireAdmin } from "@/lib/auth";
 import { parseTrNumber } from "@/lib/calc/number";
 import { getDb } from "@/lib/db";
@@ -160,4 +164,38 @@ export async function deleteRow(form: FormData): Promise<void> {
   const t = TABLES[tablo];
   await db().delete(t).where(eq(t.id, id));
   revalidatePath("/", "layout");
+}
+
+export async function addDomains(_: ActionState, form: FormData): Promise<ActionState> {
+  await requireAdmin();
+  const raw = String(form.get("liste") ?? "");
+  const list = [...new Set(raw.split(/[\s,;]+/).map((x) => normalizeHost(x)?.domain).filter((x): x is string => !!x))];
+  if (!list.length) return { ok: false, mesaj: "geçerli alan adı yok" };
+  const kat = String(form.get("kategori") ?? "");
+  const kategori = (ENVANTER_KATEGORI_SLUGLARI as readonly string[]).includes(kat) ? kat : null;
+  await db()
+    .insert(domains)
+    .values(list.map((domain) => ({ domain, kategori, kategoriKaynagi: kategori ? "admin" : null })))
+    .onConflictDoUpdate({ target: domains.domain, set: kategori ? { kategori, kategoriKaynagi: "admin" } : { domain: sql`excluded.domain` } });
+  revalidatePath("/admin/envanter");
+  return { ok: true, mesaj: `${list.length} domain eklendi / güncellendi. gece taramasında ads.txt'leri çekilecek.` };
+}
+
+export async function setCategory(form: FormData): Promise<void> {
+  await requireAdmin();
+  const domain = z.string().min(3).parse(form.get("domain"));
+  const kat = String(form.get("kategori") ?? "");
+  const kategori = (ENVANTER_KATEGORI_SLUGLARI as readonly string[]).includes(kat) ? kat : null;
+  // Admin düzeltmesi LLM çıktısını her zaman ezer (§4.2c)
+  await db().update(domains).set({ kategori, kategoriKaynagi: kategori ? "admin" : null }).where(eq(domains.domain, domain));
+  revalidatePath("/admin/envanter");
+  revalidatePath(`/envanter/kategori/${kategori}`);
+}
+
+export async function crawlNow(form: FormData): Promise<void> {
+  await requireAdmin();
+  const domain = normalizeHost(String(form.get("domain") ?? ""))?.domain;
+  if (!domain) return;
+  await crawlAndStore(domain, { maxSsp: 30 });
+  revalidatePath("/admin/envanter");
 }

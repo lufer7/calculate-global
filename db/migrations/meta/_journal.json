@@ -29,6 +29,20 @@
       "when": 1795044744537,
       "tag": "0003_reach_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795045363733,
+      "tag": "0004_envanter",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795045364267,
+      "tag": "0005_envanter_rls",
+      "breakpoints": true
     }
   ]
 }

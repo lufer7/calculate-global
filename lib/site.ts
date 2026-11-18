@@ -14,7 +14,7 @@ export const NAV: NavItem[] = [
   { href: "/sozluk", ad: "Sözlük", hazir: true },
   { href: "/hesapla", ad: "Metrik Hesapla", hazir: true },
   { href: "/reach-tahmin", ad: "Reach Tahminle", hazir: true },
-  { href: "/envanter", ad: "Envanter Ara", hazir: false },
+  { href: "/envanter", ad: "Envanter Ara", hazir: true },
   { href: "/hedef-kitle", ad: "Hedef Kitle Çalış", hazir: false },
   { href: "/rapor", ad: "Rapor Yorumla", hazir: false },
   { href: "/mecra", ad: "Mecra & Spec Bul", kisa: "Spec Bul", hazir: true },
