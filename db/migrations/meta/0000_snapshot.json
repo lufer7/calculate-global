@@ -1,0 +1,1369 @@
+{
+  "id": "9e945057-b2fa-4dce-b59f-187138c52c68",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.audience_libraries": {
+      "name": "audience_libraries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'programmatic'"
+        },
+        "dsp": {
+          "name": "dsp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "saglayici": {
+          "name": "saglayici",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "segment_adi": {
+          "name": "segment_adi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kategori": {
+          "name": "kategori",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cpm_tl": {
+          "name": "cpm_tl",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reach": {
+          "name": "reach",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "audience_id": {
+          "name": "audience_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kaynak": {
+          "name": "kaynak",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "yuklenme_tarihi": {
+          "name": "yuklenme_tarihi",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "audience_libraries_platform_chk": {
+          "name": "audience_libraries_platform_chk",
+          "value": "\"audience_libraries\".\"platform\" in ('programmatic', 'social')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.calc_presets": {
+      "name": "calc_presets",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "arac": {
+          "name": "arac",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "girdiler_json": {
+          "name": "girdiler_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ad": {
+          "name": "ad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.channel_specs": {
+      "name": "channel_specs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "channel_id": {
+          "name": "channel_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dsp": {
+          "name": "dsp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "satin_alma": {
+          "name": "satin_alma",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "oran": {
+          "name": "oran",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sure": {
+          "name": "sure",
+          "type": "integer[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dosya": {
+          "name": "dosya",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bitrate": {
+          "name": "bitrate",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tiklanabilir": {
+          "name": "tiklanabilir",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cpm_min": {
+          "name": "cpm_min",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cpm_max": {
+          "name": "cpm_max",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kaynak": {
+          "name": "kaynak",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kaynak_url": {
+          "name": "kaynak_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "son_dogrulama": {
+          "name": "son_dogrulama",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "channel_specs_channel_id_channels_id_fk": {
+          "name": "channel_specs_channel_id_channels_id_fk",
+          "tableFrom": "channel_specs",
+          "tableTo": "channels",
+          "columnsFrom": [
+            "channel_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.channels": {
+      "name": "channels",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ad": {
+          "name": "ad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tur": {
+          "name": "tur",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kanal": {
+          "name": "kanal",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'programmatic'"
+        },
+        "aktif": {
+          "name": "aktif",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "channels_slug_unique": {
+          "name": "channels_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "channels_platform_chk": {
+          "name": "channels_platform_chk",
+          "value": "\"channels\".\"platform\" in ('programmatic', 'social')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.cpm_adjustments": {
+      "name": "cpm_adjustments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'programmatic'"
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "katsayi": {
+          "name": "katsayi",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metot_notu": {
+          "name": "metot_notu",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kaynak": {
+          "name": "kaynak",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'editoryel_tahmin'"
+        },
+        "gecerlilik_baslangic": {
+          "name": "gecerlilik_baslangic",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "cpm_adjustments_katsayi_chk": {
+          "name": "cpm_adjustments_katsayi_chk",
+          "value": "\"cpm_adjustments\".\"katsayi\" > 0"
+        },
+        "cpm_adjustments_metot_chk": {
+          "name": "cpm_adjustments_metot_chk",
+          "value": "length(trim(\"cpm_adjustments\".\"metot_notu\")) >= 20"
+        },
+        "cpm_adjustments_kaynak_chk": {
+          "name": "cpm_adjustments_kaynak_chk",
+          "value": "\"cpm_adjustments\".\"kaynak\" = 'editoryel_tahmin'"
+        },
+        "cpm_adjustments_platform_chk": {
+          "name": "cpm_adjustments_platform_chk",
+          "value": "\"cpm_adjustments\".\"platform\" in ('programmatic', 'social')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.cpm_benchmarks": {
+      "name": "cpm_benchmarks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'programmatic'"
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kanal": {
+          "name": "kanal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "dsp": {
+          "name": "dsp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "satin_alma": {
+          "name": "satin_alma",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "katman": {
+          "name": "katman",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'A'"
+        },
+        "para_birimi": {
+          "name": "para_birimi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deger_min": {
+          "name": "deger_min",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deger_max": {
+          "name": "deger_max",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "p25": {
+          "name": "p25",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "p75": {
+          "name": "p75",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ornek_sayisi": {
+          "name": "ornek_sayisi",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kur_degeri": {
+          "name": "kur_degeri",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kur_tarihi": {
+          "name": "kur_tarihi",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kur_kaynagi": {
+          "name": "kur_kaynagi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kaynak": {
+          "name": "kaynak",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kaynak_adi": {
+          "name": "kaynak_adi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kaynak_url": {
+          "name": "kaynak_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "donem": {
+          "name": "donem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "cpm_benchmarks_format_donem_idx": {
+          "name": "cpm_benchmarks_format_donem_idx",
+          "columns": [
+            {
+              "expression": "format",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "donem",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "cpm_benchmarks_kaynak_chk": {
+          "name": "cpm_benchmarks_kaynak_chk",
+          "value": "\"cpm_benchmarks\".\"kaynak\" in ('public_benchmark', 'topluluk', 'editoryel_tahmin')"
+        },
+        "cpm_benchmarks_para_chk": {
+          "name": "cpm_benchmarks_para_chk",
+          "value": "\"cpm_benchmarks\".\"para_birimi\" in ('USD', 'EUR', 'TRY')"
+        },
+        "cpm_benchmarks_katman_chk": {
+          "name": "cpm_benchmarks_katman_chk",
+          "value": "\"cpm_benchmarks\".\"katman\" in ('A', 'B')"
+        },
+        "cpm_benchmarks_bant_chk": {
+          "name": "cpm_benchmarks_bant_chk",
+          "value": "\"cpm_benchmarks\".\"deger_min\" > 0 and \"cpm_benchmarks\".\"deger_max\" >= \"cpm_benchmarks\".\"deger_min\""
+        },
+        "cpm_benchmarks_kur_chk": {
+          "name": "cpm_benchmarks_kur_chk",
+          "value": "\"cpm_benchmarks\".\"kur_degeri\" > 0"
+        },
+        "cpm_benchmarks_donem_chk": {
+          "name": "cpm_benchmarks_donem_chk",
+          "value": "\"cpm_benchmarks\".\"donem\" ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'"
+        },
+        "cpm_benchmarks_platform_chk": {
+          "name": "cpm_benchmarks_platform_chk",
+          "value": "\"cpm_benchmarks\".\"platform\" in ('programmatic', 'social')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.cpm_seasonality": {
+      "name": "cpm_seasonality",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'programmatic'"
+        },
+        "ay": {
+          "name": "ay",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ozel_donem": {
+          "name": "ozel_donem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "katsayi": {
+          "name": "katsayi",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kaynak": {
+          "name": "kaynak",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "not": {
+          "name": "not",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "cpm_seasonality_ay_chk": {
+          "name": "cpm_seasonality_ay_chk",
+          "value": "\"cpm_seasonality\".\"ay\" between 1 and 12"
+        },
+        "cpm_seasonality_katsayi_chk": {
+          "name": "cpm_seasonality_katsayi_chk",
+          "value": "\"cpm_seasonality\".\"katsayi\" > 0"
+        },
+        "cpm_seasonality_platform_chk": {
+          "name": "cpm_seasonality_platform_chk",
+          "value": "\"cpm_seasonality\".\"platform\" in ('programmatic', 'social')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.cpm_settings": {
+      "name": "cpm_settings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "smallint",
+          "primaryKey": true,
+          "notNull": true,
+          "default": 1
+        },
+        "min_girdi": {
+          "name": "min_girdi",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 8
+        },
+        "min_katkici": {
+          "name": "min_katkici",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5
+        },
+        "min_gosterim": {
+          "name": "min_gosterim",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 5
+        },
+        "pencere_gun": {
+          "name": "pencere_gun",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 90
+        },
+        "tutarlilik_esigi": {
+          "name": "tutarlilik_esigi",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0.40'"
+        },
+        "guncelleme": {
+          "name": "guncelleme",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "cpm_settings_tek_satir_chk": {
+          "name": "cpm_settings_tek_satir_chk",
+          "value": "\"cpm_settings\".\"id\" = 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.cpm_submissions": {
+      "name": "cpm_submissions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "platform": {
+          "name": "platform",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'programmatic'"
+        },
+        "format": {
+          "name": "format",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dsp": {
+          "name": "dsp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mecra": {
+          "name": "mecra",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "satin_alma": {
+          "name": "satin_alma",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hedefleme": {
+          "name": "hedefleme",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ay": {
+          "name": "ay",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cpm_tl": {
+          "name": "cpm_tl",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "onaylandi": {
+          "name": "onaylandi",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "ip_hash": {
+          "name": "ip_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kaynak": {
+          "name": "kaynak",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'topluluk'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "cpm_submissions_kaynak_chk": {
+          "name": "cpm_submissions_kaynak_chk",
+          "value": "\"cpm_submissions\".\"kaynak\" = 'topluluk'"
+        },
+        "cpm_submissions_cpm_chk": {
+          "name": "cpm_submissions_cpm_chk",
+          "value": "\"cpm_submissions\".\"cpm_tl\" > 0"
+        },
+        "cpm_submissions_platform_chk": {
+          "name": "cpm_submissions_platform_chk",
+          "value": "\"cpm_submissions\".\"platform\" in ('programmatic', 'social')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.domain_adstxt": {
+      "name": "domain_adstxt",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "domain": {
+          "name": "domain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ssp": {
+          "name": "ssp",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seller_id": {
+          "name": "seller_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "iliski": {
+          "name": "iliski",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tag_id": {
+          "name": "tag_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sellers_json_dogrulandi": {
+          "name": "sellers_json_dogrulandi",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kaynak": {
+          "name": "kaynak",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'adstxt_crawl'"
+        },
+        "cekilme_tarihi": {
+          "name": "cekilme_tarihi",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "domain_adstxt_domain_idx": {
+          "name": "domain_adstxt_domain_idx",
+          "columns": [
+            {
+              "expression": "domain",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "domain_adstxt_iliski_chk": {
+          "name": "domain_adstxt_iliski_chk",
+          "value": "\"domain_adstxt\".\"iliski\" in ('DIRECT', 'RESELLER')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.domain_origins": {
+      "name": "domain_origins",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "domain": {
+          "name": "domain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origin": {
+          "name": "origin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rank_bucket": {
+          "name": "rank_bucket",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "alt_alan_adi": {
+          "name": "alt_alan_adi",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "kaynak": {
+          "name": "kaynak",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tarih": {
+          "name": "tarih",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "domain_origins_uq": {
+          "name": "domain_origins_uq",
+          "columns": [
+            {
+              "expression": "domain",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "origin",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "tarih",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.domain_snapshots": {
+      "name": "domain_snapshots",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "domain": {
+          "name": "domain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origin": {
+          "name": "origin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "yyyymm": {
+          "name": "yyyymm",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tarih": {
+          "name": "tarih",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rank_bucket": {
+          "name": "rank_bucket",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rank": {
+          "name": "rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kaynak": {
+          "name": "kaynak",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kapsam_disi": {
+          "name": "kapsam_disi",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "domain_snapshots_domain_idx": {
+          "name": "domain_snapshots_domain_idx",
+          "columns": [
+            {
+              "expression": "domain",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "kaynak",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.domains": {
+      "name": "domains",
+      "schema": "",
+      "columns": {
+        "domain": {
+          "name": "domain",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "kategori": {
+          "name": "kategori",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "iab_kategori": {
+          "name": "iab_kategori",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kategori_kaynagi": {
+          "name": "kategori_kaynagi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ilk_gorulme": {
+          "name": "ilk_gorulme",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.reports": {
+      "name": "reports",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ad": {
+          "name": "ad",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "donem": {
+          "name": "donem",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metrikler_json": {
+          "name": "metrikler_json",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "olusturma": {
+          "name": "olusturma",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.terms": {
+      "name": "terms",
+      "schema": "",
+      "columns": {
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "terim": {
+          "name": "terim",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "acik": {
+          "name": "acik",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kategori": {
+          "name": "kategori",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "seviye": {
+          "name": "seviye",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "govde_mdx": {
+          "name": "govde_mdx",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ilgili": {
+          "name": "ilgili",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "kaynak": {
+          "name": "kaynak",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'editoryel'"
+        },
+        "guncelleme": {
+          "name": "guncelleme",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "terms_seviye_chk": {
+          "name": "terms_seviye_chk",
+          "value": "\"terms\".\"seviye\" in ('temel', 'orta', 'ileri')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.universe_refs": {
+      "name": "universe_refs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "hedef_kitle_tanimi": {
+          "name": "hedef_kitle_tanimi",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "buyukluk": {
+          "name": "buyukluk",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kaynak": {
+          "name": "kaynak",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kaynak_url": {
+          "name": "kaynak_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tarih": {
+          "name": "tarih",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

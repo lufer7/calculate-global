@@ -1,0 +1,22 @@
+---
+terim: "Header Bidding"
+kategori: ["acik-artirma", "ekosistem"]
+seviye: "orta"
+ilgili: ["Prebid", "Waterfall", "SSP", "Ad Server"]
+---
+
+## Tek cümlede
+
+Yayıncının, ad server'a gitmeden önce birden çok SSP'den aynı anda teklif topladığı ve böylece hepsini eşit şartlarda yarıştırdığı açık artırma yöntemi.
+
+## İnsan gibi anlat
+
+Eskiden SSP'ler sırayla denenirdi: ilki almazsa ikinciye, o da almazsa üçüncüye. Header bidding bu sırayı yıktı. Sayfa yüklenirken tüm SSP'lere aynı anda 'kaç verirsin' diye sorulur, gelen teklifler ad server'a taşınır ve en yükseği kazanır. Yayıncının geliri artar, alıcı da envantere daha adil erişir.
+
+## Günlük işte nerede karşına çıkar
+
+Yayıncı tarafında gelir optimizasyonunda, alıcı tarafında ise aynı gösterimin birden çok SSP'den gelmesiyle oluşan teklif tekrarında (bid duplication) karşına çıkar. SPO tartışmalarının kökü buraya dayanır.
+
+## Sık yapılan karışıklık
+
+Header bidding adını sayfanın `<head>` bölümünde çalışmasından alır, 'başlık teklifi' gibi bir anlamı yok. Bir de server-side header bidding var: teklifler tarayıcıda değil sunucuda toplanır; sayfa hızlanır ama cookie eşleşmesi zayıflar.

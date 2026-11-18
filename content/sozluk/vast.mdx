@@ -1,0 +1,23 @@
+---
+terim: "VAST"
+acik: "Video Ad Serving Template"
+kategori: ["video", "kreatif"]
+seviye: "orta"
+ilgili: ["VPAID", "VMAP", "SIMID", "In-stream"]
+---
+
+## Tek cümlede
+
+Video reklamın oynatıcıya nasıl teslim edileceğini, hangi dosyaların ve takip adreslerinin kullanılacağını tanımlayan IAB standardı XML formatı.
+
+## İnsan gibi anlat
+
+Video oynatıcı bir reklam istediğinde karşılığında bir VAST dosyası alır. İçinde video dosyasının adresleri (farklı çözünürlük ve formatlarda), süre, tıklama adresi ve 'başladı, çeyreğe geldi, yarıladı, bitti' gibi olaylarda çağrılacak takip linkleri bulunur. Oynatıcı bu tarifi okur ve uygular.
+
+## Günlük işte nerede karşına çıkar
+
+Video kampanyası kurarken, üçüncü taraf ölçüm etiketi eklerken ve 'impression var ama complete yok' gibi sorunları ayıklarken karşına çıkar. VCR ve CPCV gibi metriklerin hepsi VAST olaylarından gelir.
+
+## Sık yapılan karışıklık
+
+VAST bir video dosyası değil, video dosyasını tarif eden bir XML'dir. Wrapper (başka bir VAST'a yönlendiren) ile inline (dosyayı doğrudan içeren) VAST farklıdır; çok katmanlı wrapper zinciri gecikmeye ve reklam hatalarına yol açar.

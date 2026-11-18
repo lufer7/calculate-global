@@ -1,0 +1,266 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+/* ── BID TERMINAL tema tokenları (§1) ─────────────────────────────── */
+:root {
+  --bg: #0a0c10; /* sayfa zemini */
+  --bg-alt: #0d1017; /* alternatif bant zemini */
+  --panel: #13161e; /* kart / panel */
+  --border: #232936; /* kart kenarlığı */
+  --border-dim: #1c222d; /* bölüm ayırıcı */
+  --text: #e8ecf4; /* ana metin */
+  --muted: #9aa3b5; /* ikincil metin */
+  --dim: #5c6578; /* üçüncül / etiket — kontrast 4.5:1 altında: yalnızca dekor ve büyük metin */
+  --accent: #ffb224; /* amber — birincil aksiyon, vurgu */
+  --up: #3df5a0; /* artış / pozitif */
+  --down: #ff5c6e; /* düşüş / negatif / uyarı */
+  --info: #5b9dff; /* bilgi, JSON key rengi */
+
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-body: "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    background: var(--bg);
+    color: var(--text);
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    overflow-x: clip;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100dvh;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 35%, transparent);
+    color: var(--text);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  /* Sayılar her zaman monospace ve tabular */
+  .num,
+  code,
+  kbd,
+  pre,
+  table td,
+  table th {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* `// BÖLÜM ADI` / `01 / MODÜL ADI` etiketleri */
+  .label {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    line-height: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0 1rem;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.02em;
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: transparent;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    cursor: pointer;
+  }
+  .btn:hover {
+    border-color: var(--muted);
+  }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0a0c10;
+    font-weight: 600;
+  }
+  .btn-primary:hover {
+    background: #ffc152;
+    border-color: #ffc152;
+  }
+  .input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 0.75rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .input:hover {
+    border-color: #2f3747;
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .input::placeholder {
+    color: var(--muted);
+    opacity: 0.6;
+  }
+  /* İngilizce terim içeren etiketler: Türkçe büyük harf dönüşümü (i→İ) uygulanmaz */
+  .label-en {
+    text-transform: none;
+    letter-spacing: 0.04em;
+  }
+  .syslog {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    color: var(--muted);
+  }
+  .syslog::before {
+    content: "sistem: ";
+    color: var(--accent);
+  }
+  .up {
+    color: var(--up);
+  }
+  .down {
+    color: var(--down);
+  }
+
+  /* Sözlük gövdesi */
+  .prose-term h2 {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin: 2rem 0 0.5rem;
+  }
+  .prose-term h2::before {
+    content: "// ";
+    color: var(--muted);
+  }
+  .prose-term p {
+    color: var(--text);
+    line-height: 1.75;
+    margin: 0.5rem 0;
+  }
+  .prose-term ul {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0;
+  }
+  .prose-term li {
+    position: relative;
+    padding-left: 1.25rem;
+    line-height: 1.7;
+    margin: 0.25rem 0;
+  }
+  .prose-term li::before {
+    content: ">";
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-family: var(--font-mono);
+  }
+  .prose-term code {
+    font-size: 0.875em;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.05rem 0.3rem;
+    color: var(--info);
+  }
+  .prose-term strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* Terim tooltip linki */
+  .term-link {
+    position: relative;
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-decoration-style: dotted;
+    text-underline-offset: 3px;
+  }
+  .term-link:hover {
+    color: var(--accent);
+  }
+  .term-tip {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 6px);
+    z-index: 20;
+    width: max-content;
+    max-width: min(18rem, 80vw);
+    padding: 0.5rem 0.625rem;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--muted);
+    pointer-events: none;
+    display: none; /* gizliyken layout'a girmesin (mobilde yatay taşma) */
+  }
+  .term-link:hover .term-tip,
+  .term-link:focus-visible .term-tip {
+    display: block;
+  }
+}
+
+@keyframes ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker-track {
+  animation: ticker-scroll 40s linear infinite;
+}
+.ticker-wrap:hover .ticker-track,
+.ticker-wrap:focus-within .ticker-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+.caret {
+  animation: blink 1.1s step-end infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
+}

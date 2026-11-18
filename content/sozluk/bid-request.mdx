@@ -1,0 +1,22 @@
+---
+terim: "Bid Request"
+kategori: ["acik-artirma"]
+seviye: "ileri"
+ilgili: ["Bid Response", "OpenRTB", "RTB"]
+---
+
+## Tek cümlede
+
+SSP'nin bir reklam gösterimi fırsatını DSP'lere bildirdiği, gösterimin bağlamını taşıyan teklif isteği.
+
+## İnsan gibi anlat
+
+Bir sayfa açıldığında SSP'nin DSP'lere gönderdiği dosya: hangi site ya da uygulama, hangi reklam alanı, hangi cihaz ve bölge, varsa kullanıcı kimliği ve izin sinyalleri. DSP teklif verip vermeyeceğine ve kaç vereceğine bu bilgiye bakarak karar verir.
+
+## Günlük işte nerede karşına çıkar
+
+Teknik tartışmalarda, 'bu envanterde kullanıcı kimliği geliyor mu', 'bu uygulama bundle ID gönderiyor mu' sorularında karşına çıkar. DSP'lerdeki bazı raporlar 'avails' ya da 'bid request' hacmini gösterir.
+
+## Sık yapılan karışıklık
+
+Bid request sayısı gösterim sayısı değildir. Header bidding yüzünden aynı gösterim için birden çok istek gelebilir; avails'e bakıp 'bu kadar envanter var' demek yanıltıcıdır.
