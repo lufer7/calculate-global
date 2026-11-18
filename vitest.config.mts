@@ -7,7 +7,7 @@ export default defineConfig({
     include: ["lib/**/*.test.ts", "db/**/*.test.ts"],
     coverage: {
       provider: "v8",
-      include: ["lib/calc/**/*.ts", "lib/cpm/**/*.ts", "lib/sozluk/{autolink,normalize,schema}.ts", "lib/commands.ts", "lib/quips.ts"],
+      include: ["lib/calc/**/*.ts", "lib/cpm/**/*.ts", "lib/sozluk/{autolink,normalize,schema}.ts", "lib/mecra/schema.ts", "lib/commands.ts", "lib/quips.ts"],
       exclude: ["**/*.test.ts", "lib/cpm/queries.ts"],
       thresholds: { lines: 100, functions: 100, branches: 100, statements: 100 },
     },

@@ -262,14 +262,18 @@ export const domainAdstxt = pgTable(
 );
 
 // --- Reach (P1) -----------------------------------------------------------
-export const universeRefs = pgTable("universe_refs", {
-  id: serial("id").primaryKey(),
-  hedefKitleTanimi: text("hedef_kitle_tanimi").notNull(),
-  buyukluk: integer("buyukluk").notNull(),
-  kaynak: text("kaynak").notNull(),
-  kaynakUrl: text("kaynak_url"),
-  tarih: date("tarih").notNull(),
-});
+export const universeRefs = pgTable(
+  "universe_refs",
+  {
+    id: serial("id").primaryKey(),
+    hedefKitleTanimi: text("hedef_kitle_tanimi").notNull(),
+    buyukluk: integer("buyukluk").notNull(),
+    kaynak: text("kaynak").notNull(),
+    kaynakUrl: text("kaynak_url"),
+    tarih: date("tarih").notNull(),
+  },
+  (t) => [check("universe_refs_buyukluk_chk", sql`${t.buyukluk} > 0`)],
+);
 
 // --- Hedef kitle (P3) -----------------------------------------------------
 export const audienceLibraries = pgTable("audience_libraries", {
@@ -306,3 +310,31 @@ export const reports = pgTable("reports", {
   metriklerJson: jsonb("metrikler_json").notNull(),
   olusturma: timestamp("olusturma", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Reach modeli parametreleri (§M3) — kanal bazlı, admin panelden ayarlanır.
+ * r: NBD yoğunlaşma (null = Poisson) · erisilebilir_oran: universe tavanı (0–1].
+ * Editöryel ayardır; metot notu zorunlu.
+ */
+export const REACH_KANALLAR = ["genel", "display", "video", "ctv"] as const;
+export const reachSettings = pgTable(
+  "reach_settings",
+  {
+    id: serial("id").primaryKey(),
+    platform: platform(),
+    kanal: text("kanal").notNull(),
+    nbdR: numeric("nbd_r"),
+    erisilebilirOran: numeric("erisilebilir_oran").notNull().default("1"),
+    metotNotu: text("metot_notu").notNull(),
+    kaynak: text("kaynak").notNull().default("editoryel_tahmin"),
+    tarih: date("tarih").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check("reach_settings_kanal_chk", sql`${t.kanal} in ('genel', 'display', 'video', 'ctv')`),
+    check("reach_settings_r_chk", sql`${t.nbdR} is null or ${t.nbdR} > 0`),
+    check("reach_settings_oran_chk", sql`${t.erisilebilirOran} > 0 and ${t.erisilebilirOran} <= 1`),
+    check("reach_settings_metot_chk", sql`length(trim(${t.metotNotu})) >= 20`),
+    platformCheck("reach_settings", t.platform),
+  ],
+);

@@ -15,6 +15,8 @@ describe("parseCommand", () => {
     ["/sozluk vast", "/sozluk?q=vast"],
     ["/envanter ornek.com", "/envanter?domain=ornek.com"],
     ["/envanter", "/envanter"],
+    ["/mecra twitch", "/mecra?q=twitch"],
+    ["/spec", "/mecra"],
     ["/bütçe", "/hesapla/cpm?bilinmeyen=a"],
     ["header bidding", "/sozluk?q=header%20bidding"],
   ])("%s → %s", (input, href) => {

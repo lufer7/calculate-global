@@ -15,6 +15,20 @@
       "when": 1795042791676,
       "tag": "0001_rls_ve_ayarlar",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795044743986,
+      "tag": "0002_reach",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795044744537,
+      "tag": "0003_reach_rls",
+      "breakpoints": true
     }
   ]
 }

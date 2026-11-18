@@ -1,0 +1,1 @@
+ALTER TABLE "reach_settings" ENABLE ROW LEVEL SECURITY;

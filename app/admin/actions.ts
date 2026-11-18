@@ -3,7 +3,7 @@
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { cpmAdjustments, cpmBenchmarks, cpmSeasonality, CPM_FORMATLAR, CPM_KAYNAK, PARA_BIRIMLERI } from "@/db/schema";
+import { cpmAdjustments, cpmBenchmarks, cpmSeasonality, CPM_FORMATLAR, CPM_KAYNAK, PARA_BIRIMLERI, reachSettings, REACH_KANALLAR, universeRefs } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { parseTrNumber } from "@/lib/calc/number";
 import { getDb } from "@/lib/db";
@@ -108,11 +108,54 @@ export async function addSeasonality(_: ActionState, form: FormData): Promise<Ac
   return { ok: true, mesaj: "sezon katsayısı eklendi." };
 }
 
-const TABLES = { benchmark: cpmBenchmarks, adjustment: cpmAdjustments, sezon: cpmSeasonality } as const;
+const universeSchema = z.object({
+  hedefKitleTanimi: z.string().trim().min(3),
+  buyukluk: num().pipe(z.number().int("tam sayı olmalı")),
+  kaynak: z.string().trim().min(3, "kaynak zorunlu: TÜİK, IAB Türkiye, We Are Social/Meltwater..."),
+  kaynakUrl: optText.pipe(z.string().url().nullable()),
+  tarih: z.string().date(),
+});
+
+export async function addUniverse(_: ActionState, form: FormData): Promise<ActionState> {
+  await requireAdmin();
+  const parsed = universeSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success) return fail(parsed.error);
+  await db().insert(universeRefs).values(parsed.data);
+  revalidatePath("/reach-tahmin");
+  return { ok: true, mesaj: "universe referansı eklendi." };
+}
+
+const reachSettingSchema = z.object({
+  kanal: z.enum(REACH_KANALLAR),
+  nbdR: optNum(),
+  erisilebilirOran: num().pipe(z.number().max(1, "0–1 arası olmalı")),
+  metotNotu: z.string().trim().min(20, "metot notu en az 20 karakter"),
+  tarih: z.string().date(),
+});
+
+export async function addReachSetting(_: ActionState, form: FormData): Promise<ActionState> {
+  await requireAdmin();
+  const parsed = reachSettingSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success) return fail(parsed.error);
+  const v = parsed.data;
+  await db()
+    .insert(reachSettings)
+    .values({ ...v, nbdR: v.nbdR === null ? null : String(v.nbdR), erisilebilirOran: String(v.erisilebilirOran) });
+  revalidatePath("/reach-tahmin");
+  return { ok: true, mesaj: "model ayarı eklendi." };
+}
+
+const TABLES = {
+  benchmark: cpmBenchmarks,
+  adjustment: cpmAdjustments,
+  sezon: cpmSeasonality,
+  universe: universeRefs,
+  reach: reachSettings,
+} as const;
 
 export async function deleteRow(form: FormData): Promise<void> {
   await requireAdmin();
-  const tablo = z.enum(["benchmark", "adjustment", "sezon"]).parse(form.get("tablo"));
+  const tablo = z.enum(["benchmark", "adjustment", "sezon", "universe", "reach"]).parse(form.get("tablo"));
   const id = z.coerce.number().int().positive().parse(form.get("id"));
   const t = TABLES[tablo];
   await db().delete(t).where(eq(t.id, id));

@@ -1,22 +1,44 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/ComingSoon";
+import { PageHeader } from "@/components/PageHeader";
+import { MecraBrowser } from "@/components/mecra/MecraBrowser";
+import { getAllMecra } from "@/lib/mecra/load";
+import { dogrulamaDurumu } from "@/lib/mecra/schema";
 
 export const metadata: Metadata = {
   title: "Mecra & Spec Bul",
-  description: "Twitch'e nereden girilir, hangi spec'le? Mecra bazında DSP, satın alma tipi ve kreatif spec'leri; kaynaklı, tarihli.",
+  description: "Hangi mecraya hangi DSP'den, hangi satın alma tipiyle girilir? Mecra bazında satın alma yolları, formatlar ve dikkat edilecekler.",
   alternates: { canonical: "/mecra" },
-  robots: { index: false, follow: true }, // modül hazır olana kadar indekslenmez
 };
 
 export default function Page() {
+  const now = new Date();
+  const items = getAllMecra().map(({ slug, mecra, kanal, tur, ozet, dspler, formatlar, son_dogrulama }) => ({
+    slug,
+    mecra,
+    kanal,
+    tur,
+    ozet,
+    dspler,
+    formatlar,
+    dogrulama: dogrulamaDurumu(son_dogrulama, now),
+  }));
+  const dogrulanmamis = items.filter((i) => i.dogrulama.durum !== "guncel").length;
   return (
-    <ComingSoon
-      etiket={"07 / MECRA & SPEC BUL"}
-      baslik={"Mecra & Spec Rehberi"}
-      faz={"P1 — sırada"}
-      aciklama={"Twitch'e nereden girilir, hangi spec'le? Mecra bazında DSP, satın alma tipi ve kreatif spec'leri; kaynaklı, tarihli."}
-      sistem={"spec PDF'leri toplanıyor. dağınıklık geçici."}
-      maddeler={["20 mecra ile başlangıç: CTV, video, retail media, audio, DOOH", "DSP ve satın alma tipi (PG / PMP / open)", "Kreatif spec kartları, son doğrulama tarihi ve resmî kaynak linki", "Filtre ve 2-3 mecra karşılaştırma modu"]}
-    />
+    <>
+      <PageHeader
+        etiket="07 / MECRA & SPEC BUL"
+        baslik="Mecra & Spec Rehberi"
+        sistem={dogrulanmamis ? `${dogrulanmamis} kayıt doğrulama bekliyor. bilinmeyen alanlar bilerek boş.` : "tüm kayıtlar son 6 ayda doğrulandı."}
+      >
+        <p>
+          &ldquo;Twitch&apos;e nereden girilir, hangi spec&apos;le?&rdquo; Her kayıt kaynak ve son doğrulama tarihi taşır; 6 aydan eski ya da hiç
+          doğrulanmamış kayıtlar <span className="text-accent">doğrulanmalı</span> etiketi alır. Bilmediğimiz alanı boş bırakıyoruz — tahmini spec
+          yazmıyoruz. Kreatifi göndermeden önce resmî spec belgesine bak.
+        </p>
+      </PageHeader>
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <MecraBrowser items={items} />
+      </div>
+    </>
   );
 }

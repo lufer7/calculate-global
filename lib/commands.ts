@@ -26,7 +26,7 @@ const ALIASES: Record<string, string> = {
   bütçe: "/hesapla/cpm?bilinmeyen=a",
 };
 
-export const ORNEK_KOMUTLAR = ["/cpm", "/ctr", "/pacing", "/sozluk vast", "/reach"];
+export const ORNEK_KOMUTLAR = ["/cpm", "/reach", "/pacing", "/sozluk vast", "/mecra twitch"];
 
 export function parseCommand(input: string): CommandResult {
   const raw = input.trim();
@@ -37,6 +37,9 @@ export function parseCommand(input: string): CommandResult {
 
   if (["sozluk", "sözlük", "terim"].includes(cmd)) {
     return { ok: true, href: arg ? `/sozluk?q=${encodeURIComponent(arg)}` : "/sozluk" };
+  }
+  if (cmd === "mecra" || cmd === "spec") {
+    return { ok: true, href: arg ? `/mecra?q=${encodeURIComponent(arg)}` : "/mecra" };
   }
   if (cmd === "envanter" || cmd === "site") {
     return { ok: true, href: arg ? `/envanter?domain=${encodeURIComponent(arg)}` : "/envanter" };
