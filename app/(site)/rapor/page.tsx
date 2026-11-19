@@ -1,22 +1,27 @@
 import type { Metadata } from "next";
-import { ComingSoon } from "@/components/ComingSoon";
+import { PageHeader } from "@/components/PageHeader";
+import { ReportTool } from "@/components/report/ReportTool";
+import { aiConfigured } from "@/lib/ai/client";
 
 export const metadata: Metadata = {
   title: "Rapor Yorumla",
-  description: "DSP raporunu yükle, kolonları eşleştir; metrikler deterministik hesaplansın, yorum PDF olarak gelsin.",
+  description: "DSP raporunu yükle: metrikler tarayıcında formülle hesaplanır, yapay zekâ yalnızca yorum yazar. Türkçe PDF indir. Ham veri sunucuya gitmez.",
   alternates: { canonical: "/rapor" },
-  robots: { index: false, follow: true }, // modül hazır olana kadar indekslenmez
 };
+export const dynamic = "force-dynamic";
 
 export default function Page() {
   return (
-    <ComingSoon
-      etiket={"06 / RAPOR YORUMLA"}
-      baslik={"Rapor Yorumla"}
-      faz={"P4"}
-      aciklama={"DSP raporunu yükle, kolonları eşleştir; metrikler deterministik hesaplansın, yorum PDF olarak gelsin."}
-      sistem={"rapor yorumcusu henüz kahvesini içiyor."}
-      maddeler={["Adform, Amazon DSP, DV360, CM360 şablon tanıma", "Sayılar formülle hesaplanır, yapay zekâ yalnızca yorum yazar", "Nerede para kaçıyor, patron neyi soracak", "Türkçe karakterli PDF", "Yüklenen dosya diske yazılmaz, istek bitince silinir"]}
-    />
+    <>
+      <PageHeader etiket="06 / RAPOR YORUMLA" baslik="Rapor Yorumla" sistem="sayıyı formül hesaplar, yorumu model yazar. tersi olmaz.">
+        <p>
+          Adform, Amazon DSP, DV360 veya CM360 export&apos;unu yükle. Metrikler tarayıcında, lib/calc formülleriyle hesaplanır; yapay zekâ yalnızca bu
+          sayılara bakıp yorum yazar ve yeni sayı üretemez. Sonuç: kapak, metrik tablosu, grafikler ve yorumla tek PDF.
+        </p>
+      </PageHeader>
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <ReportTool aiHazir={aiConfigured()} />
+      </div>
+    </>
   );
 }

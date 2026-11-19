@@ -2,7 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   pageExtensions: ["ts", "tsx"],
-  outputFileTracingIncludes: { "/**": ["./content/**/*"] },
+  serverExternalPackages: ["@react-pdf/renderer"],
+  outputFileTracingIncludes: { "/**": ["./content/**/*"], "/api/report/pdf": ["./node_modules/@expo-google-fonts/inter/**/*.ttf", "./node_modules/@expo-google-fonts/jetbrains-mono/**/*.ttf"] },
   async redirects() {
     // Route'lar sabit (§1b). Eski / alternatif adlar buraya kalıcı yönlendirme olarak eklenir.
     return [

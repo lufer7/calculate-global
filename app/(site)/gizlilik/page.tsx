@@ -18,7 +18,7 @@ export default function Page() {
           <h2 className="label">// şu an ne işleniyor</h2>
           <ul className="mt-3 space-y-2">
             <li>
-              <strong>Hesaplayıcılar:</strong> girdiğin sayılar yalnızca tarayıcında hesaplanır, sunucuya gönderilmez. Paylaşılabilir
+              <strong>Hesaplayıcılar ve reach tahmini:</strong> girdiğin sayılar yalnızca tarayıcında hesaplanır, sunucuya gönderilmez. Paylaşılabilir
               link için sayılar adres çubuğundaki URL&apos;de durur; linki kime gönderirsen o görür.
             </li>
             <li>
@@ -34,11 +34,35 @@ export default function Page() {
           </ul>
         </section>
         <section>
-          <h2 className="label">// rapor ve segment yüklemeleri (gelecek modüller)</h2>
+          <h2 className="label">// rapor yorumla</h2>
+          <ul className="mt-3 space-y-2">
+            <li>Yüklenen rapor dosyası <strong>tarayıcında</strong> okunur ve hesaplanır; ham satırlar sunucumuza gönderilmez, diske yazılmaz.</li>
+            <li>
+              &ldquo;Yorum üret&rdquo; seçilirse yalnızca toplu metrikler (toplamlar, oranlar, en iyi/en kötü satır adları) yorum için Anthropic API&apos;ye
+              iletilir. PDF bellekte üretilip sana döner, saklanmaz.
+            </li>
+          </ul>
+        </section>
+        <section>
+          <h2 className="label">// hedef kitle çalış</h2>
+          <ul className="mt-3 space-y-2">
+            <li>Segment export dosyan tarayıcında okunur; sunucuya yalnızca kitle adı, sağlayıcı, CPM, reach ve id kolonları gider.</li>
+            <li>Brief ve bu liste, kitle seçimi için Anthropic API&apos;ye iletilir; istek bitince sunucuda tutulmaz, veritabanına ve loglara yazılmaz.</li>
+            <li>&ldquo;Bu tarayıcıda hatırla&rdquo; seçilirse segment listesi yalnızca senin tarayıcının yerel depolamasında tutulur.</li>
+          </ul>
+        </section>
+        <section>
+          <h2 className="label">// envanter ara</h2>
+          <ul className="mt-3 space-y-2">
+            <li>Aranan alan adları tarama listesine eklenebilir (alan adı kişisel veri değildir).</li>
+            <li>&ldquo;Kendi verini getir&rdquo; ekranında dosyan tarayıcında işlenir; sunucuya yalnızca domain listesi gider.</li>
+          </ul>
+        </section>
+        <section>
+          <h2 className="label">// kötüye kullanım koruması</h2>
           <p className="mt-3">
-            Rapor Yorumla ve Hedef Kitle Çalış modüllerinde yüklenen dosyalar varsayılan olarak diske yazılmayacak, bellekte işlenip istek
-            bitince silinecek. Kullanıcı açıkça &ldquo;kaydet&rdquo; demedikçe hiçbir rapor saklanmayacak. Loglara satır verisi yazılmayacak.
-            Bu modüller yayına çıkmadan önce bu bölüm ayrıntılı aydınlatma metniyle güncellenecek.
+            Yapay zekâ kullanan araçlar için IP adresinin salt&apos;lı tek yönlü özeti (hash) kısa süreli kota sayacında tutulur; IP adresinin kendisi
+            saklanmaz.
           </p>
         </section>
         <section>

@@ -12,6 +12,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
     { url: `${SITE_URL}/sozluk`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${SITE_URL}/hesapla`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${SITE_URL}/hedef-kitle`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_URL}/rapor`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/reach-tahmin`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
     { url: `${SITE_URL}/envanter`, lastModified: now, changeFrequency: "weekly", priority: 0.8 },
     ...ENVANTER_KATEGORI_SLUGLARI.map((k) => ({ url: `${SITE_URL}/envanter/kategori/${k}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.6 })),

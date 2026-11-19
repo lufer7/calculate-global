@@ -15,6 +15,7 @@ export async function readTable(f: File): Promise<string[][]> {
       out.push(
         (row.values as unknown[]).slice(1).map((v) => {
           if (v == null) return "";
+          if (v instanceof Date) return v.toISOString().slice(0, 10);
           if (typeof v === "object") {
             const o = v as { text?: unknown; result?: unknown; richText?: { text: string }[] };
             if (o.richText) return o.richText.map((r) => r.text).join("");
