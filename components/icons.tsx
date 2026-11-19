@@ -34,3 +34,12 @@ export const TurkishFlag = ({ className }: P) => (
     />
   </svg>
 );
+export const IconUser = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...base}><circle cx="12" cy="8" r="4" /><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" /></svg>
+);
+export const IconStar = ({ className, filled }: P & { filled?: boolean }) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...base} fill={filled ? "currentColor" : "none"}><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z" /></svg>
+);
+export const IconSave = ({ className }: P) => (
+  <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...base}><path d="M5 3h11l3 3v15H5z" /><path d="M8 3v5h7V3M8 21v-7h8v7" /></svg>
+);

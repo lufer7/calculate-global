@@ -33,6 +33,7 @@ export function Footer() {
           <p className="label">// Site</p>
           <ul className="mt-3 space-y-1">
             {[
+              ["/topluluk", "Topluluk CPM'i"],
               ["/hakkinda", "Hakkında & veri politikası"],
               ["/gizlilik", "Gizlilik & KVKK"],
               ["/ads.txt", "ads.txt"],

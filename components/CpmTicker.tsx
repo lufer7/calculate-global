@@ -3,15 +3,20 @@ import { getTickerData, FORMAT_ETIKET } from "@/lib/cpm/queries";
 import { formatChange, formatMoney } from "@/lib/calc/number";
 import { formatDate } from "@/lib/format-date";
 import type { CPM_FORMATLAR } from "@/db/schema";
+import { cellId, getFormatCells } from "@/lib/cpm/community-queries";
 
 /**
  * CPM şeridi. Katman A (public benchmark × editöryel Türkiye katsayısı).
  * "Canlı" / "gerçek zamanlı" ifadesi YOK (§4.1 Kural 2): "tahmini CPM bandı".
  */
 export async function CpmTicker() {
-  const data = await getTickerData();
+  const [data, cells] = await Promise.all([getTickerData(), getFormatCells().catch(() => new Map())]);
   const hucreler = data.durum === "ok" ? data.hucreler : [];
-  const hasAny = hucreler.some((h) => h.durum === "ok");
+  const birincil = (f: string) => {
+    const c = cells.get(cellId({ format: f }));
+    return c?.birincil ? c : null;
+  };
+  const hasAny = hucreler.some((h) => h.durum === "ok" || birincil(h.format));
 
   return (
     <div className="border-t border-border-dim bg-bg-alt">
@@ -27,6 +32,15 @@ export async function CpmTicker() {
           <ul className="flex shrink-0 items-center gap-5">
             {hucreler.map((h) => {
               const etiket = FORMAT_ETIKET[h.format as (typeof CPM_FORMATLAR)[number]] ?? h.format.toUpperCase();
+              const tc = birincil(h.format);
+              if (tc) {
+                return (
+                  <li key={h.format} className="num whitespace-nowrap font-mono text-xs" title={`topluluk medyanı · ${tc.girdi} girdi · ${tc.katkici} katkıcı`}>
+                    <span className="text-text">{etiket}</span> <span className="up">{formatMoney(tc.medyan, "TRY")}</span>{" "}
+                    <span className="text-muted">topluluk</span>
+                  </li>
+                );
+              }
               if (h.durum !== "ok") {
                 return (
                   <li key={h.format} className="font-mono text-xs text-muted">

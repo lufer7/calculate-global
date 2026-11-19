@@ -58,7 +58,7 @@ describe("cpm_benchmarks kısıtları", () => {
   });
   it("tanımsız platform reddedilir", async () => {
     await expect(benchmark({ platform: "tv" })).rejects.toThrow(/platform_chk/);
-    await expect(benchmark({ platform: "social" })).resolves.toBeDefined();
+    await expect(benchmark({ platform: "social", alt_platform: "tiktok" })).resolves.toBeDefined();
   });
   it("kaynak NULL olamaz", async () => {
     await expect(
@@ -73,6 +73,21 @@ describe("cpm_benchmarks kısıtları", () => {
       `select column_name from information_schema.columns where table_name = 'cpm_benchmarks'`,
     );
     expect(cols.rows.map((r) => r.column_name)).not.toContain("deger_tl");
+  });
+});
+
+describe("sosyal kanal genişlemesi (P5)", () => {
+  it("programatikte alt platform boş olmalı, sosyalde meta/tiktok", async () => {
+    await expect(benchmark({ alt_platform: "meta" })).rejects.toThrow(/alt_platform_chk/);
+    await expect(benchmark({ platform: "social", alt_platform: "meta" })).resolves.toBeDefined();
+    await expect(benchmark({ platform: "social", alt_platform: "snap" })).rejects.toThrow(/alt_platform_chk/);
+  });
+  it("topluluk girdisi: dönem biçimi ve pozitif CPM", async () => {
+    const ins = (ay: string, cpm: number) =>
+      db.query(`insert into cpm_submissions (user_id, format, ay, cpm_tl) values ('00000000-0000-0000-0000-000000000001', 'banner', $1, $2)`, [ay, cpm]);
+    await expect(ins("2026-11", 12)).resolves.toBeDefined();
+    await expect(ins("2026-1", 12)).rejects.toThrow(/ay_chk/);
+    await expect(ins("2026-11", 0)).rejects.toThrow(/cpm_chk/);
   });
 });
 

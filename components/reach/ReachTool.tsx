@@ -17,6 +17,7 @@ import { quip } from "@/lib/quips";
 import { formatDate } from "@/lib/format-date";
 import { IconCheck, IconLink } from "@/components/icons";
 import { useCopyLink, useInitialParams, writeParams } from "@/components/hesapla/useShareUrl";
+import { SavePreset } from "@/components/account/SavePreset";
 import type { ReachSetting, UniverseRef } from "@/lib/reach/queries";
 
 const ReachChart = dynamic(() => import("./ReachChart").then((m) => m.ReachChart), {
@@ -220,10 +221,13 @@ export function ReachTool({ refs, settings }: { refs: UniverseRef[]; settings: R
           <p className="syslog" aria-live="polite">
             {sistem}
           </p>
+          <div className="flex flex-wrap gap-2">
+          <SavePreset arac="reach-tahmin" varsayilanAd="Reach senaryosu" />
           <button type="button" onClick={copy} className="btn">
             {copied ? <IconCheck className="h-4 w-4 text-up" /> : <IconLink className="h-4 w-4" />}
             {copied ? "kopyalandı" : "linki kopyala"}
           </button>
+          </div>
         </div>
       </div>
 

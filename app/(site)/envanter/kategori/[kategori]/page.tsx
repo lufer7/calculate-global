@@ -6,6 +6,8 @@ import { cruxLabel, sortByBuckets } from "@/lib/envanter/domain";
 import { ENVANTER_KATEGORILERI, ENVANTER_KATEGORI_SLUGLARI, isEnvanterKategori } from "@/lib/envanter/kategoriler";
 import { getCategoryRows } from "@/lib/envanter/report";
 import { formatNumber } from "@/lib/calc/number";
+import { LISANS as CRUX } from "@/lib/providers/crux";
+import { providerEnabled } from "@/lib/providers/types";
 
 export const revalidate = 3600;
 export const dynamicParams = false;
@@ -29,6 +31,7 @@ export default async function Page({ params }: { params: Promise<{ kategori: str
   const rows = await getCategoryRows(k);
   const sorted = rows ? sortByBuckets(rows) : null;
   const kat = ENVANTER_KATEGORILERI[k];
+  const cruxAcik = providerEnabled(CRUX);
   return (
     <>
       <PageHeader etiket={`04 / ENVANTER ARA / ${kat.ad.toLocaleUpperCase("tr-TR")}`} baslik={`${kat.ad} siteleri`} sistem={sorted ? `${sorted.length} site. aynı kovadakiler alfabetik — yapay kesinlik yok.` : "veritabanı bağlı değil."}>
@@ -65,7 +68,7 @@ export default async function Page({ params }: { params: Promise<{ kategori: str
                         {r.domain}
                       </Link>
                     </td>
-                    <td className="px-3 py-2 text-muted">{cruxLabel(r.cruxRank).etiket}</td>
+                    <td className="px-3 py-2 text-muted">{cruxAcik ? cruxLabel(r.cruxRank).etiket : "kaynak kapalı"}</td>
                     <td className="num px-3 py-2">{formatNumber(r.sspSayisi, 0)}</td>
                     <td className="num px-3 py-2">{formatNumber(r.direct, 0)}</td>
                     <td className="num px-3 py-2">{formatNumber(r.reseller, 0)}</td>

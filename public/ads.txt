@@ -1,5 +1,0 @@
-# ads.txt — prgturk.com
-# Programatik sitesinin ads.txt'i olmaması komik olurdu.
-# AdSense yayıncı kimliği alındığında aşağıdaki satır açılacak:
-# google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
-contact=https://prgturk.com/hakkinda

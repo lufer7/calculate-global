@@ -5,6 +5,7 @@ import { ENVANTER_KATEGORILERI, isEnvanterKategori } from "@/lib/envanter/katego
 import { getCategoryRows } from "@/lib/envanter/report";
 import { LISANS as CRUX } from "@/lib/providers/crux";
 import { LISANS as CF } from "@/lib/providers/cloudflare-radar";
+import { providerEnabled } from "@/lib/providers/types";
 
 /**
  * §4.2c: bulk export'ta sağlayıcının ham sayısı YOK. Kolonlar: bizim crawl verimiz,
@@ -16,17 +17,20 @@ export async function GET(_: Request, { params }: { params: Promise<{ kategori: 
   const rows = await getCategoryRows(k);
   if (!rows) return NextResponse.json({ hata: "veritabanı bağlı değil" }, { status: 503 });
   const kat = ENVANTER_KATEGORILERI[k];
+  // Yalnızca açık (lisansı teyitli) ve bulk export'a izin veren kaynakların kova kolonları eklenir
+  const cruxCol = providerEnabled(CRUX) && CRUX.bulkCsvExportaDahil;
+  const cfCol = providerEnabled(CF) && CF.bulkCsvExportaDahil;
   const header = ["domain", "kategori", "iab_kategori"];
-  if (CRUX.bulkCsvExportaDahil) header.push("buyukluk_kovasi", "planlama_kademesi");
-  if (CF.bulkCsvExportaDahil) header.push("cloudflare_kovasi");
+  if (cruxCol) header.push("buyukluk_kovasi", "planlama_kademesi");
+  if (cfCol) header.push("cloudflare_kovasi");
   header.push("ssp_sayisi", "direct", "reseller", "ssp_listesi");
   const body = sortByBuckets(rows).map((r) => {
     const out: (string | number | null)[] = [r.domain, kat.ad, kat.iab];
-    if (CRUX.bulkCsvExportaDahil) {
+    if (cruxCol) {
       const l = cruxLabel(r.cruxRank);
       out.push(l.etiket, l.kademe);
     }
-    if (CF.bulkCsvExportaDahil) out.push(r.cfRank);
+    if (cfCol) out.push(r.cfRank);
     out.push(r.sspSayisi, r.direct, r.reseller, r.ssp.join(", "));
     return out;
   });

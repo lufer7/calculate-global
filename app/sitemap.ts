@@ -21,6 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...getAllMecra().map((m) => ({ url: `${SITE_URL}/mecra/${m.slug}`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.6 })),
     ...TOOLS.map((t) => ({ url: `${SITE_URL}/hesapla/${t.slug}`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.8 })),
     ...getAllTerms().map((t) => ({ url: `${SITE_URL}/sozluk/${t.slug}`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.7 })),
+    { url: `${SITE_URL}/topluluk`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
     { url: `${SITE_URL}/hakkinda`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE_URL}/gizlilik`, lastModified: now, changeFrequency: "yearly", priority: 0.2 },
   ];

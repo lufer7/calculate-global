@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/PageHeader";
+import { ConsentReset } from "@/components/consent/ConsentBanner";
 
 export const metadata: Metadata = {
   title: "Gizlilik & KVKK",
@@ -25,11 +26,19 @@ export default function Page() {
               <strong>Sözlük araması:</strong> tamamen tarayıcında çalışır.
             </li>
             <li>
-              <strong>Yönetici girişi:</strong> yalnızca yönetici paneli için e-posta adresi ve oturum çerezi (Supabase Auth) işlenir.
+              <strong>Giriş:</strong> magic link ile giriş için e-posta adresi ve oturum çerezi (Supabase Auth) işlenir; giriş isteğe bağlıdır.
             </li>
             <li>
-              <strong>Analitik ve reklam:</strong> şu an yok. Eklendiğinde (Vercel Analytics, Google Analytics 4, AdSense) bu metin ve çerez
-              tercihleri önceden güncellenecek.
+              <strong>Vercel Analytics:</strong> çerez kullanmayan, toplu sayfa görüntüleme istatistiği. Kişiyi tanımlamaz.
+            </li>
+            <li>
+              <strong>Google Analytics 4 ve Google AdSense:</strong> yalnızca çerez penceresinde &ldquo;kabul et&rdquo; dersen yüklenir. Reddedersen
+              hiçbiri yüklenmez ve araçlar aynen çalışır. IP anonimleştirme açıktır.
+              <ConsentReset />
+            </li>
+            <li>
+              <strong>Hesap:</strong> giriş yaparsan e-posta adresin, kaydettiğin hesaplamalar, favorilerin ve CPM katkıların (anonim gösterilir) saklanır.
+              Hesabını silmek için iletişim kanalından yazabilirsin.
             </li>
           </ul>
         </section>

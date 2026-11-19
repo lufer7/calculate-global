@@ -6,6 +6,7 @@ import { pacing } from "@/lib/calc/pacing";
 import { quip } from "@/lib/quips";
 import { IconCheck, IconLink } from "@/components/icons";
 import { useCopyLink, useInitialParams, writeParams } from "./useShareUrl";
+import { SavePreset } from "@/components/account/SavePreset";
 
 const FIELDS = [
   { key: "butce", label: "Toplam bütçe", ph: "300.000", ipucu: "Flight'ın toplam bütçesi" },
@@ -123,10 +124,13 @@ export function PacingCalculator() {
         <p className="syslog" aria-live="polite">
           {sistem}
         </p>
+        <div className="flex flex-wrap gap-2">
+        <SavePreset arac={"pacing"} varsayilanAd={"Pacing hesabı"} />
         <button type="button" onClick={copy} className="btn">
           {copied ? <IconCheck className="h-4 w-4 text-up" /> : <IconLink className="h-4 w-4" />}
           {copied ? "kopyalandı" : "linki kopyala"}
         </button>
+        </div>
       </div>
     </div>
   );

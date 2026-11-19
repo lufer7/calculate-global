@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { cpmAdjustments, cpmBenchmarks, cpmSeasonality, CPM_FORMATLAR, CPM_KAYNAK, PARA_BIRIMLERI, reachSettings, REACH_KANALLAR, universeRefs } from "@/db/schema";
-import { domains } from "@/db/schema";
+import { cpmSettings, cpmSubmissions, domains } from "@/db/schema";
 import { crawlAndStore, fetchHomepageMeta } from "@/lib/adstxt/crawl";
 import { classifyDomain } from "@/lib/ai/classify";
 import { normalizeHost } from "@/lib/envanter/domain";
@@ -221,4 +221,32 @@ export async function classifyPending(_: ActionState, __: FormData): Promise<Act
   }
   revalidatePath("/admin/envanter");
   return { ok: true, mesaj: `${rows.length} domain denendi, ${n} tanesi sınıflandırıldı (eminliği düşük olanlar boş bırakıldı).` };
+}
+
+export async function moderateSubmission(form: FormData): Promise<void> {
+  await requireAdmin();
+  const id = z.coerce.number().int().positive().parse(form.get("id"));
+  const karar = z.enum(["onayla", "sil"]).parse(form.get("karar"));
+  if (karar === "onayla") await db().update(cpmSubmissions).set({ onaylandi: true }).where(eq(cpmSubmissions.id, id));
+  else await db().delete(cpmSubmissions).where(eq(cpmSubmissions.id, id));
+  revalidatePath("/admin/topluluk");
+  revalidatePath("/", "layout");
+}
+
+const settingsSchema = z.object({
+  minGirdi: z.coerce.number().int().min(1).max(1000),
+  minKatkici: z.coerce.number().int().min(1).max(1000),
+  minGosterim: z.coerce.number().int().min(1).max(1000),
+  pencereGun: z.coerce.number().int().min(7).max(730),
+  tutarlilikEsigi: num().pipe(z.number().max(5)),
+});
+
+export async function updateCpmSettings(_: ActionState, form: FormData): Promise<ActionState> {
+  await requireAdmin();
+  const parsed = settingsSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success) return fail(parsed.error);
+  const v = { ...parsed.data, tutarlilikEsigi: String(parsed.data.tutarlilikEsigi), guncelleme: new Date() };
+  await db().insert(cpmSettings).values({ id: 1, ...v }).onConflictDoUpdate({ target: cpmSettings.id, set: v });
+  revalidatePath("/", "layout");
+  return { ok: true, mesaj: "eşikler güncellendi." };
 }

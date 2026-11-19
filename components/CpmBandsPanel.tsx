@@ -2,6 +2,8 @@ import { getTickerData, FORMAT_ETIKET } from "@/lib/cpm/queries";
 import { formatChange, formatMoney, formatNumber, formatPercent } from "@/lib/calc/number";
 import { formatDate, formatDonem } from "@/lib/format-date";
 import { CPM_FORMATLAR } from "@/db/schema";
+import Link from "next/link";
+import { cellId, getFormatCells } from "@/lib/cpm/community-queries";
 
 function Change({ v, label }: { v: number | null | undefined; label: string }) {
   if (v == null) return <span className="text-muted">{label}: önceki dönem yok</span>;
@@ -18,7 +20,7 @@ function Change({ v, label }: { v: number | null | undefined; label: string }) {
  * (editöryel tahmin) ve metot notu görünür. Kural 1: TL ve kaynak para birimi değişimi ayrı.
  */
 export async function CpmBandsPanel() {
-  const data = await getTickerData();
+  const [data, cells] = await Promise.all([getTickerData(), getFormatCells().catch(() => new Map())]);
   const hucreler = data.durum === "ok" ? data.hucreler : CPM_FORMATLAR.map((f) => ({ format: f, durum: "veri_yok" as const, bantlar: [] }));
 
   return (
@@ -33,8 +35,21 @@ export async function CpmBandsPanel() {
       <ul className="mt-4 grid gap-3 md:grid-cols-2">
         {hucreler.map((h) => {
           const etiket = FORMAT_ETIKET[h.format as (typeof CPM_FORMATLAR)[number]];
+          const c = cells.get(cellId({ format: h.format }));
           return (
             <li key={h.format} className="card p-4">
+              {c && (
+                <p className={`mb-2 flex items-baseline justify-between gap-3 ${c.birincil ? "" : "text-muted"}`}>
+                  <span className="font-mono text-[11px] uppercase tracking-widest">{c.birincil ? "topluluk medyanı" : "topluluk (ikincil)"}</span>
+                  <span className={`num font-mono ${c.birincil ? "text-lg text-up" : "text-sm"}`}>{formatMoney(c.medyan)}</span>
+                </p>
+              )}
+              {c && (
+                <p className="mb-2 font-mono text-[11px] text-muted">
+                  P25–P75 {formatMoney(c.p25)}–{formatMoney(c.p75)} · {c.girdi} girdi · {c.katkici} katkıcı
+                  {c.birincil ? " · aşağıdaki benchmark karşılaştırma içindir" : ""}
+                </p>
+              )}
               <div className="flex items-baseline justify-between gap-3">
                 <span className="font-mono text-sm font-semibold tracking-wide text-text">{etiket}</span>
                 {h.durum === "ok" ? (
@@ -80,6 +95,12 @@ export async function CpmBandsPanel() {
         })}
       </ul>
       {data.durum === "ok" && data.sonGuncelleme && <p className="syslog mt-3">son güncelleme: {formatDate(data.sonGuncelleme)}</p>}
+      <p className="mt-3 text-sm text-muted">
+        Gördüğün CPM&apos;i anonim paylaş, topluluk medyanı büyüsün:{" "}
+        <Link href="/topluluk" className="text-accent underline underline-offset-2">
+          topluluk CPM&apos;i
+        </Link>
+      </p>
     </section>
   );
 }

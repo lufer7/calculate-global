@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/inter";
 import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
+import { ConsentBanner } from "@/components/consent/ConsentBanner";
+import { ThirdPartyScripts } from "@/components/consent/ThirdPartyScripts";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -24,7 +27,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        {children}
+        <ConsentBanner />
+        <ThirdPartyScripts />
+        <Analytics />
+      </body>
     </html>
   );
 }

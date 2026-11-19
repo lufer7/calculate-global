@@ -5,8 +5,8 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/admin";
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/admin";
+  const next = searchParams.get("next") ?? "/hesabim";
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/hesabim";
   const supabase = await createSupabaseServer();
   if (code && supabase) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);

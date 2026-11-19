@@ -5,6 +5,7 @@ import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import { DogrulamaBadge } from "@/components/mecra/DogrulamaBadge";
 import { SpecTable } from "@/components/mecra/SpecTable";
+import { FavoriteButton } from "@/components/account/FavoriteButton";
 import { MdxLink } from "@/components/sozluk/TermLink";
 import { formatMoney } from "@/lib/calc/number";
 import { formatDate } from "@/lib/format-date";
@@ -44,6 +45,9 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
             <DogrulamaBadge d={d} />
           </div>
           <p className="mt-3 max-w-2xl text-muted">{m.ozet}</p>
+          <div className="mt-4">
+            <FavoriteButton tip="mecra" refId={m.slug} ad={m.mecra} />
+          </div>
         </div>
       </div>
       <div className="mx-auto max-w-4xl space-y-8 px-4 py-8">

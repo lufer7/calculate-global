@@ -8,6 +8,7 @@ import { quip, situationForMetric } from "@/lib/quips";
 import { IconCheck, IconLink } from "@/components/icons";
 import { formatField, type ParaBirimi } from "./display";
 import { useCopyLink, useInitialParams, writeParams } from "./useShareUrl";
+import { SavePreset } from "@/components/account/SavePreset";
 
 const FIELDS: RatioField[] = ["a", "b", "x"];
 
@@ -151,10 +152,13 @@ export function RatioCalculator({ tool }: { tool: RatioTool }) {
         <p className="syslog" aria-live="polite">
           {sistem}
         </p>
+        <div className="flex flex-wrap gap-2">
+        <SavePreset arac={tool.slug} varsayilanAd={`${tool.ad} hesabı`} />
         <button type="button" onClick={copy} className="btn">
           {copied ? <IconCheck className="h-4 w-4 text-up" /> : <IconLink className="h-4 w-4" />}
           {copied ? "kopyalandı" : "linki kopyala"}
         </button>
+        </div>
       </div>
     </div>
   );

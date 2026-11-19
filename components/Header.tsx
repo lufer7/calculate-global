@@ -1,6 +1,7 @@
 import { Logo } from "./Logo";
 import { Nav } from "./Nav";
 import { CpmTicker } from "./CpmTicker";
+import { AccountLink } from "./account/AccountLink";
 
 export function Header() {
   return (
@@ -10,7 +11,10 @@ export function Header() {
       </a>
       <div className="relative mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4">
         <Logo />
-        <Nav />
+        <div className="flex items-center gap-2">
+          <Nav />
+          <AccountLink />
+        </div>
       </div>
       <CpmTicker />
     </header>

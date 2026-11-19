@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import remarkGfm from "remark-gfm";
 import { MdxLink } from "@/components/sozluk/TermLink";
+import { FavoriteButton } from "@/components/account/FavoriteButton";
+import { AdSlot } from "@/components/consent/AdSlot";
 import { getAllTerms, getTerm } from "@/lib/sozluk/load";
 import { remarkAutolink } from "@/lib/sozluk/remark-autolink";
 import { KATEGORILER, SEVIYELER, type Kategori } from "@/lib/sozluk/kategoriler";
@@ -75,6 +77,9 @@ export default async function TermPage({ params }: { params: Promise<{ slug: str
           <p className="mt-4 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted">
             seviye: <span className="text-accent">{SEVIYELER[t.seviye]}</span>
           </p>
+          <div className="mt-4">
+            <FavoriteButton tip="terim" refId={t.slug} ad={t.terim} />
+          </div>
         </div>
       </div>
 
@@ -122,6 +127,7 @@ export default async function TermPage({ params }: { params: Promise<{ slug: str
             </ul>
           </aside>
         )}
+        <AdSlot yer="alt" />
       </div>
     </article>
   );

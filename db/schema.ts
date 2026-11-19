@@ -30,6 +30,14 @@ import {
 
 const platform = () =>
   text("platform").notNull().default("programmatic");
+/** P5: sosyal kanal genişlemesi. platform='social' iken alt platform (meta, tiktok); programatikte null. */
+export const SOSYAL_ALT_PLATFORMLAR = ["meta", "tiktok"] as const;
+const altPlatform = () => text("alt_platform");
+const altPlatformCheck = (table: string, platformCol: AnyPgColumn, altCol: AnyPgColumn) =>
+  check(
+    `${table}_alt_platform_chk`,
+    sql`(${platformCol} = 'programmatic' and ${altCol} is null) or (${platformCol} = 'social' and ${altCol} in ('meta', 'tiktok'))`,
+  );
 const platformCheck = (table: string, col: AnyPgColumn) =>
   check(`${table}_platform_chk`, sql`${col} in ('programmatic', 'social')`);
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
@@ -57,8 +65,9 @@ export const channels = pgTable("channels", {
   tur: text("tur").notNull(),
   kanal: text("kanal").array().notNull().default(sql`'{}'::text[]`),
   platform: platform(),
+  altPlatform: altPlatform(),
   aktif: boolean("aktif").notNull().default(true),
-}, (t) => [platformCheck("channels", t.platform)]);
+}, (t) => [platformCheck("channels", t.platform), altPlatformCheck("channels", t.platform, t.altPlatform)]);
 
 export const channelSpecs = pgTable("channel_specs", {
   id: serial("id").primaryKey(),
@@ -88,6 +97,7 @@ export const cpmBenchmarks = pgTable(
   {
     id: serial("id").primaryKey(),
     platform: platform(),
+    altPlatform: altPlatform(),
     format: text("format").notNull(),
     kanal: text("kanal"),
     dsp: text("dsp"),
@@ -117,6 +127,7 @@ export const cpmBenchmarks = pgTable(
     check("cpm_benchmarks_kur_chk", sql`${t.kurDegeri} > 0`),
     check("cpm_benchmarks_donem_chk", sql`${t.donem} ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`),
     platformCheck("cpm_benchmarks", t.platform),
+    altPlatformCheck("cpm_benchmarks", t.platform, t.altPlatform),
     index("cpm_benchmarks_format_donem_idx").on(t.format, t.donem),
   ],
 );
@@ -183,7 +194,9 @@ export const cpmSubmissions = pgTable(
     id: serial("id").primaryKey(),
     userId: uuid("user_id").notNull(),
     platform: platform(),
+    altPlatform: altPlatform(),
     format: text("format").notNull(),
+    kanal: text("kanal"), // desktop | mobil | ctv
     dsp: text("dsp"),
     mecra: text("mecra"),
     satinAlma: text("satin_alma"),
@@ -198,7 +211,10 @@ export const cpmSubmissions = pgTable(
   (t) => [
     check("cpm_submissions_kaynak_chk", sql`${t.kaynak} = 'topluluk'`),
     check("cpm_submissions_cpm_chk", sql`${t.cpmTl} > 0`),
+    check("cpm_submissions_ay_chk", sql`${t.ay} ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`),
     platformCheck("cpm_submissions", t.platform),
+    altPlatformCheck("cpm_submissions", t.platform, t.altPlatform),
+    index("cpm_submissions_cell_idx").on(t.platform, t.format, t.createdAt),
   ],
 );
 
@@ -373,4 +389,20 @@ export const aiUsage = pgTable(
     tarih: timestamp("tarih", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("ai_usage_idx").on(t.ipHash, t.tip, t.tarih)],
+);
+
+/** P5: kullanıcı favorileri (sözlük terimi, mecra, araç). Yalnızca giriş yapmış kullanıcı. */
+export const favorites = pgTable(
+  "favorites",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    tip: text("tip").notNull(), // terim | mecra | arac
+    ref: text("ref").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("favorites_uq").on(t.userId, t.tip, t.ref),
+    check("favorites_tip_chk", sql`${t.tip} in ('terim', 'mecra', 'arac')`),
+  ],
 );

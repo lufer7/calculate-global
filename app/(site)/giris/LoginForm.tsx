@@ -12,11 +12,11 @@ export function LoginForm({ url, anonKey }: { url: string; anonKey: string }) {
     e.preventDefault();
     setState("gonderiliyor");
     const supabase = createBrowserClient(url, anonKey);
-    const next = new URLSearchParams(window.location.search).get("next") ?? "/admin";
-    const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/admin";
+    const next = new URLSearchParams(window.location.search).get("next") ?? "/hesabim";
+    const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/hesabim";
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`, shouldCreateUser: false },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`, shouldCreateUser: true },
     });
     if (error) {
       setState("hata");

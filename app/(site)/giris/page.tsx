@@ -10,7 +10,7 @@ export default function Page() {
   return (
     <>
       <PageHeader etiket="// GİRİŞ" baslik="Giriş">
-        <p>Araçlar girişsiz çalışır. Giriş yalnızca yönetici paneli için (ileride: kaydedilen hesaplamalar ve favoriler).</p>
+        <p>Araçlar girişsiz çalışır. Giriş; hesaplamaları kaydetmek, favoriler ve topluluk CPM katkısı için. Şifre yok: e-postana tek kullanımlık bağlantı gelir.</p>
       </PageHeader>
       <div className="mx-auto max-w-md px-4 py-10">
         {env ? (

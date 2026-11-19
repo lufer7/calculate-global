@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { RatioCalculator } from "@/components/hesapla/RatioCalculator";
 import { PacingCalculator } from "@/components/hesapla/PacingCalculator";
 import { CpmBandsPanel } from "@/components/CpmBandsPanel";
+import { AdSlot } from "@/components/consent/AdSlot";
+import { FavoriteButton } from "@/components/account/FavoriteButton";
 import { getTool, TOOLS } from "@/lib/calc/tools";
 import { getAllTerms } from "@/lib/sozluk/load";
 import { SITE_URL } from "@/lib/site";
@@ -75,9 +77,11 @@ export default async function AracPage({ params }: { params: Promise<{ arac: str
           </section>
 
           {tool.slug === "cpm" && <CpmBandsPanel />}
+          <AdSlot yer="alt" />
         </div>
 
         <aside className="space-y-6">
+          <FavoriteButton tip="arac" refId={tool.slug} ad={tool.ad} />
           {ilgili.length > 0 && (
             <div>
               <h2 className="label">// sözlükte</h2>
@@ -105,6 +109,7 @@ export default async function AracPage({ params }: { params: Promise<{ arac: str
               ))}
             </ul>
           </div>
+          <AdSlot yer="yan" />
         </aside>
       </div>
     </>
